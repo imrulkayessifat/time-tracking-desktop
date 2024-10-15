@@ -1,10 +1,28 @@
-import { getSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
+import dynamic from 'next/dynamic';
 
-const ProfilePage =  () => {
-    
+import Loader from '../components/Loader';
+import Main from '../components/Main';
+
+const ProfilePage = () => {
+    const { data: session, status } = useSession();
+
+    if (!session) {
+        return <ClientSideRedirect />;
+    }
+
+
+    if (status === "loading") {
+        return (
+            <Loader />
+        );
+    }
+
     return (
-        <div>hi</div>
-    )
+        <Main />
+    );
 }
+
+const ClientSideRedirect = dynamic(() => import('../components/hooks/ClientSideRedirect'), { ssr: false });
 
 export default ProfilePage
