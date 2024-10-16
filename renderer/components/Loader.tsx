@@ -6,15 +6,16 @@ import {
     CardContent
 } from "../components/ui/Card"
 import { Skeleton } from '../components/ui/Skeleton';
+import { cn } from '../lib/utils';
 const Loader = () => {
     return (
-        <div className="max-w-screen-2xl mx-auto w-full pb-10 mt-24">
-            <Card className='border-none'>
+        <div className="max-w-screen-xl mx-auto w-full pb-10 mt-24">
+            <Card className={cn('border-none')}>
                 <CardHeader>
                     <Skeleton className='h-8 w-48' />
                 </CardHeader>
-                <CardContent>
-                    <div className='h-[500px] w-full flex items-center justify-center'>
+                <CardContent className='border-none'>
+                    <div className='h-full w-full flex items-center justify-center'>
                         <Loader2
                             className='size-6 text-slate-100 animate-spin'
                         />

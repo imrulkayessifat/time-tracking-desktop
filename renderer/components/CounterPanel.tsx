@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import { FaCirclePlay, FaCirclePause } from "react-icons/fa6";
 
-const CounterPanel = () => {
+import { Separator } from "./ui/separator";
+import Project from "./Project";
+
+interface CounterPanelProps {
+  token: string
+}
+
+const CounterPanel: React.FC<CounterPanelProps> = ({
+  token
+}) => {
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
@@ -71,24 +80,30 @@ const CounterPanel = () => {
   };
   return (
     <div className="w-full">
-      <div className='flex justify-center'>
-        <p className='bg-gray-400 text-white mt-5 font-bold text-2xl px-28'>
-          {`${formatTime(time.hours)}:${formatTime(time.minutes)}:${formatTime(time.seconds)}`}
-        </p>
-      </div>
-      <div className='flex justify-center mt-5'>
-        {
-          !isRunning ?
-            <FaCirclePlay
-              onClick={toggleTimer}
-              className="w-12 h-12 text-blue-500 cursor-pointer"
-            />
-            :
-            <FaCirclePause
-              onClick={toggleTimer}
-              className="w-12 h-12 text-blue-500 cursor-pointer"
-            />
-        }
+      <div className="flex flex-col items-center gap-5">
+        <div className='flex justify-center'>
+          <p className='bg-gray-400 text-white mt-5 font-bold text-2xl px-28'>
+            {`${formatTime(time.hours)}:${formatTime(time.minutes)}:${formatTime(time.seconds)}`}
+          </p>
+        </div>
+        <div className='flex justify-center'>
+          {
+            !isRunning ?
+              <FaCirclePlay
+                onClick={toggleTimer}
+                className="w-12 h-12 text-blue-500 cursor-pointer"
+              />
+              :
+              <FaCirclePause
+                onClick={toggleTimer}
+                className="w-12 h-12 text-blue-500 cursor-pointer"
+              />
+          }
+        </div>
+        <Separator className="bg-gray-300 w-11/12" />
+        <div className="w-full px-5">
+          <Project token={token} />
+        </div>
       </div>
     </div>
   )

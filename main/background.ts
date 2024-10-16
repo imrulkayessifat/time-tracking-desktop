@@ -130,7 +130,7 @@ ipcMain.on('toggle-expand', (_, isExpanded) => {
     mainWindow.setMinimumSize(!isExpanded ? 1000 : 500, height)
     mainWindow.setMaximumSize(!isExpanded ? 99999 : 500, height)
     console.log(mainWindow.getMaximumSize())
-    mainWindow.setSize(newWidth, height);
+    mainWindow.setSize(newWidth, height, true);
   }
 });
 

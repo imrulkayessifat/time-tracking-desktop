@@ -31,21 +31,31 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { Separator } from "./ui/separator";
+import { useSelectProject } from "./hooks/project/use-select-project";
+import Task from "./Task";
 
-const TodosPanel = () => {
+interface TasksPanelProps {
+  token: string
+}
+
+const TasksPanel: React.FC<TasksPanelProps> = ({
+  token
+}) => {
   const router = useRouter();
+  const { id: selectedProjectId } = useSelectProject()
   return (
     <div className='w-full flex flex-col justify-between h-screen min-w-[480px]'>
-      <div className="mx-2 mt-2 flex flex-col justify-between">
+      <div className="mx-2 mt-2 flex flex-col gap-3 justify-between">
         <div className='flex justify-between items-center'>
-          <p className='font-bold text-xl'>To-dos</p>
+          <p className='font-bold text-xl'>Tasks : </p>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button>
                 <CiMenuKebab className="w-4 h-4 cursor-pointer" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 bg-white">
               <DropdownMenuLabel>My Profile</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
@@ -123,6 +133,8 @@ const TodosPanel = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        <Separator className="bg-gray-300 w-full" />
+        <Task token={token} />
       </div>
       <footer className="border-t px-2">
         <span className="text-xs text-black/70">showing 0 of 0 to-dos</span>
@@ -131,4 +143,4 @@ const TodosPanel = () => {
   )
 }
 
-export default TodosPanel
+export default TasksPanel

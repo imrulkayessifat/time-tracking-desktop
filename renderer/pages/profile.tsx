@@ -19,7 +19,7 @@ const ProfilePage = () => {
     }
 
     return (
-        <Main />
+        <Main token={session.accessToken} />
     );
 }
 
