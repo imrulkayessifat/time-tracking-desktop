@@ -5,6 +5,7 @@ import Loader from './Loader';
 import { cn } from '../lib/utils';
 import { useGetTasks } from './hooks/task/use-get-tasks';
 import { useSelectProject } from './hooks/project/use-select-project';
+import { useSelectTask } from './hooks/task/use-select-task';
 
 interface TaskProps {
     token: string;
@@ -15,7 +16,8 @@ const Task: React.FC<TaskProps> = ({
 }) => {
     const [taskPage, setTaskPage] = useState(1)
     const { id: projectId } = useSelectProject()
-    
+    const { id: selectedTaskId, setTaskId } = useSelectTask()
+
     const { data, isLoading } = useGetTasks({ taskPage, token, projectId })
 
     if (isLoading) {
@@ -62,8 +64,8 @@ const Task: React.FC<TaskProps> = ({
             <div className="flex flex-col gap-3">
                 {
                     tasks.map((task, index) => (
-                        <div key={index} className={cn("border rounded-md border-gray-400")}>
-                            <button className="w-full text-left py-5 pl-2 hover:text-gray-700">
+                        <div key={index} className={cn("border rounded-md border-gray-400", task.id === selectedTaskId && 'border-purple-500 bg-purple-500')}>
+                            <button onClick={() => setTaskId(task.id)} className="w-full text-left py-5 pl-2 hover:text-gray-700">
                                 {task.name}
                             </button>
                         </div>
