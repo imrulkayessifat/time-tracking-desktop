@@ -22,7 +22,6 @@ db.prepare(`
   CREATE TABLE IF NOT EXISTS activities (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     app_name TEXT,
-    window_title TEXT,
     url TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )
@@ -56,7 +55,7 @@ if (isProd) {
     resizable: true
   })
   mainWindow.setMenu(null);
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   if (isProd) {
     await mainWindow.loadURL('app://./home')
@@ -160,9 +159,11 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
 
 const startTracking = async () => {
   try {
-    const getWindows = await import('../node_modules/get-windows');
-    const windowInfo = await getWindows.activeWindow();
-    console.log("activity : ", windowInfo);
+    const { activeWindow } = await import('../node_modules/get-windows');
+    const result = await activeWindow()
+    // const stmt = db.prepare('INSERT INTO activities (app_name, url) VALUES (?, ?)');
+    // stmt.run(result.owner.name, result.url);
+    console.log(result)
   } catch (error) {
     console.error('Error tracking active window:', error);
   }
