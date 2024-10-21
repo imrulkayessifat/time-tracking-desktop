@@ -14,7 +14,7 @@ const Project: React.FC<ProjectsProps> = ({
   token
 }) => {
   const [page, setPage] = useState(1)
-  const { id:selectedProjectId, setProjectId } = useSelectProject()
+  const { id: selectedProjectId, setProjectId } = useSelectProject()
   const { data, isLoading } = useGetProjects({ page, token })
 
   if (isLoading) {
@@ -56,7 +56,12 @@ const Project: React.FC<ProjectsProps> = ({
         {
           projects.map((project, index) => (
             <div key={index} className={cn("border rounded-md border-gray-400", project.id === selectedProjectId && 'border-blue-400 bg-blue-400')}>
-              <button onClick={() => setProjectId(project.id)} className="w-full text-left py-5 pl-2 hover:text-gray-700">
+              <button
+                onClick={() => {
+                  setProjectId(project.id)
+                }}
+                className="w-full text-left py-5 pl-2 hover:text-gray-700"
+              >
                 {project.name}
               </button>
             </div>

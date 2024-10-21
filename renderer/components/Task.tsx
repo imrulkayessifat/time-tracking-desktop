@@ -16,7 +16,7 @@ const Task: React.FC<TaskProps> = ({
 }) => {
     const [taskPage, setTaskPage] = useState(1)
     const { id: projectId } = useSelectProject()
-    const { id: selectedTaskId, setTaskId } = useSelectTask()
+    const { id: selectedTaskId, setTask } = useSelectTask()
 
     const { data, isLoading } = useGetTasks({ taskPage, token, projectId })
 
@@ -47,6 +47,19 @@ const Task: React.FC<TaskProps> = ({
             </div>
         )
     }
+
+    // const getTask = async (id: number) => {
+    //     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/${1}`, {
+    //         method: 'GET',
+    //         headers: {
+    //             'Authorization': `${token}`,
+    //         }
+    //     })
+    //     const { data } = await res.json()
+    //     console.log(data)
+    //     setTask(id, data.project_id)
+    // }
+
     return (
         <div className="flex flex-col gap-5">
             <h1 className="font-semibold tracking-tight">Project List :</h1>
@@ -65,7 +78,7 @@ const Task: React.FC<TaskProps> = ({
                 {
                     tasks.map((task, index) => (
                         <div key={index} className={cn("border rounded-md border-gray-400", task.id === selectedTaskId && 'border-purple-500 bg-purple-500')}>
-                            <button onClick={() => setTaskId(task.id)} className="w-full text-left py-5 pl-2 hover:text-gray-700">
+                            <button onClick={() => setTask(task.id, task.project_id)} className="w-full text-left py-5 pl-2 hover:text-gray-700">
                                 {task.name}
                             </button>
                         </div>

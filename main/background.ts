@@ -10,11 +10,23 @@ import {
   screen
 } from 'electron'
 import serve from 'electron-serve'
+import Database from 'better-sqlite3';
 import { createWindow } from './helpers'
 
 const isProd = process.env.NODE_ENV === 'production'
 
 import * as fs from 'fs';
+
+const db = new Database('timetracking.db');
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS activities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    app_name TEXT,
+    window_title TEXT,
+    url TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`).run();
 
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -44,7 +56,7 @@ if (isProd) {
     resizable: true
   })
   mainWindow.setMenu(null);
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   if (isProd) {
     await mainWindow.loadURL('app://./home')
@@ -138,14 +150,25 @@ ipcMain.on('timer-status-update', (_, isRunning: boolean) => {
   rebuildTrayMenu(isRunning);
 });
 
-ipcMain.on('timer-update', (_, time: { hours: number, minutes: number, seconds: number }) => {
-  if (time.minutes !== lastScreenshotTime.minutes || time.hours !== lastScreenshotTime.hours) {
-    captureAndSaveScreenshot(time);
-    lastScreenshotTime = { minutes: time.minutes, hours: time.hours };
+ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
+  if (info.minutes !== lastScreenshotTime.minutes || info.hours !== lastScreenshotTime.hours) {
+    startTracking()
+    // captureAndSaveScreenshot(info);
+    lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
 });
 
-const captureAndSaveScreenshot = async (time: { hours: number, minutes: number, seconds: number }) => {
+const startTracking = async () => {
+  try {
+    const getWindows = await import('../node_modules/get-windows');
+    const windowInfo = await getWindows.activeWindow();
+    console.log("activity : ", windowInfo);
+  } catch (error) {
+    console.error('Error tracking active window:', error);
+  }
+}
+
+const captureAndSaveScreenshot = async (time: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
   try {
 
     const displays = screen.getAllDisplays();
@@ -170,7 +193,7 @@ const captureAndSaveScreenshot = async (time: { hours: number, minutes: number, 
       );
 
       if (source && source.thumbnail) {
-        const fileName = `screenshot_display${i + 1}_${time.hours.toString().padStart(2, '0')}-${time.minutes.toString().padStart(2, '0')}-${time.seconds.toString().padStart(2, '0')}.png`;
+        const fileName = `${time.project_id}_${time.selectedTaskId}_${new Date().toISOString()}.png`;
         const filePath = path.join(screenshotPath, fileName);
 
         fs.writeFileSync(filePath, source.thumbnail.toPNG());

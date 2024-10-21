@@ -3,6 +3,7 @@ import type { AppProps } from 'next/app'
 import { SessionProvider } from "next-auth/react"
 
 import { QueryProvider } from '../providers/query-provider'
+import { Toaster } from '../components/ui/sonner'
 import '../styles/globals.css'
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
@@ -11,6 +12,7 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
     <QueryProvider>
       <SessionProvider session={session}>
         <Component {...pageProps} />
+        <Toaster />
       </SessionProvider>
     </QueryProvider>
   )

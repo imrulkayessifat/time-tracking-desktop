@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner"
 import { FaCirclePlay, FaCirclePause } from "react-icons/fa6";
 
 import { Separator } from "./ui/separator";
 import Project from "./Project";
+
+import { useSelectProject } from "./hooks/project/use-select-project";
+import { useSelectTask } from "./hooks/task/use-select-task";
+import { cn } from '../lib/utils';
 
 interface CounterPanelProps {
   token: string
@@ -13,6 +18,10 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
 }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [time, setTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+
+  const { id: selectedTaskId, project_id } = useSelectTask()
+
+  console.log(project_id, selectedTaskId)
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -38,11 +47,11 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
             newHours = 0;
           }
 
-          const newTime = { hours: newHours, minutes: newMinutes, seconds: newSeconds };
+          const info = { project_id, selectedTaskId, hours: newHours, minutes: newMinutes, seconds: newSeconds };
 
-          window.electron.ipcRenderer.send('timer-update', newTime);
+          window.electron.ipcRenderer.send('timer-update', info);
 
-          return newTime;
+          return info;
         });
       }, 1000);
     } else if (interval) {
@@ -75,9 +84,49 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
     });
   };
 
+  const startTask = async (project_id, task_id) => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${token}`
+      },
+      body: JSON.stringify({
+        project_id,
+        task_id
+      })
+    })
+    const { success } = await res.json()
+
+    if (!success) {
+      toast("Something went wrong!")
+    }
+    toast("Task track started")
+  }
+
+  const pauseTask = async (project_id, task_id) => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${token}`
+      },
+      body: JSON.stringify({
+        project_id,
+        task_id
+      })
+    })
+    const { success } = await res.json()
+    if (!success) {
+      toast("Something went wrong!")
+    }
+    toast("Task track paused")
+  }
+
   const formatTime = (value: number) => {
     return value.toString().padStart(2, '0');
   };
+
   return (
     <div className="w-full">
       <div className="flex flex-col items-center gap-5">
@@ -89,15 +138,23 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
         <div className='flex justify-center'>
           {
             !isRunning ?
-              <FaCirclePlay
-                onClick={toggleTimer}
-                className="w-12 h-12 text-blue-500 cursor-pointer"
-              />
+              <button disabled={project_id === -1 || selectedTaskId === -1} onClick={() => {
+                toggleTimer();
+                startTask(project_id, selectedTaskId)
+              }}>
+                <FaCirclePlay
+                  className={cn("w-12 h-12 text-blue-500 cursor-pointer", (project_id === -1 || selectedTaskId === -1) && " text-gray-300 cursor-not-allowed")}
+                />
+              </button>
               :
-              <FaCirclePause
-                onClick={toggleTimer}
-                className="w-12 h-12 text-blue-500 cursor-pointer"
-              />
+              <button disabled={project_id === -1 || selectedTaskId === -1} onClick={() => {
+                toggleTimer();
+                pauseTask(project_id, selectedTaskId)
+              }}>
+                <FaCirclePause
+                  className={cn("w-12 h-12 text-blue-500 cursor-pointer", (project_id === -1 || selectedTaskId === -1) && " text-gray-300 cursor-not-allowed")}
+                />
+              </button>
           }
         </div>
         <Separator className="bg-gray-300 w-11/12" />

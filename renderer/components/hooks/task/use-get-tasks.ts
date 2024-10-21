@@ -29,7 +29,6 @@ export const useGetTasks = ({ taskPage, token, projectId }: UseGetTaskProps) => 
                 throw new Error("Failed to fetch tasks");
             }
             const { data } = await res.json();
-            console.log(data)
             return data;
         },
     })
