@@ -34,7 +34,7 @@ async function queryChromiumDatabase(dbPath, browser) {
             ORDER BY visits.visit_time DESC
             LIMIT 1`;
 
-        const latestVisit = db.prepare(sql).all();
+        const latestVisit = db.prepare(sql).get();
         db.close();
         await fs.unlink(tempDbPath);
         return latestVisit;

@@ -77,7 +77,7 @@ const startTracking = async () => {
         data.app_name = result.owner.name
         if (isBrowser(result.owner.name)) {
             const browserHistory = await getBrowserHistory(result.owner.name);
-            data.url = browserHistory?.[0]?.url ?? ''
+            data.url = browserHistory?.url ?? ''
         }
 
         if (isMacResult(result)) {
