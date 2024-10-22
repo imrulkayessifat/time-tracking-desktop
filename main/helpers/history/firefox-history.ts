@@ -5,7 +5,7 @@ import { homedir } from 'os';
 import { promises as fs } from 'fs';
 import { copyFileSync } from 'fs';
 
-import Database from './db';
+import Database from '../db';
 
 function getFirefoxProfilePath() {
     switch (process.platform) {
@@ -55,22 +55,22 @@ async function queryDatabase(dbPath) {
 
         const sql = `
         SELECT 
-          p.url,
-          p.title,
-          datetime(h.visit_date/1000000, 'unixepoch') as visit_date,
-          h.visit_type
+            p.url,
+            p.title,
+            datetime(h.visit_date/1000000, 'unixepoch') as visit_date,
+            h.visit_type
         FROM moz_places p
         JOIN moz_historyvisits h ON p.id = h.place_id
         ORDER BY h.visit_date DESC
-        LIMIT 10`;
+        LIMIT 1`;
 
-        const rows = db.prepare(sql).all();
+        const latestVisit = db.prepare(sql).all();
 
         // Close database and clean up
         db.close();
         await fs.unlink(tempDbPath);
 
-        return rows;
+        return latestVisit;
     } catch (error) {
         // Clean up temp file if there was an error
         try {
@@ -83,7 +83,7 @@ async function queryDatabase(dbPath) {
 }
 
 // Function to read browser history
-export async function readBrowserHistory() {
+export async function readFirefoxHistory() {
     try {
         const dbPath = await findPlacesDatabase();
         return await queryDatabase(dbPath);

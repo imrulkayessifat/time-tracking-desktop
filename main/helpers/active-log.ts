@@ -1,5 +1,8 @@
 import Database from './db';
-import { readBrowserHistory } from './history';
+import { readFirefoxHistory } from './history/firefox-history';
+import { readChromeHistory } from './history/chrome-history';
+import { readSafariHistory } from './history/safari-history';
+import { readEdgeHistory } from './history/edge-history';
 
 const db = new Database('timetracking.db');
 db.prepare(`
@@ -14,8 +17,8 @@ db.prepare(`
 const startTracking = async () => {
     try {
         const { activeWindow } = await import('../../node_modules/get-windows');
-        const history = await readBrowserHistory()
-        console.log(history)
+        const history = await readSafariHistory()
+        console.log("safari : ", history)
         const result = await activeWindow()
         const stmt = db.prepare('INSERT INTO activities (app_name, url) VALUES (?, ?)');
         stmt.run(result.owner.name, result.title);
