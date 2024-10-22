@@ -6,26 +6,18 @@ import {
   Menu,
   MenuItemConstructorOptions,
   Tray,
-  desktopCapturer,
-  screen
 } from 'electron'
 import serve from 'electron-serve'
-import Database from 'better-sqlite3';
+
+import db from './helpers/db'
 import { createWindow } from './helpers'
+import startTracking from './helpers/active-log'
+import captureAndSaveScreenshot from './helpers/capture-screenshot'
+
 
 const isProd = process.env.NODE_ENV === 'production'
 
 import * as fs from 'fs';
-
-const db = new Database('timetracking.db');
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS activities (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    app_name TEXT,
-    url TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`).run();
 
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -152,58 +144,7 @@ ipcMain.on('timer-status-update', (_, isRunning: boolean) => {
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
   if (info.minutes !== lastScreenshotTime.minutes || info.hours !== lastScreenshotTime.hours) {
     startTracking()
-    // captureAndSaveScreenshot(info);
+    captureAndSaveScreenshot(info);
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
 });
-
-const startTracking = async () => {
-  try {
-    const { activeWindow } = await import('../node_modules/get-windows');
-    const result = await activeWindow()
-    // const stmt = db.prepare('INSERT INTO activities (app_name, url) VALUES (?, ?)');
-    // stmt.run(result.owner.name, result.url);
-    console.log(result)
-  } catch (error) {
-    console.error('Error tracking active window:', error);
-  }
-}
-
-const captureAndSaveScreenshot = async (time: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
-  try {
-
-    const displays = screen.getAllDisplays();
-    const screenshotPath = path.join(app.getPath('pictures'), 'ASD_Screenshots');
-
-    if (!fs.existsSync(screenshotPath)) {
-      fs.mkdirSync(screenshotPath, { recursive: true });
-    }
-
-    for (let i = 0; i < displays.length; i++) {
-      const display = displays[i];
-      const { bounds } = display;
-
-      const sources = await desktopCapturer.getSources({
-        types: ['screen'],
-        thumbnailSize: { width: bounds.width, height: bounds.height }
-      });
-
-      const source = sources.find(s =>
-        s.display_id === display.id.toString() ||
-        (s.id.startsWith('screen:') && sources.length === 1)
-      );
-
-      if (source && source.thumbnail) {
-        const fileName = `${time.project_id}_${time.selectedTaskId}_${new Date().toISOString()}.png`;
-        const filePath = path.join(screenshotPath, fileName);
-
-        fs.writeFileSync(filePath, source.thumbnail.toPNG());
-        console.log(`Screenshot saved for display ${i + 1}: ${filePath}`);
-      } else {
-        console.error(`No source found for display ${i + 1}`);
-      }
-    }
-  } catch (error) {
-    console.error('Error capturing screenshot:', error);
-  }
-};
