@@ -53,7 +53,16 @@ async function queryDatabase(dbPath) {
     try {
         const db = new Database(tempDbPath, { readonly: true });
 
-        const sql = `SELECT url, datetime(last_visit_date/1000000,'unixepoch') AS LastVisitTime FROM moz_places ORDER BY LastVisitTime DESC LIMIT 1`;
+        const sql = `
+        SELECT 
+            p.url,
+            p.title,
+            datetime(h.visit_date/1000000, 'unixepoch','localtime') as visit_date,
+            h.visit_type
+        FROM moz_places p
+        JOIN moz_historyvisits h ON p.id = h.place_id
+        ORDER BY h.visit_date DESC
+        LIMIT 1`;
 
         const latestVisit = db.prepare(sql).get();
 
