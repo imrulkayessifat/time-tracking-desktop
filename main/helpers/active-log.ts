@@ -80,7 +80,7 @@ const startTracking = async () => {
             data.url = browserHistory?.url ?? ''
         }
 
-        if (isMacResult(result)) {
+        if (isMacResult(result) && result?.url) {
             data.url = result?.url ?? ''
         }
 
