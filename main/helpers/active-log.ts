@@ -11,6 +11,11 @@ interface BaseResult {
     };
 }
 
+interface DataType {
+    app_name: string;
+    url: string;
+}
+
 interface MacResult extends BaseResult {
     url: string;
 }
@@ -64,21 +69,19 @@ const startTracking = async () => {
     try {
         const { activeWindow } = await import('../../node_modules/get-windows');
         const result: Result = await activeWindow();
+        let data:DataType;
         const stmt = db.prepare('INSERT INTO activities (app_name, url) VALUES (?, ?)');
+        data.app_name = result.owner.name
+        if (isBrowser(result.owner.name)) {
+            const browserHistory = await getBrowserHistory(result.owner.name);
+            data.url = browserHistory?.[0]?.url ?? ''
+        }
 
         if (isMacResult(result)) {
-            // On macOS, we have direct access to the URL
-            stmt.run(result.owner.name, result.url);
-        } else if (isBrowser(result.owner.name)) {
-            // For other platforms, get URL from browser history
-            const browserHistory = await getBrowserHistory(result.owner.name);
-            console.log(`${result.owner.name} history:`, browserHistory);
-            stmt.run(result.owner.name, browserHistory?.[0]?.url ?? '');
-        } else {
-            // For non-browser applications
-            console.log(`${result.owner.name} history:`, result);
-            stmt.run(result.owner.name, '');
+            data.url = result?.url ?? ''
         }
+        
+        console.log("active window log : ",data)
     } catch (error) {
         console.error('Error tracking active window:', error);
     }
