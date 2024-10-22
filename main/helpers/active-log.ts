@@ -69,7 +69,10 @@ const startTracking = async () => {
     try {
         const { activeWindow } = await import('../../node_modules/get-windows');
         const result: Result = await activeWindow();
-        let data:DataType;
+        let data: DataType = {
+            app_name: '',
+            url: ''
+        };
         const stmt = db.prepare('INSERT INTO activities (app_name, url) VALUES (?, ?)');
         data.app_name = result.owner.name
         if (isBrowser(result.owner.name)) {
@@ -80,8 +83,8 @@ const startTracking = async () => {
         if (isMacResult(result)) {
             data.url = result?.url ?? ''
         }
-        
-        console.log("active window log : ",data)
+
+        console.log("active window log : ", data)
     } catch (error) {
         console.error('Error tracking active window:', error);
     }
