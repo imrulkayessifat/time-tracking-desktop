@@ -38,6 +38,14 @@ const Project: React.FC<ProjectsProps> = ({
     }
   }
 
+  if (projects.length === 0) {
+    return (
+      <div className='flex items-center justify-center'>
+        <p>No project available</p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <h1 className="font-semibold tracking-tight">Project List :</h1>
