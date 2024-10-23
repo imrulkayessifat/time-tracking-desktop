@@ -22,13 +22,13 @@ async function querySafariDatabase(dbPath) {
         const sql = `
             SELECT
                 history_items.url,
-                history_items.title,
+                history_items.domain_expansion,
                 datetime(history_visits.visit_time + 978307200, 'unixepoch') as visit_date
             FROM history_items
             JOIN history_visits ON history_items.id = history_visits.history_item
             ORDER BY history_visits.visit_time DESC
             LIMIT 1`;
-        
+
         const latestVisit = db.prepare(sql).get();
         db.close();
         await fs.unlink(tempDbPath);
