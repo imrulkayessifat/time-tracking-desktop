@@ -1,95 +1,115 @@
 import { app } from 'electron';
-
 import path from 'path';
 import { homedir } from 'os';
 import { promises as fs } from 'fs';
-import { copyFileSync } from 'fs';
+import { copyFile } from 'fs/promises';
+const sqlite3 = require('sqlite3').verbose();
 
-import Database from '../db';
+interface FirefoxHistoryEntry {
+    url: string;
+    title: string;
+    visit_date: number;
+}
 
 function getFirefoxProfilePath() {
     switch (process.platform) {
         case 'win32':
-            return path.join(process.env.APPDATA, 'Mozilla/Firefox/Profiles');
+            return path.join(process.env.APPDATA!, 'Mozilla', 'Firefox', 'Profiles');
         case 'darwin':
-            return path.join(homedir(), 'Library/Application Support/Firefox/Profiles');
+            return path.join(homedir(), 'Library', 'Application Support', 'Firefox', 'Profiles');
         default: // Linux
-            return path.join(homedir(), '.mozilla/firefox');
+            return path.join(homedir(), '.mozilla', 'firefox');
     }
 }
 
-// Function to find places.sqlite file
-async function findPlacesDatabase() {
+async function findDefaultProfile() {
     const profilesPath = getFirefoxProfilePath();
+    const profiles = await fs.readdir(profilesPath);
+    const defaultProfile = profiles.find(profile =>
+        profile.endsWith('.default') || profile.endsWith('.default-release')
+    );
 
-    try {
-        const profiles = await fs.readdir(profilesPath);
+    if (!defaultProfile) {
+        throw new Error('No default Firefox profile found');
+    }
+    return path.join(profilesPath, defaultProfile);
+}
 
-        for (const profile of profiles) {
-            if (profile.endsWith('.default') || profile.endsWith('.default-release')) {
-                const dbPath = path.join(profilesPath, profile, 'places.sqlite');
+async function createTempCopy(dbPath: string): Promise<string> {
+    const tempPath = path.join(app.getPath('temp'), `places-${Date.now()}.sqlite`);
+    await copyFile(dbPath, tempPath);
+    return tempPath;
+}
 
-                try {
-                    await fs.access(dbPath);
-                    return dbPath;
-                } catch {
-                    continue;
-                }
+function cleanupTempFile(tempPath: string) {
+    fs.unlink(tempPath).catch(err => {
+        console.error('Failed to cleanup temporary database file:', err);
+    });
+}
+
+async function queryFirefoxDatabase(dbPath: string): Promise<FirefoxHistoryEntry[]> {
+    // Create a temporary copy of the database
+    const tempDbPath = await createTempCopy(dbPath);
+
+    return new Promise((resolve, reject) => {
+        const db = new sqlite3.Database(tempDbPath, sqlite3.OPEN_READONLY, (err: Error | null) => {
+            if (err) {
+                cleanupTempFile(tempDbPath);
+                return reject(new Error(`Failed to open database: ${err.message}`));
             }
-        }
+        });
 
-        throw new Error('Firefox history database not found');
-    } catch (error) {
-        throw new Error(`Error accessing Firefox profile: ${error.message}`);
-    }
+        db.serialize(() => {
+            // Reduced timeout since we're working with a copy
+            db.run('PRAGMA busy_timeout = 1000;');
+
+            const sql = `
+                SELECT
+                    p.url,
+                    p.title,
+                    v.visit_date / 1000000 AS visit_date
+                FROM
+                    moz_places p
+                JOIN
+                    moz_historyvisits v ON p.id = v.place_id
+                ORDER BY
+                    v.visit_date DESC
+                LIMIT 10;
+            `;
+
+            db.all(sql, [], (err: Error | null, rows: FirefoxHistoryEntry[]) => {
+                if (err) {
+                    db.close();
+                    cleanupTempFile(tempDbPath);
+                    return reject(new Error(`Failed to query database: ${err.message}`));
+                }
+
+                db.close((closeErr: Error | null) => {
+                    cleanupTempFile(tempDbPath);
+                    if (closeErr) {
+                        return reject(new Error(`Failed to close the database: ${closeErr.message}`));
+                    }
+                    resolve(rows);
+                });
+            });
+        });
+    });
 }
 
-// Function to query the database
-async function queryDatabase(dbPath) {
-    // Create a copy of the database file since Firefox might have it locked
-    const tempDbPath = path.join(app.getPath('temp'), 'places-temp.sqlite');
-    copyFileSync(dbPath, tempDbPath);
-
-    try {
-        const db = new Database(tempDbPath, { readonly: true });
-
-        const sql = `
-        SELECT
-            p.url,
-            p.title,
-            v.visit_date / 1000000 AS visit_date
-        FROM
-            moz_places p
-        JOIN
-            moz_historyvisits v ON p.id = v.place_id
-        ORDER BY
-            visit_date DESC
-        LIMIT 1;`;
-
-        const latestVisit = db.prepare(sql).get();
-
-        // Close database and clean up
-        db.close();
-        await fs.unlink(tempDbPath);
-
-        return latestVisit;
-    } catch (error) {
-        // Clean up temp file if there was an error
-        try {
-            await fs.unlink(tempDbPath);
-        } catch {
-            // Ignore cleanup errors
-        }
-        throw error;
-    }
-}
-
-// Function to read browser history
 export async function readFirefoxHistory() {
     try {
-        const dbPath = await findPlacesDatabase();
-        return await queryDatabase(dbPath);
+        const profilePath = await findDefaultProfile();
+        const dbPath = path.join(profilePath, 'places.sqlite');
+
+        const latestVisits = await queryFirefoxDatabase(dbPath);
+        if (latestVisits.length > 0) {
+            console.log("Latest visited URLs: ", latestVisits);
+            return latestVisits[0]; // Returning the most recent visit
+        } else {
+            console.log('No recent history found.');
+            return null;
+        }
     } catch (error) {
-        throw new Error(`Failed to read browser history: ${error.message}`);
+        throw new Error(`Failed to read Firefox history: ${error.message}`);
     }
 }
