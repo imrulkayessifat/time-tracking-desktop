@@ -8,11 +8,16 @@ import {
   Tray,
 } from 'electron'
 import serve from 'electron-serve'
+import Store from 'electron-store';
 
-import db from './helpers/db'
+const store = new Store();
+
 import { createWindow } from './helpers'
 import startTracking from './helpers/active-log'
 import captureAndSaveScreenshot from './helpers/capture-screenshot'
+import { loadProcessorConfig } from './helpers/processor/load-config';
+import { setupAuthIPC } from './helpers/auth-ipc-handler';
+import { ScreenshotProcessor } from './helpers/processor/screenshot-processor';
 
 
 const isProd = process.env.NODE_ENV === 'production'
@@ -23,6 +28,8 @@ let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
 let contextMenu: Menu | null = null;
 let lastScreenshotTime = { minutes: -1, hours: -1 };
+
+let screenshotProcessor: ScreenshotProcessor;
 
 if (isProd) {
   serve({ directory: 'app' })
@@ -47,7 +54,7 @@ if (isProd) {
     resizable: true
   })
   mainWindow.setMenu(null);
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   if (isProd) {
     await mainWindow.loadURL('app://./home')
@@ -56,6 +63,14 @@ if (isProd) {
     await mainWindow.loadURL(`http://localhost:${port}/home`)
   }
   createTray();
+  setupAuthIPC();
+  // Load configuration
+  const { apiEndpoint, intervalMs } = await loadProcessorConfig();
+  screenshotProcessor = new ScreenshotProcessor(apiEndpoint, intervalMs);
+
+  // Initialize the processor with loaded config
+  screenshotProcessor.startProcessing();
+  console.log('Screenshot processor started');
 })()
 
 const createTray = () => {
@@ -94,6 +109,13 @@ const createTray = () => {
 app.on('window-all-closed', () => {
   app.quit()
 })
+
+app.on('before-quit', () => {
+  console.log('App is quitting, stopping screenshot processor...');
+  if (screenshotProcessor) {
+    screenshotProcessor.stopProcessing();
+  }
+});
 
 ipcMain.on('message', async (event, arg) => {
   event.reply('message', `${arg} World!`)
@@ -147,4 +169,14 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
     captureAndSaveScreenshot(info);
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
+});
+
+ipcMain.on('save-timers', (_, timers) => {
+  store.set('taskTimers', timers);
+});
+
+// Load timers
+ipcMain.on('load-timers', (event) => {
+  const savedTimers = store.get('taskTimers', {});
+  event.reply('timers-loaded', savedTimers);
 });
