@@ -12,11 +12,11 @@ const Login = () => {
         // if (status === 'loading') return;
 
         if (session) {
-            if (session.user.role_id === 2) {
-                router.replace('/profile');
-            } else {
-                router.replace('/dashboard');
-            }
+            // if (session.user.role_id === 2) {
+            router.replace('/profile');
+            // } else {
+            //     router.replace('/dashboard');
+            // }
         }
     }, [session, status, router]);
 
@@ -45,11 +45,9 @@ const Login = () => {
             console.error(res.error)
         } else {
             const { user } = await getSession()
-            if (user.role_id === 2) {
-                router.push('/profile');
-            } else {
-                router.push('/dashboard');
-            }
+
+            router.push('/profile');
+
         }
 
     }

@@ -78,7 +78,9 @@ const Task: React.FC<TaskProps> = ({
                 {
                     tasks.map((task, index) => (
                         <div key={index} className={cn("border rounded-md border-gray-400", task.id === selectedTaskId && 'border-purple-500 bg-purple-500')}>
-                            <button onClick={() => setTask(task.id, task.project_id)} className="w-full text-left py-5 pl-2 hover:text-gray-700">
+                            <button onClick={() => {
+                                setTask(task.id, task.project_id)
+                            }} className="w-full text-left py-5 pl-2 hover:text-gray-700">
                                 {task.name}
                             </button>
                         </div>

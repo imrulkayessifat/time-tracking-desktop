@@ -40,6 +40,8 @@ const db = new Database('timetracking.db');
 db.prepare(`
   CREATE TABLE IF NOT EXISTS activities (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER,
+    task_id INTEGER,
     app_name TEXT,
     url TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -65,7 +67,7 @@ const isBrowser = (appName: string): boolean => {
     return browsers.some(browser => appName.toLowerCase().includes(browser));
 };
 
-const startTracking = async () => {
+const startTracking = async (project_id: number, task_id: number) => {
     try {
         const { activeWindow } = await import('../../node_modules/get-windows');
         const result: Result = await activeWindow();
@@ -73,7 +75,10 @@ const startTracking = async () => {
             app_name: '',
             url: ''
         };
-        const stmt = db.prepare('INSERT INTO activities (app_name, url) VALUES (?, ?)');
+        const stmt = db.prepare(`
+            INSERT INTO activities (project_id, task_id, app_name, url)
+            VALUES (?, ?, ?, ?)
+          `);
         data.app_name = result.owner.name
         if (isBrowser(result.owner.name)) {
             const browserHistory = await getBrowserHistory(result.owner.name);
@@ -83,7 +88,7 @@ const startTracking = async () => {
         if (isMacResult(result) && result?.url) {
             data.url = result?.url ?? ''
         }
-
+        stmt.run(project_id, task_id, data.app_name, data.url)
         console.log("active window log : ", data)
     } catch (error) {
         console.error('Error tracking active window:', error);

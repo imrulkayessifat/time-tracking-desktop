@@ -33,7 +33,6 @@ export class ScreenshotProcessor {
         const tokenStore = AuthTokenStore.getInstance();
         const token = tokenStore.getToken();
 
-        console.log("token : ", token)
         if (token) {
             headers.append('Authorization', `${token}`);
         }
@@ -150,8 +149,6 @@ export class ScreenshotProcessor {
                 timestamp: imageInfo.timestamp,
                 image: base64Image
             };
-
-            console.log('Making API call for:', payload);
             // Make API call
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',

@@ -37,7 +37,7 @@ export const loadProcessorConfig = async (): Promise<ProcessorConfig> => {
 
             return {
                 apiEndpoint: `${envConfig.NEXT_PUBLIC_BASE_URL}/screenshot/submit`,
-                intervalMs: 30000
+                intervalMs: 120000
             };
         } else {
             throw new Error(`Environment file not found at ${envPath}`);
