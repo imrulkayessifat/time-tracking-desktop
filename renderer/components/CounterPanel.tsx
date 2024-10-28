@@ -17,7 +17,27 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   const { id: selectedTaskId, project_id } = useSelectTask();
 
   console.log(project_id, selectedTaskId)
-  
+
+  const pauseTask = async (project_id: number, task_id: number) => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${token}`
+      },
+      body: JSON.stringify({
+        project_id,
+        task_id,
+      })
+    });
+    const { success } = await res.json();
+    if (!success) {
+      toast.error(`Track Pause Something went wrong ${project_id} ${task_id}`);
+      return;
+    }
+    toast.success(`Task track paused : ${task_id}`);
+  };
+
   const {
     seconds,
     minutes,
@@ -25,7 +45,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
     isRunning,
     start,
     pause,
-  } = useTaskTimer(selectedTaskId, project_id);
+  } = useTaskTimer(selectedTaskId, project_id, pauseTask);
 
   // Handle timer updates
   useEffect(() => {
@@ -39,6 +59,12 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
       });
     }
   }, [hours, minutes, seconds, isRunning, project_id, selectedTaskId]);
+
+  useEffect(() => {
+    if (selectedTaskId !== -1) {
+      toast.warning(`You need to start task ${selectedTaskId}`)
+    }
+  }, [selectedTaskId])
 
   // Effect for electron IPC communication
   useEffect(() => {
@@ -72,35 +98,10 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
     const { success } = await res.json();
 
     if (!success) {
-      toast("Something went wrong!");
+      toast.error(`Track Start : Something went wrong ${project_id} ${task_id}`);
       return;
     }
-    toast(`Task track started : ${task_id}`);
-  };
-
-  const pauseTask = async (project_id: number, task_id: number) => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `${token}`
-      },
-      body: JSON.stringify({
-        project_id,
-        task_id,
-        time: {
-          hours,
-          minutes,
-          seconds
-        }
-      })
-    });
-    const { success } = await res.json();
-    if (!success) {
-      toast("Something went wrong!");
-      return;
-    }
-    toast(`Task track paused : ${task_id}`);
+    toast.success(`Task track started : ${task_id}`);
   };
 
   const formatTime = (value: number) => {

@@ -52,7 +52,7 @@ if (isProd) {
     resizable: true
   })
   mainWindow.setMenu(null);
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   if (isProd) {
     await mainWindow.loadURL('app://./home')
@@ -169,8 +169,10 @@ ipcMain.on('timer-status-update', (_, isRunning: boolean) => {
 
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
   if (info.minutes !== lastScreenshotTime.minutes || info.hours !== lastScreenshotTime.hours) {
-    startTracking(info.project_id, info.selectedTaskId)
-    captureAndSaveScreenshot(info);
+    if (info.selectedTaskId !== -1) {
+      startTracking(info.project_id, info.selectedTaskId)
+      captureAndSaveScreenshot(info);
+    }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
 });
