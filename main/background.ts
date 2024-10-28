@@ -11,9 +11,10 @@ import serve from 'electron-serve'
 
 import { createWindow } from './helpers'
 import startTracking from './helpers/active-log'
+import { TaskIdleTracker } from './helpers/tracker/idle-tracker'
+import { setupAuthIPC } from './helpers/auth-ipc-handler';
 import captureAndSaveScreenshot from './helpers/capture-screenshot'
 import { loadProcessorConfig } from './helpers/processor/load-config';
-import { setupAuthIPC } from './helpers/auth-ipc-handler';
 import { ScreenshotProcessor } from './helpers/processor/screenshot-processor';
 import { ActivityProcessor } from './helpers/processor/activity-processor';
 
@@ -25,6 +26,8 @@ let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
 let contextMenu: Menu | null = null;
 let lastScreenshotTime = { minutes: -1, hours: -1 };
+
+const idleTracker = new TaskIdleTracker(60);
 
 let screenshotProcessor: ScreenshotProcessor;
 let activityProcessor: ActivityProcessor;
@@ -112,6 +115,8 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   console.log('App is quitting, stopping screenshot processor...');
+  idleTracker.clearAll();
+
   if (screenshotProcessor) {
     screenshotProcessor.stopProcessing();
   }
@@ -170,9 +175,18 @@ ipcMain.on('timer-status-update', (_, isRunning: boolean) => {
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
   if (info.minutes !== lastScreenshotTime.minutes || info.hours !== lastScreenshotTime.hours) {
     if (info.selectedTaskId !== -1) {
+      idleTracker.startTracking(info.project_id, info.selectedTaskId);
+      
+      const idleState = idleTracker.getIdleTime(info.project_id, info.selectedTaskId);
+      
       startTracking(info.project_id, info.selectedTaskId)
       captureAndSaveScreenshot(info);
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
 });
+
+ipcMain.on('task-stopped', (_, { projectId, taskId }) => {
+  const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
+});
+

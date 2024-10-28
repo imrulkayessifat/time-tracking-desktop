@@ -19,6 +19,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   console.log(project_id, selectedTaskId)
 
   const pauseTask = async (project_id: number, task_id: number) => {
+    window.electron.ipcRenderer.send('task-stopped', { projectId: project_id, taskId: task_id });
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
       method: 'POST',
       headers: {
