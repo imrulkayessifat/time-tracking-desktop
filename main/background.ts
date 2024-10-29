@@ -57,7 +57,7 @@ if (isProd) {
     resizable: true
   })
   mainWindow.setMenu(null);
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   if (isProd) {
     await mainWindow.loadURL('app://./home')
@@ -65,6 +65,7 @@ if (isProd) {
     const port = process.argv[2]
     await mainWindow.loadURL(`http://localhost:${port}/home`)
   }
+  
   createTray();
   setupAuthIPC();
   // Load configuration

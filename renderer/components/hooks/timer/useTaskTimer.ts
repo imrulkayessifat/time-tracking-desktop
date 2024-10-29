@@ -6,6 +6,7 @@ interface TaskTime {
     minutes: number;
     seconds: number;
     isRunning: boolean;
+    date: string;
 }
 
 interface TaskTimerStore {
@@ -19,6 +20,10 @@ export const useTaskTimer = (
 ) => {
     // Create a unique key for the task
     const taskKey = `task_${projectId}_${taskId}`;
+
+    const getCurrentDate = () => {
+        return new Date().toISOString().split('T')[0];
+    };
 
     // Get stored time for this task
     const getStoredTime = (): TaskTime | null => {
@@ -109,7 +114,8 @@ export const useTaskTimer = (
             hours,
             minutes,
             seconds,
-            isRunning
+            isRunning,
+            date: getCurrentDate()
         };
         localStorage.setItem('taskTimers', JSON.stringify(timers));
     }, [hours, minutes, seconds, isRunning, taskKey]);
@@ -128,7 +134,8 @@ export const useTaskTimer = (
                 hours,
                 minutes,
                 seconds,
-                isRunning: false
+                isRunning: false,
+                date: getCurrentDate()
             };
             localStorage.setItem('taskTimers', JSON.stringify(timers));
         }

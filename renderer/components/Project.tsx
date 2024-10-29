@@ -5,6 +5,7 @@ import Loader from "./Loader"
 import { cn } from "../lib/utils";
 import { useSelectProject } from "./hooks/project/use-select-project";
 import { useGetProjects } from "./hooks/project/use-get-projects"
+import { useTimerCleanup } from "./hooks/timer/useTimerCleanup";
 
 interface ProjectsProps {
   token: string
@@ -16,13 +17,14 @@ const Project: React.FC<ProjectsProps> = ({
   const [page, setPage] = useState(1)
   const { id: selectedProjectId, setProjectId } = useSelectProject()
   const { data, isLoading } = useGetProjects({ page, token })
+  const { cleanupTimers } = useTimerCleanup();
 
   if (isLoading) {
     return (
       <Loader />
     )
   }
-
+  cleanupTimers()
   const projects = data?.rows || []
   const meta = data?.meta
 
