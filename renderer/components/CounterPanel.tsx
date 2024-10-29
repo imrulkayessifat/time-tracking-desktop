@@ -52,7 +52,6 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
 
   useEffect(() => {
     if (isRunning && window.electron) {
-      console.log(isRunning, window.electron)
       window.electron.ipcRenderer.send('timer-update', {
         project_id,
         selectedTaskId,
