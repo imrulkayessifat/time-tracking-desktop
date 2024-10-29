@@ -8,17 +8,17 @@ const Login = () => {
     const router = useRouter();
     const { data: session, status } = useSession();
 
-    useEffect(() => {
-        // if (status === 'loading') return;
+    // useEffect(() => {
+    //     // if (status === 'loading') return;
 
-        if (session) {
-            // if (session.user.role_id === 2) {
-            router.replace('/profile');
-            // } else {
-            //     router.replace('/dashboard');
-            // }
-        }
-    }, [session, status, router]);
+    //     if (session) {
+    //         // if (session.user.role_id === 2) {
+    //         router.replace('/profile');
+    //         // } else {
+    //         //     router.replace('/dashboard');
+    //         // }
+    //     }
+    // }, [session, status, router]);
 
     if (status === 'loading') {
         return (

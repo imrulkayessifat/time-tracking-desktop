@@ -12,6 +12,7 @@ export default NextAuth({
                 rememberMe: { label: "rememberMe", type: "checkbox" }
             },
             async authorize(credentials, req) {
+                console.log(credentials)
                 const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/login`, {
                     method: 'POST',
                     headers: {
@@ -65,15 +66,16 @@ export default NextAuth({
                 session.user.role_id = token.role_id;
                 session.accessToken = token.accessToken;
             }
-            console.log("Session in NextAuth config:", session);
             return session;
         },
     },
     secret: process.env.AUTH_SECRET,
     session: {
         strategy: 'jwt',
+        maxAge: 24 * 60 * 60,
     },
     jwt: {
         secret: process.env.AUTH_SECRET,
+        maxAge: 24 * 60 * 60,
     },
 });

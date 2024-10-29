@@ -17,7 +17,6 @@ const ProfilePage = () => {
             <Loader />
         );
     }
-
     return (
         <Main token={session.accessToken} />
     );
