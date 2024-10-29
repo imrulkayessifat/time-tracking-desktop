@@ -1,11 +1,20 @@
 // idle-tracker.ts
 import { powerMonitor } from 'electron';
 
+import AuthTokenStore from '../auth-token-store';
+
+interface IdlePeriod {
+    project_id: number;
+    task_id: number;
+    start_time: string;
+    end_time: string;
+}
+
 interface TaskIdleTime {
     taskId: number;
     projectId: number;
-    startTime?: number;
-    endTime?: number;
+    startTime?: string;
+    endTime?: string;
     totalIdleTime: number;
     isIdle: boolean;
 }
@@ -15,12 +24,30 @@ export class TaskIdleTracker {
     private idleThreshold: number;
     private idleCheckInterval: NodeJS.Timeout | null;
     private activeTaskKey: string | null;
+    private idlePeriods: IdlePeriod[];
 
-    constructor(idleThresholdSeconds: number = 60) {
+    constructor(private apiEndpoint: string, idleThresholdSeconds: number = 60) {
         this.taskIdleTimes = new Map();
         this.idleThreshold = idleThresholdSeconds;
         this.idleCheckInterval = null;
         this.activeTaskKey = null;
+        this.idlePeriods = []
+    }
+
+    private getAuthHeaders(): Headers {
+        const headers = new Headers({
+            'Content-Type': 'application/json'
+        });
+
+        const tokenStore = AuthTokenStore.getInstance();
+        const token = tokenStore.getToken();
+
+
+        if (token) {
+            headers.append('Authorization', `${token}`);
+        }
+
+        return headers;
     }
 
     private getTaskKey(projectId: number, taskId: number): string {
@@ -65,6 +92,20 @@ export class TaskIdleTracker {
 
         console.log(systemIdleTime, this.idleThreshold)
 
+        if (!isNowIdle && !!activeTaskState.endTime) {
+            this.idlePeriods.push({
+                project_id: activeTaskState.taskId,
+                task_id: activeTaskState.projectId,
+                start_time: activeTaskState.startTime,
+                end_time: activeTaskState.endTime
+            })
+            delete activeTaskState.endTime
+        }
+
+        if (systemIdleTime === 0 || systemIdleTime === 1) {
+            activeTaskState.startTime = new Date(Date.now()).toISOString();
+        }
+
         if (isNowIdle) {
             if (!wasIdle) {
                 // Just became idle
@@ -72,15 +113,14 @@ export class TaskIdleTracker {
             }
             // Add one second to total idle time
             activeTaskState.totalIdleTime += 1;
-            console.log("idle end Time", new Date(Date.now()).toISOString())
-            console.log("idle start Time",new Date(Date.now()-((60+activeTaskState.totalIdleTime)*1000)).toISOString())
+            activeTaskState.endTime = new Date(Date.now()).toISOString();
         } else if (wasIdle) {
             // Just became active
             activeTaskState.isIdle = false;
         }
     }
 
-    stopTracking(projectId: number, taskId: number): number {
+    async stopTracking(projectId: number, taskId: number): Promise<number> {
         const taskKey = this.getTaskKey(projectId, taskId);
         const taskState = this.taskIdleTimes.get(taskKey);
         console.log("taskState : ", taskState)
@@ -99,10 +139,27 @@ export class TaskIdleTracker {
                 this.activeTaskKey = null;
             }
 
+            console.log("idle periods : ", this.idlePeriods)
+
+            if (this.idlePeriods.length > 0) {
+                const res = await fetch(this.apiEndpoint, {
+                    method: 'POST',
+                    headers: this.getAuthHeaders(),
+                    body: JSON.stringify({
+                        "idle_time": this.idlePeriods
+
+                    })
+                });
+
+                const { message } = await res.json()
+                console.log(message)
+                this.idlePeriods = []
+            }
+
             return totalIdleTime;
         }
 
-        return 0;
+        return;
     }
 
     getIdleTime(projectId: number, taskId: number): { totalIdleTime: number; isIdle: boolean } {

@@ -36,7 +36,7 @@ export const loadProcessorConfig = async (): Promise<ProcessorConfig> => {
             console.log('Loaded environment variables:', envConfig);
 
             return {
-                apiEndpoint: `${envConfig.NEXT_PUBLIC_BASE_URL}/screenshot/submit`,
+                apiEndpoint: `${envConfig.NEXT_PUBLIC_BASE_URL}`,
                 intervalMs: 120000
             };
         } else {

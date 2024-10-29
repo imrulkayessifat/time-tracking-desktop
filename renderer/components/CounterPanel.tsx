@@ -19,7 +19,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   console.log(project_id, selectedTaskId)
 
   const pauseTask = async (project_id: number, task_id: number) => {
-    window.electron.ipcRenderer.send('task-stopped', { projectId: project_id, taskId: task_id });
+    window.electron.ipcRenderer.send('idle-stopped', { projectId: project_id, taskId: task_id });
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
       method: 'POST',
       headers: {
@@ -49,8 +49,10 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   } = useTaskTimer(selectedTaskId, project_id, pauseTask);
 
   // Handle timer updates
+
   useEffect(() => {
     if (isRunning && window.electron) {
+      console.log(isRunning, window.electron)
       window.electron.ipcRenderer.send('timer-update', {
         project_id,
         selectedTaskId,
@@ -85,6 +87,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   }, [isRunning, pause, start]);
 
   const startTask = async (project_id: number, task_id: number) => {
+    window.electron.ipcRenderer.send('idle-started', { project_id, task_id });
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/start`, {
       method: 'POST',
       headers: {

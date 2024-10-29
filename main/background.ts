@@ -27,10 +27,10 @@ let mainWindow: BrowserWindow | null = null;
 let contextMenu: Menu | null = null;
 let lastScreenshotTime = { minutes: -1, hours: -1 };
 
-const idleTracker = new TaskIdleTracker(60);
 
 let screenshotProcessor: ScreenshotProcessor;
 let activityProcessor: ActivityProcessor;
+let idleTracker: TaskIdleTracker
 
 if (isProd) {
   serve({ directory: 'app' })
@@ -55,7 +55,7 @@ if (isProd) {
     resizable: true
   })
   mainWindow.setMenu(null);
-  // mainWindow.webContents.openDevTools();
+  mainWindow.webContents.openDevTools();
 
   if (isProd) {
     await mainWindow.loadURL('app://./home')
@@ -67,8 +67,9 @@ if (isProd) {
   setupAuthIPC();
   // Load configuration
   const { apiEndpoint, intervalMs } = await loadProcessorConfig();
-  screenshotProcessor = new ScreenshotProcessor(apiEndpoint, intervalMs);
-  activityProcessor = new ActivityProcessor(apiEndpoint, intervalMs)
+  screenshotProcessor = new ScreenshotProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
+  activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs)
+  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 60);
 
   // Initialize the processor with loaded config
   screenshotProcessor.startProcessing();
@@ -175,10 +176,7 @@ ipcMain.on('timer-status-update', (_, isRunning: boolean) => {
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
   if (info.minutes !== lastScreenshotTime.minutes || info.hours !== lastScreenshotTime.hours) {
     if (info.selectedTaskId !== -1) {
-      idleTracker.startTracking(info.project_id, info.selectedTaskId);
-      
-      const idleState = idleTracker.getIdleTime(info.project_id, info.selectedTaskId);
-      
+
       startTracking(info.project_id, info.selectedTaskId)
       captureAndSaveScreenshot(info);
     }
@@ -186,7 +184,11 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
   }
 });
 
-ipcMain.on('task-stopped', (_, { projectId, taskId }) => {
+ipcMain.on('idle-started', (_, { project_id, task_id }) => {
+  idleTracker.startTracking(project_id, task_id);
+})
+
+ipcMain.on('idle-stopped', (_, { projectId, taskId }) => {
   const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
 });
 
