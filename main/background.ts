@@ -17,6 +17,7 @@ import captureAndSaveScreenshot from './helpers/capture-screenshot'
 import { loadProcessorConfig } from './helpers/processor/load-config';
 import { ScreenshotProcessor } from './helpers/processor/screenshot-processor';
 import { ActivityProcessor } from './helpers/processor/activity-processor';
+import { ConfigurationProcessor } from './helpers/processor/configuration-processor'
 
 const isProd = process.env.NODE_ENV === 'production'
 
@@ -30,7 +31,8 @@ let lastScreenshotTime = { minutes: -1, hours: -1 };
 
 let screenshotProcessor: ScreenshotProcessor;
 let activityProcessor: ActivityProcessor;
-let idleTracker: TaskIdleTracker
+let idleTracker: TaskIdleTracker;
+let configurationProcessor: ConfigurationProcessor;
 
 if (isProd) {
   serve({ directory: 'app' })
@@ -55,7 +57,7 @@ if (isProd) {
     resizable: true
   })
   mainWindow.setMenu(null);
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   if (isProd) {
     await mainWindow.loadURL('app://./home')
@@ -68,12 +70,14 @@ if (isProd) {
   // Load configuration
   const { apiEndpoint, intervalMs } = await loadProcessorConfig();
   screenshotProcessor = new ScreenshotProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
-  activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs)
+  activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
+  configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/configuration`, 120000)
   idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 60);
 
   // Initialize the processor with loaded config
   screenshotProcessor.startProcessing();
-  activityProcessor.startProcessing()
+  activityProcessor.startProcessing();
+  configurationProcessor.startProcessing();
   console.log('Screenshot processor started');
 })()
 
@@ -125,6 +129,10 @@ app.on('before-quit', () => {
   if (activityProcessor) {
     activityProcessor.stopProcessing()
   }
+
+  if (configurationProcessor) {
+    configurationProcessor.stopProcessing()
+  }
 });
 
 ipcMain.on('message', async (event, arg) => {
@@ -174,10 +182,15 @@ ipcMain.on('timer-status-update', (_, isRunning: boolean) => {
 });
 
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
-  if (info.minutes !== lastScreenshotTime.minutes || info.hours !== lastScreenshotTime.hours) {
-    if (info.selectedTaskId !== -1) {
+  // const interval = configurationProcessor.getScreenShotInterval();
+  const interval = 2
 
-      startTracking(info.project_id, info.selectedTaskId)
+  console.log("interval", interval)
+  const elapsedMinutes = (info.hours * 60 + info.minutes) - (lastScreenshotTime.hours * 60 + lastScreenshotTime.minutes);
+
+  if (elapsedMinutes >= interval) {
+    if (info.selectedTaskId !== -1) {
+      startTracking(info.project_id, info.selectedTaskId);
       captureAndSaveScreenshot(info);
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
