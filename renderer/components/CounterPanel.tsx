@@ -14,9 +14,9 @@ interface CounterPanelProps {
 }
 
 const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
-  const { id: selectedTaskId, project_id } = useSelectTask();
+  const { id: selectedTaskId, project_id:selectedProjectId } = useSelectTask();
 
-  console.log(project_id, selectedTaskId)
+  console.log(selectedProjectId, selectedTaskId)
 
   const pauseTask = async (project_id: number, task_id: number) => {
     window.electron.ipcRenderer.send('idle-stopped', { projectId: project_id, taskId: task_id });
@@ -46,21 +46,21 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
     isRunning,
     start,
     pause,
-  } = useTaskTimer(selectedTaskId, project_id, pauseTask);
+  } = useTaskTimer(selectedTaskId, selectedProjectId, pauseTask);
 
   // Handle timer updates
 
   useEffect(() => {
     if (isRunning && window.electron) {
       window.electron.ipcRenderer.send('timer-update', {
-        project_id,
+        project_id:selectedProjectId,
         selectedTaskId,
         hours,
         minutes,
         seconds
       });
     }
-  }, [hours, minutes, seconds, isRunning, project_id, selectedTaskId]);
+  }, [hours, minutes, seconds, isRunning, selectedProjectId, selectedTaskId]);
 
   useEffect(() => {
     if (selectedTaskId !== -1) {
@@ -114,10 +114,10 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   const handleTimerToggle = async () => {
     if (!isRunning) {
       start();
-      await startTask(project_id, selectedTaskId);
+      await startTask(selectedProjectId, selectedTaskId);
     } else {
       pause();
-      await pauseTask(project_id, selectedTaskId);
+      await pauseTask(selectedProjectId, selectedTaskId);
     }
     if (window.electron) {
       window.electron.ipcRenderer.send('timer-status-update', !isRunning);
@@ -134,21 +134,21 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
         </div>
         <div className="flex justify-center">
           <button
-            disabled={project_id === -1 || selectedTaskId === -1}
+            disabled={selectedProjectId === -1 || selectedTaskId === -1}
             onClick={handleTimerToggle}
           >
             {!isRunning ? (
               <FaCirclePlay
                 className={cn(
                   "w-12 h-12 text-blue-500 cursor-pointer",
-                  (project_id === -1 || selectedTaskId === -1) && "text-gray-300 cursor-not-allowed"
+                  (selectedProjectId === -1 || selectedTaskId === -1) && "text-gray-300 cursor-not-allowed"
                 )}
               />
             ) : (
               <FaCirclePause
                 className={cn(
                   "w-12 h-12 text-blue-500 cursor-pointer",
-                  (project_id === -1 || selectedTaskId === -1) && "text-gray-300 cursor-not-allowed"
+                  (selectedProjectId === -1 || selectedTaskId === -1) && "text-gray-300 cursor-not-allowed"
                 )}
               />
             )}
