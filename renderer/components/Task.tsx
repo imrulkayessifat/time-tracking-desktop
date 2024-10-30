@@ -4,8 +4,9 @@ import { FaAngleLeft, FaAngleRight } from 'react-icons/fa6';
 import Loader from './Loader';
 import { cn } from '../lib/utils';
 import { useGetTasks } from './hooks/task/use-get-tasks';
-import { useSelectProject } from './hooks/project/use-select-project';
 import { useSelectTask } from './hooks/task/use-select-task';
+import { useSelectProject } from './hooks/project/use-select-project';
+import { useSelectProjectTask } from './hooks/task/use-select-ProjectTask';
 
 interface TaskProps {
     token: string;
@@ -15,6 +16,7 @@ const Task: React.FC<TaskProps> = ({
     token
 }) => {
     const [taskPage, setTaskPage] = useState(1)
+    const { setProjectTask } = useSelectProjectTask()
     const { id: projectId, setProjectId } = useSelectProject()
     const { id: selectedTaskId, project_id: selectedProjectId, setTask } = useSelectTask()
 
@@ -50,18 +52,6 @@ const Task: React.FC<TaskProps> = ({
         )
     }
 
-    // const getTask = async (id: number) => {
-    //     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/${1}`, {
-    //         method: 'GET',
-    //         headers: {
-    //             'Authorization': `${token}`,
-    //         }
-    //     })
-    //     const { data } = await res.json()
-    //     console.log(data)
-    //     setTask(id, data.project_id)
-    // }
-
     return (
         <div className="flex flex-col gap-5">
             <h1 className="font-semibold tracking-tight">Project List :</h1>
@@ -83,6 +73,7 @@ const Task: React.FC<TaskProps> = ({
                             <button onClick={() => {
                                 setTask(task.id, task.project_id)
                                 setProjectId(-1)
+                                setProjectTask(task.project_id,task.id)
                             }} className="w-full text-left py-5 pl-2 hover:text-gray-700">
                                 {task.name}
                             </button>

@@ -3,6 +3,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 
 import Loader from "./Loader"
 import { cn } from "../lib/utils";
+import { useSelectProjectTask } from "./hooks/task/use-select-ProjectTask";
 import { useSelectProject } from "./hooks/project/use-select-project";
 import { useSelectTask } from "./hooks/task/use-select-task";
 import { useGetProjects } from "./hooks/project/use-get-projects"
@@ -18,6 +19,7 @@ const Project: React.FC<ProjectsProps> = ({
   const [page, setPage] = useState(1)
   const { setTask } = useSelectTask()
   const { cleanupTimers } = useTimerCleanup();
+  const { setProjectTask } = useSelectProjectTask()
   const { data, isLoading } = useGetProjects({ page, token })
   const { id: selectedProjectId, setProjectId } = useSelectProject()
 
@@ -72,6 +74,7 @@ const Project: React.FC<ProjectsProps> = ({
                 onClick={() => {
                   setProjectId(project.id)
                   setTask(-1, -1)
+                  setProjectTask(project.id, -1)
                 }}
                 className="w-full text-left py-5 pl-2 hover:text-gray-700"
               >
