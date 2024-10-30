@@ -129,9 +129,6 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
       pause();
       await pauseTask(chosen_project_id, chosen_task_id);
     }
-    if (window.electron) {
-      window.electron.ipcRenderer.send('timer-status-update', !isRunning);
-    }
   };
 
   return (

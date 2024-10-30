@@ -1,5 +1,6 @@
 import React from 'react'
 import type { AppProps } from 'next/app'
+import { Nunito } from 'next/font/google';
 import { SessionProvider } from "next-auth/react"
 
 import { useAuthSync } from '../components/hooks/use-auth-sync'
@@ -7,12 +8,21 @@ import { QueryProvider } from '../providers/query-provider'
 import { Toaster } from '../components/ui/sonner'
 import '../styles/globals.css'
 
+
+const nunito = Nunito({
+  subsets: ['latin'], // Add 'latin' or other subsets if needed
+  weight: ['400', '700'], // Optional: specify weights you need
+});
+
+
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
     <QueryProvider>
       <SessionProvider session={session}>
         <AuthSyncWrapper>
-          <Component {...pageProps} />
+          <main className={nunito.className}>
+            <Component {...pageProps} />
+          </main>
           <Toaster richColors />
         </AuthSyncWrapper>
       </SessionProvider>

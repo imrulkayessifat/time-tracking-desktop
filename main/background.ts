@@ -3,9 +3,7 @@ import {
   app,
   BrowserWindow,
   ipcMain,
-  Menu,
-  MenuItemConstructorOptions,
-  Tray,
+  globalShortcut
 } from 'electron'
 import serve from 'electron-serve'
 
@@ -21,11 +19,7 @@ import { ConfigurationProcessor } from './helpers/processor/configuration-proces
 
 const isProd = process.env.NODE_ENV === 'production'
 
-import * as fs from 'fs';
-
-let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
-let contextMenu: Menu | null = null;
 let lastScreenshotTime = { minutes: -1, hours: -1 };
 
 
@@ -46,9 +40,8 @@ if (isProd) {
   mainWindow = createWindow('main', {
     height: 720,
     width: 1000,
-    minHeight: 645,
-    minWidth: 500,
-    maxWidth: 500,
+    minHeight: 720,
+    minWidth: 1000,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -57,7 +50,10 @@ if (isProd) {
     resizable: true
   })
   mainWindow.setMenu(null);
-  mainWindow.webContents.openDevTools();
+  globalShortcut.register('CommandOrControl+Shift+I', () => {
+    mainWindow.webContents.toggleDevTools();
+  });
+
 
   if (isProd) {
     await mainWindow.loadURL('app://./home')
@@ -65,8 +61,7 @@ if (isProd) {
     const port = process.argv[2]
     await mainWindow.loadURL(`http://localhost:${port}/home`)
   }
-  
-  createTray();
+
   setupAuthIPC();
   // Load configuration
   const { apiEndpoint, intervalMs } = await loadProcessorConfig();
@@ -81,39 +76,6 @@ if (isProd) {
   configurationProcessor.startProcessing();
   console.log('Screenshot processor started');
 })()
-
-const createTray = () => {
-  const imagePath = path.join(__dirname, 'images', 'asd-screen-recorder.png');
-
-  if (!fs.existsSync(imagePath)) {
-    console.error(`Image not found at path: ${imagePath}`);
-    return;
-  }
-
-  tray = new Tray(imagePath);
-
-  const menuTemplate: MenuItemConstructorOptions[] = [
-    {
-      label: 'Start Timer',
-      click: () => {
-        mainWindow?.webContents.send('toggle-timer');
-      }
-    },
-    { label: 'Add Time Note', click: () => { /* ... */ } },
-    {
-      label: 'Open Timer',
-      click: () => {
-        mainWindow?.show();
-      }
-    },
-    { type: 'separator' },
-    { label: 'Quit', click: () => app.quit() }
-  ];
-
-  contextMenu = Menu.buildFromTemplate(menuTemplate);
-  tray.setContextMenu(contextMenu);
-  tray.setToolTip('Time Tracking');
-};
 
 app.on('window-all-closed', () => {
   app.quit()
@@ -140,32 +102,6 @@ ipcMain.on('message', async (event, arg) => {
   event.reply('message', `${arg} World!`)
 })
 
-
-const rebuildTrayMenu = (isRunning: boolean) => {
-  if (tray) {
-    const menuTemplate: MenuItemConstructorOptions[] = [
-      {
-        label: isRunning ? 'Stop Timer' : 'Start Timer',
-        click: () => {
-          mainWindow?.webContents.send('toggle-timer');
-        }
-      },
-      { label: 'Add Time Note', click: () => { /* ... */ } },
-      {
-        label: 'Open Timer',
-        click: () => {
-          mainWindow?.show();
-        }
-      },
-      { type: 'separator' },
-      { label: 'Quit', click: () => app.quit() }
-    ];
-
-    const newContextMenu = Menu.buildFromTemplate(menuTemplate);
-    tray.setContextMenu(newContextMenu);
-  }
-};
-
 ipcMain.on('toggle-expand', (_, isExpanded) => {
   if (mainWindow) {
     console.log(isExpanded)
@@ -176,10 +112,6 @@ ipcMain.on('toggle-expand', (_, isExpanded) => {
     console.log(mainWindow.getMaximumSize())
     mainWindow.setSize(newWidth, height, true);
   }
-});
-
-ipcMain.on('timer-status-update', (_, isRunning: boolean) => {
-  rebuildTrayMenu(isRunning);
 });
 
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {

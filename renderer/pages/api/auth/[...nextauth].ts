@@ -12,7 +12,6 @@ export default NextAuth({
                 rememberMe: { label: "rememberMe", type: "checkbox" }
             },
             async authorize(credentials, req) {
-                console.log(credentials)
                 const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/login`, {
                     method: 'POST',
                     headers: {
@@ -29,7 +28,11 @@ export default NextAuth({
                     return null
                 }
 
-                const { data } = await response.json()
+                const { data, success } = await response.json()
+
+                if (!success) {
+                    return null
+                }
                 const user = data
 
                 return {
