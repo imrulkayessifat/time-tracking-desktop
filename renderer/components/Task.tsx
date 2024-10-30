@@ -15,10 +15,12 @@ const Task: React.FC<TaskProps> = ({
     token
 }) => {
     const [taskPage, setTaskPage] = useState(1)
-    const { id: projectId } = useSelectProject()
-    const { id: selectedTaskId, setTask } = useSelectTask()
+    const { id: projectId, setProjectId } = useSelectProject()
+    const { id: selectedTaskId, project_id: selectedProjectId, setTask } = useSelectTask()
 
-    const { data, isLoading } = useGetTasks({ taskPage, token, projectId })
+    const projectIdToUse = projectId === -1 ? selectedProjectId : projectId
+
+    const { data, isLoading } = useGetTasks({ taskPage, token, projectId: projectIdToUse })
 
     if (isLoading) {
         return (
@@ -80,6 +82,7 @@ const Task: React.FC<TaskProps> = ({
                         <div key={index} className={cn("border rounded-md border-gray-400", task.id === selectedTaskId && 'border-purple-500 bg-purple-500')}>
                             <button onClick={() => {
                                 setTask(task.id, task.project_id)
+                                setProjectId(-1)
                             }} className="w-full text-left py-5 pl-2 hover:text-gray-700">
                                 {task.name}
                             </button>

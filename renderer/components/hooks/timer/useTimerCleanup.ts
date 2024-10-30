@@ -26,7 +26,6 @@ export const useTimerCleanup = () => {
             const currentDate = getCurrentDate();
             const timers: TaskTimerStore = JSON.parse(stored);
 
-            console.log("timer info : ", timers)
             let hasExpiredTimers = false;
 
             // Check if any timer is from a previous date
