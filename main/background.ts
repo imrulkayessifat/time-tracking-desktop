@@ -102,18 +102,6 @@ ipcMain.on('message', async (event, arg) => {
   event.reply('message', `${arg} World!`)
 })
 
-ipcMain.on('toggle-expand', (_, isExpanded) => {
-  if (mainWindow) {
-    console.log(isExpanded)
-    const [width, height] = mainWindow.getSize();
-    const newWidth = !isExpanded ? 1250 : 500
-    mainWindow.setMinimumSize(!isExpanded ? 1000 : 500, height)
-    mainWindow.setMaximumSize(!isExpanded ? 99999 : 500, height)
-    console.log(mainWindow.getMaximumSize())
-    mainWindow.setSize(newWidth, height, true);
-  }
-});
-
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
   // const interval = configurationProcessor.getScreenShotInterval();
   const interval = 2

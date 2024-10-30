@@ -132,8 +132,8 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   };
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col items-center gap-5">
+    <div className='flex flex-col gap-4 min-w-[458px] p-5 justify-between border-r'>
+      {/* <div className="flex flex-col items-center gap-5">
         <div className="flex justify-center">
           <p className="bg-gray-400 text-white mt-5 font-bold text-2xl px-28">
             {`${formatTime(hours)}:${formatTime(minutes)}:${formatTime(seconds)}`}
@@ -165,7 +165,32 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
         <div className="w-full px-5">
           <Project token={token} />
         </div>
+      </div> */}
+      <p className='text-xl leading-[25px] font-normal'>My Projects</p>
+      <p className='text-base leading-5 font-normal bg-[#294DFF] h-9 py-2 text-center text-white'>
+        {`${formatTime(hours)}:${formatTime(minutes)}:${formatTime(seconds)}`}
+      </p>
+      <div className="flex items-center justify-center">
+        {
+          !isRunning ? (
+            <img src="/images/start.png" className={cn("w-[50px] h-[50px] cursor-pointer")} />
+          ) : (
+            <img src="/images/start.png" className={cn("w-[50px] h-[50px] cursor-pointer")} />
+          )
+        }
       </div>
+
+      <form className="flex items-center w-full mx-auto">
+        <div className="relative w-full">
+          <div className="absolute inset-y-0 start-0 flex items-center ps-3">
+            <img src="/images/search.png" className="h-[26px] w-[26px] cursor-pointer" />
+          </div>
+          <input type="text" className=" border block w-full ps-10 p-2.5" />
+        </div>
+      </form>
+
+      <Project token={token} />
+
     </div>
   );
 };
