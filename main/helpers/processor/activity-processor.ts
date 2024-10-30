@@ -84,10 +84,10 @@ export class ActivityProcessor {
             // Prepare API payload
             const payload = {
                 project_id: activity.project_id,
-                task_id: activity.task_id,
                 app_name: activity.app_name,
                 url: activity.url,
-                timestamp: activity.timestamp
+                timestamp: activity.timestamp,
+                ...(activity.task_id !== -1 && { task_id: activity.task_id })
             };
 
             console.log('Making API call for activity:', activity.id);

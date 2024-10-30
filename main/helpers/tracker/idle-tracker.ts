@@ -141,12 +141,21 @@ export class TaskIdleTracker {
 
             console.log("idle periods : ", this.idlePeriods)
 
+            const transformedIdlePeriods = this.idlePeriods.map(period => {
+                if (period.task_id === -1) {
+                  // Destructure the period and omit task_id when it's -1
+                  const { task_id, ...periodWithoutTaskId } = period;
+                  return periodWithoutTaskId;
+                }
+                return period;
+              });
+
             if (this.idlePeriods.length > 0) {
                 const res = await fetch(this.apiEndpoint, {
                     method: 'POST',
                     headers: this.getAuthHeaders(),
                     body: JSON.stringify({
-                        "idle_time": this.idlePeriods
+                        "idle_time": transformedIdlePeriods
 
                     })
                 });

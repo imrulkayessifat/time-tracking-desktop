@@ -24,23 +24,23 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
 
   const pauseTask = async (project_id: number, task_id: number) => {
     window.electron.ipcRenderer.send('idle-stopped', { projectId: project_id, taskId: task_id });
+    const requestBody = task_id === -1
+      ? { project_id }
+      : { project_id, task_id };
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `${token}`
       },
-      body: JSON.stringify({
-        project_id,
-        task_id,
-      })
+      body: JSON.stringify(requestBody)
     });
     const { success } = await res.json();
     if (!success) {
       toast.error(`Track Pause Something went wrong ${project_id} ${task_id}`);
       return;
     }
-    toast.success(`Task track paused : ${task_id}`);
+    toast.success(`Task track paused : ${project_id} ${task_id}`);
   };
 
   const {
@@ -50,21 +50,21 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
     isRunning,
     start,
     pause,
-  } = useTaskTimer(selectedTaskId, selectedProjectId, pauseTask);
+  } = useTaskTimer(chosen_task_id, chosen_project_id, pauseTask);
 
   // Handle timer updates
 
   useEffect(() => {
     if (isRunning && window.electron) {
       window.electron.ipcRenderer.send('timer-update', {
-        project_id: selectedProjectId,
-        selectedTaskId,
+        project_id: chosen_project_id,
+        selectedTaskId: chosen_task_id,
         hours,
         minutes,
         seconds
       });
     }
-  }, [hours, minutes, seconds, isRunning, selectedProjectId, selectedTaskId]);
+  }, [hours, minutes, seconds, isRunning, chosen_project_id, chosen_task_id]);
 
   useEffect(() => {
     if (selectedTaskId !== -1) {
@@ -97,16 +97,16 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
 
   const startTask = async (project_id: number, task_id: number) => {
     window.electron.ipcRenderer.send('idle-started', { project_id, task_id });
+    const requestBody = task_id === -1
+      ? { project_id }
+      : { project_id, task_id };
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/start`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `${token}`
       },
-      body: JSON.stringify({
-        project_id,
-        task_id
-      })
+      body: JSON.stringify(requestBody)
     });
     const { success } = await res.json();
 
@@ -114,7 +114,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
       toast.error(`Track Start : Something went wrong ${project_id} ${task_id}`);
       return;
     }
-    toast.success(`Task track started : ${task_id}`);
+    toast.success(`Task track started : ${project_id} ${task_id}`);
   };
 
   const formatTime = (value: number) => {
@@ -124,10 +124,10 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   const handleTimerToggle = async () => {
     if (!isRunning) {
       start();
-      await startTask(selectedProjectId, selectedTaskId);
+      await startTask(chosen_project_id, chosen_task_id);
     } else {
       pause();
-      await pauseTask(selectedProjectId, selectedTaskId);
+      await pauseTask(chosen_project_id, chosen_task_id);
     }
     if (window.electron) {
       window.electron.ipcRenderer.send('timer-status-update', !isRunning);

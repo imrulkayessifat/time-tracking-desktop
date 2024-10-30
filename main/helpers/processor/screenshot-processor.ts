@@ -86,7 +86,7 @@ export class ScreenshotProcessor {
     // Parse image filename to extract information
     private parseImageFileName(fileName: string): ParsedImageInfo | null {
         console.log('Parsing filename:', fileName);
-        const match = fileName.match(/^(\d+)_(\d+)_(.+)_display(\d+)\.png$/);
+        const match = fileName.match(/^(-?\d+)_(-?\d+)_(.+)_display(\d+)\.png$/);
 
         if (!match) {
             console.log('Failed to parse filename:', fileName);
@@ -145,10 +145,11 @@ export class ScreenshotProcessor {
             // Prepare API payload
             const payload = {
                 project_id: imageInfo.projectId,
-                task_id: imageInfo.taskId,
                 timestamp: imageInfo.timestamp,
-                image: base64Image
+                image: base64Image,
+                ...(imageInfo.taskId !== -1 && { task_id: imageInfo.taskId })
             };
+
             // Make API call
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',

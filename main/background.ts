@@ -190,7 +190,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
   const elapsedMinutes = (info.hours * 60 + info.minutes) - (lastScreenshotTime.hours * 60 + lastScreenshotTime.minutes);
 
   if (elapsedMinutes >= interval) {
-    if (info.selectedTaskId !== -1) {
+    if (info.project_id !== -1) {
       startTracking(info.project_id, info.selectedTaskId);
       captureAndSaveScreenshot(info);
     }
