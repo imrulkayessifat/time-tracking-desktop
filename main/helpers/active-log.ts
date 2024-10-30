@@ -1,3 +1,5 @@
+const pidusage = require('pidusage');
+
 import Database from './db';
 import { readFirefoxHistory } from './history/firefox-history';
 import { readChromeHistory } from './history/chrome-history';
@@ -8,6 +10,7 @@ import { readEdgeHistory } from './history/edge-history';
 interface BaseResult {
     owner: {
         name: string;
+        processId: number;
     };
 }
 
@@ -71,6 +74,11 @@ const startTracking = async (project_id: number, task_id: number) => {
     try {
         const { activeWindow } = await import('../../node_modules/get-windows');
         const result: Result = await activeWindow();
+        const stats = await pidusage(result.owner.processId)
+
+        console.log(stats.elapsed)
+        console.log("Active window Start time : ", new Date(Date.now() - stats.elapsed))
+
         let data: DataType = {
             app_name: '',
             url: ''
