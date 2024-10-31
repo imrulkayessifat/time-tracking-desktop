@@ -76,7 +76,7 @@ const Task: React.FC<TaskProps> = ({
                                         setProject(-1, -1)
                                     }}
                                     key={index}
-                                    className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
+                                    className={cn("bg-white hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
                                 >
                                     <th scope="row" className={cn("px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", task.id === chosen_task_id && 'text-white')}>
                                         {task.name}

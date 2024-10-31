@@ -72,7 +72,7 @@ const Project: React.FC<ProjectsProps> = ({
                     setTask(-1, -1)
                   }}
                   key={index}
-                  className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
+                  className={cn("bg-white hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
                 >
                   <th scope="row" className={cn("px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
                     {project.name}
@@ -88,7 +88,7 @@ const Project: React.FC<ProjectsProps> = ({
       </div>
       {
         meta && (
-          <div className="flex justify-between mt-4 w-full">
+          <div className="flex justify-between my-4 w-full">
             <div className="flex gap-2 items-center">
               <p className="text-[14px] leading-5 font-medium">Result Per Page</p>
               <Select defaultValue="5">
