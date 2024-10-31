@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 import { useGetTasks } from './hooks/task/use-get-tasks';
 import { useSelectTask } from './hooks/task/use-select-task';
 import { useSelectProject } from './hooks/project/use-select-project';
-import { useSelectProjectTask } from './hooks/task/use-select-ProjectTask';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from '../components/ui/select';
 
 interface TaskProps {
     token: string;
@@ -16,11 +16,10 @@ const Task: React.FC<TaskProps> = ({
     token
 }) => {
     const [taskPage, setTaskPage] = useState(1)
-    const { setProjectTask } = useSelectProjectTask()
-    const { id: projectId, setProjectId } = useSelectProject()
-    const { id: selectedTaskId, project_id: selectedProjectId, setTask } = useSelectTask()
+    const { project_id, setProject } = useSelectProject()
+    const { chosen_project_id, chosen_task_id, setTask } = useSelectTask()
 
-    const projectIdToUse = projectId === -1 ? selectedProjectId : projectId
+    const projectIdToUse = project_id === -1 ? chosen_project_id : project_id
 
     const { data, isLoading } = useGetTasks({ taskPage, token, projectId: projectIdToUse })
 
@@ -53,57 +52,85 @@ const Task: React.FC<TaskProps> = ({
     }
 
     return (
-        <div className="flex flex-col gap-5">
-            <h1 className="font-semibold tracking-tight">Project List :</h1>
-            <div className="flex gap-2">
-                <p className="text-sm bg-orage-400 rounded-md tracking-tight px-2 py-2">
-                    Total Pages : {meta.total_pages}
-                </p>
-                <p className="text-sm bg-emerald-400 rounded-md tracking-tight px-2 py-2">
-                    Total Records : {meta.total_records}
-                </p>
-                <p className="text-sm bg-cyan-400 rounded-md tracking-tight px-2 py-2">
-                    Current Page : {meta.current_page}
-                </p>
+        <>
+            <div className='relative overflow-x-auto'>
+                <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th scope="col" className="px-6 py-3">
+                                Task
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                                Created
+                            </th>
+                            <th scope="col" className="px-6 py-3">
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {
+                            tasks.map((task, index) => (
+                                <tr
+                                    onClick={() => {
+                                        setTask(task.project_id, task.id)
+                                        setProject(-1, -1)
+                                    }}
+                                    key={index}
+                                    className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
+                                >
+                                    <th scope="row" className={cn("px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", task.id === chosen_task_id && 'text-white')}>
+                                        {task.name}
+                                    </th>
+                                    <td className="px-6 py-4 text-sm">
+                                        {task.createdAt.split('T')[0]}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        00:00:00
+                                    </td>
+                                </tr>
+                            ))
+                        }
+                    </tbody>
+                </table>
             </div>
-            <div className="flex flex-col gap-3">
-                {
-                    tasks.map((task, index) => (
-                        <div key={index} className={cn("border rounded-md border-gray-400", task.id === selectedTaskId && 'border-purple-500 bg-purple-500')}>
-                            <button onClick={() => {
-                                setTask(task.id, task.project_id)
-                                setProjectId(-1)
-                                setProjectTask(task.project_id,task.id)
-                            }} className="w-full text-left py-5 pl-2 hover:text-gray-700">
-                                {task.name}
-                            </button>
+            {
+                meta && (
+                    <div className="flex justify-between my-4 w-full">
+                        <div className="flex gap-2 items-center">
+                            <p className="text-[14px] leading-5 font-medium">Result Per Page</p>
+                            <Select defaultValue="5">
+                                <SelectTrigger isArrow={false} className="w-8 h-8 rounded-md p-2 appearance-none">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent side="right" align="start">
+                                    <SelectGroup>
+                                        <SelectItem value="5">5</SelectItem>
+                                        <SelectItem value="10">10</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    ))
-                }
-            </div>
-            <div>
-                {
-                    meta && (
-                        <div className="flex justify-between">
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={handlePrevPage}
                                 disabled={1 === Number(meta.current_page)}
-                                className={cn("border p-2 rounded-md border-gray-400 disabled:hover:border-gray-400 hover:border-blue-400", 1 === Number(meta.current_page) && "cursor-not-allowed")}
-                            >
-                                <FaAngleLeft />
+                                className={cn("flex gap-1 items-center w-[60px] h-8 border border-gray-950 rounded-md px-[10px] py-[6px]", 1 === Number(meta.current_page) && "opacity-20 cursor-not-allowed")}>
+                                <img src="/images/arrowleft.png" className="" />
+                                <span className="text-gray-950 leading-5 font-light">Back</span>
                             </button>
+                            <button className="w-8 h-8 bg-[#294DFF] text-white rounded-md text-lg p-[3px]">{taskPage}</button>
                             <button
                                 onClick={handleNextPage}
                                 disabled={meta.total_pages === Number(meta.current_page)}
-                                className={cn("border p-2 rounded-md border-gray-400 disabled:hover:border-gray-400 hover:border-blue-400", taskPage === Number(meta.total_pages) && "cursor-not-allowed")}
+                                className={cn(taskPage === Number(meta.total_pages) && "opacity-20 cursor-not-allowed")}
                             >
-                                <FaAngleRight />
+                                <img src="/images/next.png" />
                             </button>
                         </div>
-                    )
-                }
-            </div>
-        </div>
+                    </div>
+                )
+            }
+        </>
     )
 }
 

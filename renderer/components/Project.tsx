@@ -1,9 +1,8 @@
 import { useState } from "react"
-import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 import Loader from "./Loader"
 import { cn } from "../lib/utils";
-import { useSelectProjectTask } from "./hooks/task/use-select-ProjectTask";
 import { useSelectProject } from "./hooks/project/use-select-project";
 import { useSelectTask } from "./hooks/task/use-select-task";
 import { useGetProjects } from "./hooks/project/use-get-projects"
@@ -17,11 +16,10 @@ const Project: React.FC<ProjectsProps> = ({
   token
 }) => {
   const [page, setPage] = useState(1)
-  const { setTask } = useSelectTask()
+  const { chosen_project_id, setTask } = useSelectTask()
   const { cleanupTimers } = useTimerCleanup();
-  const { setProjectTask } = useSelectProjectTask()
   const { data, isLoading } = useGetProjects({ page, token })
-  const { id: selectedProjectId, setProjectId } = useSelectProject()
+  const { project_id, setProject } = useSelectProject()
 
   if (isLoading) {
     return (
@@ -53,93 +51,79 @@ const Project: React.FC<ProjectsProps> = ({
   }
 
   return (
-    // <div className="flex flex-col gap-5">
-    //   <h1 className="font-semibold tracking-tight">Project List :</h1>
-    //   <div className="flex gap-2">
-    //     <p className="text-sm bg-orage-400 rounded-md tracking-tight px-2 py-2">
-    //       Total Pages : {meta.total_pages}
-    //     </p>
-    //     <p className="text-sm bg-emerald-400 rounded-md tracking-tight px-2 py-2">
-    //       Total Records : {meta.total_records}
-    //     </p>
-    //     <p className="text-sm bg-cyan-400 rounded-md tracking-tight px-2 py-2">
-    //       Current Page : {meta.current_page}
-    //     </p>
-    //   </div>
-    //   <div className="flex flex-col gap-3">
-    //     {
-    //       projects.map((project, index) => (
-    //         <div key={index} className={cn("border rounded-md border-gray-400", project.id === selectedProjectId && 'border-blue-400 bg-blue-400')}>
-    //           <button
-    // onClick={() => {
-    //   setProjectId(project.id)
-    //   setTask(-1, -1)
-    //   setProjectTask(project.id, -1)
-    // }}
-    //             className="w-full text-left py-5 pl-2 hover:text-gray-700"
-    //           >
-    //             {project.name}
-    //           </button>
-    //         </div>
-    //       ))
-    //     }
-    //   </div>
-    //   <div>
-    //     {
-    //       meta && (
-    //         <div className="flex justify-between">
-    //           <button
-    //             onClick={handlePrevPage}
-    //             disabled={1 === Number(meta.current_page)}
-    //             className={cn("border p-2 rounded-md border-gray-400 disabled:hover:border-gray-400 hover:border-blue-400", 1 === Number(meta.current_page) && "cursor-not-allowed")}
-    //           >
-    //             <FaAngleLeft />
-    //           </button>
-    //           <button
-    //             onClick={handleNextPage}
-    //             disabled={meta.total_pages === Number(meta.current_page)}
-    //             className={cn("border p-2 rounded-md border-gray-400 disabled:hover:border-gray-400 hover:border-blue-400", page === Number(meta.total_pages) && "cursor-not-allowed")}
-    //           >
-    //             <FaAngleRight />
-    //           </button>
-    //         </div>
-    //       )
-    //     }
-    //   </div>
-    // </div>
-    <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-      <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-        <tr>
-          <th scope="col" className="px-6 py-3">
-            Project
-          </th>
-          <th scope="col" className="px-6 py-3">
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {
-          projects.map((project, index) => (
-            <tr
-              onClick={() => {
-                setProjectId(project.id)
-                setTask(-1, -1)
-                setProjectTask(project.id, -1)
-              }}
-              key={index}
-              className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', project.id === selectedProjectId && ' bg-[#294DFF] text-white')}
-            >
-              <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                {project.name}
+    <>
+      <div className="relative overflow-x-auto">
+        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" className="px-6 py-3">
+                Project
               </th>
-              <td className="px-6 py-4">
-                00:00:00
-              </td>
+              <th scope="col" className="px-6 py-3">
+              </th>
             </tr>
-          ))
-        }
-      </tbody>
-    </table>
+          </thead>
+          <tbody>
+            {
+              projects.map((project, index) => (
+                <tr
+                  onClick={() => {
+                    setProject(project.id, -1)
+                    setTask(-1, -1)
+                  }}
+                  key={index}
+                  className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
+                >
+                  <th scope="row" className={cn("px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
+                    {project.name}
+                  </th>
+                  <td className="px-6 py-4">
+                    00:00:00
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      {
+        meta && (
+          <div className="flex justify-between mt-4 w-full">
+            <div className="flex gap-2 items-center">
+              <p className="text-[14px] leading-5 font-medium">Result Per Page</p>
+              <Select defaultValue="5">
+                <SelectTrigger isArrow={false} className="w-8 h-8 rounded-md p-2 appearance-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent side="right" align="start">
+                  <SelectGroup>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrevPage}
+                disabled={1 === Number(meta.current_page)}
+                className={cn("flex gap-1 items-center w-[60px] h-8 border border-gray-950 rounded-md px-[10px] py-[6px]", 1 === Number(meta.current_page) && "opacity-20 cursor-not-allowed")}>
+                <img src="/images/arrowleft.png" className="" />
+                <span className="text-gray-950 leading-5 font-light">Back</span>
+              </button>
+              <button className="w-8 h-8 bg-[#294DFF] text-white rounded-md text-lg p-[3px]">{page}</button>
+              <button
+                onClick={handleNextPage}
+                disabled={meta.total_pages === Number(meta.current_page)}
+                className={cn(page === Number(meta.total_pages) && "opacity-20 cursor-not-allowed")}
+              >
+                <img src="/images/next.png" />
+              </button>
+            </div>
+          </div>
+        )
+      }
+    </>
   )
 }
 

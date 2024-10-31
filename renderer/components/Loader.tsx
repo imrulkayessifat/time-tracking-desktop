@@ -1,29 +1,15 @@
-import { Loader2 } from 'lucide-react';
-
-import {
-    Card,
-    CardHeader,
-    CardContent
-} from "../components/ui/Card"
 import { Skeleton } from '../components/ui/Skeleton';
-import { cn } from '../lib/utils';
+
 const Loader = () => {
     return (
         <div className="max-w-screen-xl mx-auto w-full pb-10 mt-24">
-            <Card className={cn('border-none')} style={{
-                borderStyle: "none"
-            }}>
-                <CardHeader>
-                    <Skeleton className='h-8 w-48' />
-                </CardHeader>
-                <CardContent>
-                    <div className='h-full w-full flex items-center justify-center'>
-                        <Loader2
-                            className='size-6 text-slate-100 animate-spin'
-                        />
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
+                </div>
+            </div>
         </div>
     )
 }

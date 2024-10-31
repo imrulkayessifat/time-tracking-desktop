@@ -20,9 +20,12 @@ const Main: React.FC<MainProps> = ({
   const router = useRouter();
   return (
     <div className="flex w-full h-screen">
-      <div className="h-full w-20 bg-[#294DFF]">
+      <div className="w-20 bg-[#294DFF]">
         <div className="flex flex-col justify-between h-full">
-          <img src='/images/projects.png' className="w-11 h-[57px] mx-5 mt-5" />
+          <div className="flex flex-col items-center">
+            <img src='/images/projects.png' className="w-9 h-9 mx-5 mt-5" />
+            <span className="text-white text-xs">Projects</span>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger className="mb-10 p-0 cursor-pointer" asChild>
               <img src='/images/profile.png' className="w-9 h-9 mx-5" />
@@ -41,9 +44,9 @@ const Main: React.FC<MainProps> = ({
           </DropdownMenu>
         </div>
       </div>
-      <div className="w-full">
-          <CounterPanel token={token} />
-        {/* <TasksPanel token={token} /> */}
+      <div className="flex w-full max-h-full">
+        <CounterPanel token={token} />
+        <TasksPanel token={token} />
       </div>
     </div>
   );

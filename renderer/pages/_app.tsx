@@ -3,6 +3,7 @@ import type { AppProps } from 'next/app'
 import { Nunito } from 'next/font/google';
 import { SessionProvider } from "next-auth/react"
 
+import { cn } from '../lib/utils';
 import { useAuthSync } from '../components/hooks/use-auth-sync'
 import { QueryProvider } from '../providers/query-provider'
 import { Toaster } from '../components/ui/sonner'
@@ -20,7 +21,7 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
     <QueryProvider>
       <SessionProvider session={session}>
         <AuthSyncWrapper>
-          <main className={nunito.className}>
+          <main className={cn(nunito.className,"w-full h-full")}>
             <Component {...pageProps} />
           </main>
           <Toaster richColors />

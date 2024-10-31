@@ -1,12 +1,14 @@
 import { create } from 'zustand'
 
 interface ProjectState {
-    id: number | null;
-    setProjectId: (id: number) => void;
+    project_id: number | null;
+    task_id: number | null;
+    setProject: (project_id: number, task_id: number) => void;
 }
 
 
 export const useSelectProject = create<ProjectState>((set) => ({
-    id: -1,
-    setProjectId: (id) => set({ id: id }),
+    project_id: -1,
+    task_id: -1,
+    setProject: (project_id: number, task_id: number) => set({ project_id, task_id }),
 }))
