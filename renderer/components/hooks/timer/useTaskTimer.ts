@@ -42,44 +42,32 @@ export const useTaskTimer = (
         return stored ? JSON.parse(stored) : {};
     };
 
+    const updateParentTaskTime = (currentTimers: TaskTimerStore) => {
+        if (taskId === -1) return; // Don't update if this is already a parent task
 
-
-    const calculateTotalSeconds = (time: TaskTime): number => {
-        return time.hours * 3600 + time.minutes * 60 + time.seconds;
-    };
-
-    // Convert total seconds to TaskTime format
-    const secondsToTaskTime = (totalSeconds: number): { hours: number; minutes: number; seconds: number } => {
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        return { hours, minutes, seconds };
-    };
-
-    // Update parent task time by aggregating all child tasks
-    const updateParentTaskTime = () => {
-        const timers = getAllTimers();
-        let totalSeconds = 0;
-
-        // Sum up all times for tasks in the same project
-        Object.entries(timers).forEach(([key, timer]) => {
-            const [_, timerProjectId, timerTaskId] = key.split('_');
-            if (timerProjectId === projectId.toString() && timerTaskId !== '-1') {
-                totalSeconds += calculateTotalSeconds(timer);
-            }
-        });
-
-        // Update parent task with aggregated time
-        const timeComponents = secondsToTaskTime(totalSeconds);
-        timers[parentTaskKey] = {
-            ...timeComponents,
+        const parentTime = currentTimers[parentTaskKey] || {
+            hours: 0,
+            minutes: 0,
+            seconds: 0,
             isRunning: false,
             date: getCurrentDate()
         };
 
-        localStorage.setItem('taskTimers', JSON.stringify(timers));
-    };
+        // Add one second to parent task
+        parentTime.seconds += 1;
 
+        // Handle time overflow
+        if (parentTime.seconds >= 60) {
+            parentTime.minutes += Math.floor(parentTime.seconds / 60);
+            parentTime.seconds = parentTime.seconds % 60;
+        }
+        if (parentTime.minutes >= 60) {
+            parentTime.hours += Math.floor(parentTime.minutes / 60);
+            parentTime.minutes = parentTime.minutes % 60;
+        }
+
+        currentTimers[parentTaskKey] = parentTime;
+    };
 
     // Find and stop any running timer
     const stopRunningTimer = () => {
@@ -150,17 +138,29 @@ export const useTaskTimer = (
         if (typeof window === 'undefined') return;
 
         const timers = getAllTimers();
-        timers[taskKey] = {
+        const previousState = timers[taskKey];
+        const currentState = {
             hours,
             minutes,
             seconds,
             isRunning,
             date: getCurrentDate()
         };
-        localStorage.setItem('taskTimers', JSON.stringify(timers));
-        if (taskId !== -1) {
-            updateParentTaskTime();
+
+        // Update the current task state
+        timers[taskKey] = currentState;
+
+        // Only update parent if the actual time changed (not just isRunning state)
+        // and the timer is running
+        if (isRunning &&
+            previousState && // Make sure we have a previous state
+            (previousState.hours !== hours ||
+                previousState.minutes !== minutes ||
+                previousState.seconds !== seconds)) {
+            updateParentTaskTime(timers);
         }
+
+        localStorage.setItem('taskTimers', JSON.stringify(timers));
 
     }, [hours, minutes, seconds, isRunning, taskKey]);
 
@@ -182,10 +182,6 @@ export const useTaskTimer = (
                 date: getCurrentDate()
             };
             localStorage.setItem('taskTimers', JSON.stringify(timers));
-            if (taskId !== -1) {
-                updateParentTaskTime();
-            }
-
         }
     }, [pauseStopwatch, taskKey, hours, minutes, seconds]);
 
