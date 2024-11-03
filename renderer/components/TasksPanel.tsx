@@ -1,10 +1,17 @@
-import { useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  ChangeEvent,
+  MouseEvent
+} from "react";
 import { toast } from "sonner"
+import { X } from 'lucide-react';
 
 import Task from "./Task";
 import { cn } from "../lib/utils";
 import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { useSelectTask } from "./hooks/task/use-select-task";
+import { useSelectProject } from "./hooks/project/use-select-project";
 import {
   Select,
   SelectContent,
@@ -15,6 +22,18 @@ import {
   SelectValue,
 } from "./ui/select";
 
+interface TaskMeta {
+  total_records: number;
+  total_pages: number;
+  current_page: number;
+  page_size: string;
+}
+
+interface TaskData {
+  rows: any[];
+  meta: TaskMeta;
+}
+
 interface TasksPanelProps {
   token: string
 }
@@ -23,7 +42,11 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   token
 }) => {
 
+  const [searchValue, setSearchValue] = useState<string>('');
+  const [searchTask, setSearchTask] = useState<TaskData>()
+
   const { chosen_project_id, chosen_task_id } = useSelectTask()
+  const { project_id } = useSelectProject()
 
   const pauseTask = async (project_id: number, task_id: number) => {
     window.electron.ipcRenderer.send('idle-stopped', { projectId: project_id, taskId: task_id });
@@ -135,6 +158,31 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
     }
   };
 
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setSearchValue(event.target.value);
+  };
+
+  const handleSearch = async (e: MouseEvent<HTMLButtonElement>): Promise<void> => {
+    e.preventDefault();
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/project/${project_id}?page=1&limit=5&query=${searchValue}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `${token}`,
+      }
+    });
+    if (!res.ok) {
+      throw new Error("Failed to fetch tasks");
+    }
+    const { data } = await res.json();
+    setSearchTask(data)
+  };
+
+  const handleClearSearch = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setSearchValue('') // Prevent default form submission
+    setSearchTask(undefined);
+  };
+
   return (
     <div className='flex flex-col min-w-1/2 w-1/2 p-5 gap-4'>
       <div className="flex flex-col gap-8">
@@ -160,9 +208,32 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
           <form className="flex items-center w-2/3">
             <div className="relative w-full">
               <div className="absolute inset-y-0 start-0 flex items-center ps-3">
-                <img src="/images/search.png" className="h-[26px] w-[26px] cursor-pointer" />
+                <button
+                  onClick={handleSearch}
+                  disabled={searchValue.length === 0}
+                  className={cn("", searchValue.length === 0 && "opacity-30 cursor-not-allowed")}
+                >
+                  <img
+                    src="/images/search.png"
+                    className={"h-[26px] w-[26px] cursor-pointer"}
+                  />
+                </button>
               </div>
-              <input type="text" className=" border block w-full ps-10 p-2.5" />
+              <input
+                value={searchValue}
+                onChange={handleSearchChange}
+                type="text"
+                className=" border block w-full ps-10 p-2.5"
+              />
+              <div className={cn("absolute inset-y-0 end-2 flex items-center ps-3", searchValue.length === 0 && "hidden")}>
+                <button
+                  onClick={handleClearSearch}
+                >
+                  <X
+                    className={"h-[26px] w-[26px] cursor-pointer"}
+                  />
+                </button>
+              </div>
             </div>
           </form>
           <form className="flex items-center w-1/3">
@@ -180,7 +251,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
           </form>
         </div>
       </div>
-      <Task token={token} />
+      <Task token={token} searchTask={searchTask} />
     </div>
   )
 }

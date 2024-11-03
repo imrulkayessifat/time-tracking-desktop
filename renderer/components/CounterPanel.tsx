@@ -1,16 +1,37 @@
+import {
+  ChangeEvent,
+  MouseEvent,
+  useEffect,
+  useState
+} from "react";
 import { toast } from "sonner"
-import { useEffect } from "react";
 
 import Project from "./Project";
 import { cn } from '../lib/utils';
 import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { useSelectProject } from "./hooks/project/use-select-project";
+import { X } from "lucide-react";
 
+
+interface ProjectMeta {
+  total_records: number;
+  total_pages: number;
+  current_page: number;
+  page_size: string;
+}
+
+interface ProjectData {
+  rows: any[];
+  meta: ProjectMeta;
+}
 interface CounterPanelProps {
   token: string
 }
 
 const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
+
+  const [searchValue, setSearchValue] = useState<string>('');
+  const [searchProject, setSearchProject] = useState<ProjectData>()
   const { project_id, task_id } = useSelectProject();
 
   const pauseTask = async (project_id: number, task_id: number) => {
@@ -124,6 +145,31 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
     }
   };
 
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setSearchValue(event.target.value);
+  };
+
+  const handleSearch = async (e: MouseEvent<HTMLButtonElement>): Promise<void> => {
+    e.preventDefault();
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/project?page=1&limit=5&query=${searchValue}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `${token}`,
+      }
+    });
+    if (!res.ok) {
+      throw new Error("Failed to fetch tasks");
+    }
+    const { data } = await res.json();
+    setSearchProject(data)
+  };
+
+  const handleClearSearch = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setSearchValue('') // Prevent default form submission
+    setSearchProject(undefined);
+  };
+
   return (
     <div className='flex flex-col min-w-1/2 w-1/2 p-5 gap-4 border-r'>
       <div className="flex flex-col gap-8">
@@ -149,14 +195,34 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
         <form className="flex items-center w-full mx-auto">
           <div className="relative w-full">
             <div className="absolute inset-y-0 start-0 flex items-center ps-3">
-              <img src="/images/search.png" className="h-[26px] w-[26px] cursor-pointer" />
+              <button
+                onClick={handleSearch}
+                disabled={searchValue.length === 0}
+                className={cn("", searchValue.length === 0 && "opacity-30 cursor-not-allowed")}
+              >
+                <img src="/images/search.png" className="h-[26px] w-[26px] cursor-pointer" />
+              </button>
             </div>
-            <input type="text" className=" border block w-full ps-10 p-2.5" />
+            <input
+              value={searchValue}
+              onChange={handleSearchChange}
+              type="text"
+              className=" border block w-full ps-10 p-2.5"
+            />
+            <div className={cn("absolute inset-y-0 end-2 flex items-center ps-3", searchValue.length === 0 && "hidden")}>
+              <button
+                onClick={handleClearSearch}
+              >
+                <X
+                  className={"h-[26px] w-[26px] cursor-pointer"}
+                />
+              </button>
+            </div>
           </div>
         </form>
       </div>
 
-      <Project token={token} />
+      <Project token={token} searchProject={searchProject} />
     </div>
   );
 };

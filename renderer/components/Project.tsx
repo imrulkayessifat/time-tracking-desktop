@@ -8,12 +8,26 @@ import { useSelectTask } from "./hooks/task/use-select-task";
 import { useGetProjects } from "./hooks/project/use-get-projects"
 import { useTimerCleanup } from "./hooks/timer/useTimerCleanup";
 
+interface ProjectMeta {
+  total_records: number;
+  total_pages: number;
+  current_page: number;
+  page_size: string;
+}
+
+interface ProjectData {
+  rows: any[];
+  meta: ProjectMeta;
+}
+
 interface ProjectsProps {
-  token: string
+  token: string;
+  searchProject: ProjectData
 }
 
 const Project: React.FC<ProjectsProps> = ({
-  token
+  token,
+  searchProject
 }) => {
   const [page, setPage] = useState(1)
   const { chosen_project_id, setTask } = useSelectTask()
@@ -27,8 +41,8 @@ const Project: React.FC<ProjectsProps> = ({
     )
   }
   cleanupTimers()
-  const projects = data?.rows || []
-  const meta = data?.meta
+  const projects = searchProject?.rows.length > 0 ? searchProject.rows : data?.rows || []
+  const meta = searchProject?.meta ? searchProject.meta : data?.meta
 
   const handlePrevPage = () => {
     if (page > 1) {
@@ -72,7 +86,7 @@ const Project: React.FC<ProjectsProps> = ({
                     setTask(-1, -1)
                   }}
                   key={index}
-                  className={cn("bg-white hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
+                  className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
                 >
                   <th scope="row" className={cn("px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
                     {project.name}

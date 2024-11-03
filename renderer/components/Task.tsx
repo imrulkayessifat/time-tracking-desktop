@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { FaAngleLeft, FaAngleRight } from 'react-icons/fa6';
 
 import Loader from './Loader';
 import { cn } from '../lib/utils';
@@ -8,12 +7,26 @@ import { useSelectTask } from './hooks/task/use-select-task';
 import { useSelectProject } from './hooks/project/use-select-project';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from '../components/ui/select';
 
+interface TaskMeta {
+    total_records: number;
+    total_pages: number;
+    current_page: number;
+    page_size: string;
+}
+
+interface TaskData {
+    rows: any[];
+    meta: TaskMeta;
+}
+
 interface TaskProps {
     token: string;
+    searchTask: TaskData;
 }
 
 const Task: React.FC<TaskProps> = ({
-    token
+    token,
+    searchTask
 }) => {
     const [taskPage, setTaskPage] = useState(1)
     const { project_id, setProject } = useSelectProject()
@@ -29,8 +42,8 @@ const Task: React.FC<TaskProps> = ({
         )
     }
 
-    const tasks = data?.rows || []
-    const meta = data?.meta
+    const tasks = searchTask?.rows.length > 0 ? searchTask.rows : data?.rows || []
+    const meta = searchTask?.meta ? searchTask.meta : data?.meta
 
     const handlePrevPage = () => {
         if (taskPage > 1) {
@@ -76,7 +89,7 @@ const Task: React.FC<TaskProps> = ({
                                         setProject(-1, -1)
                                     }}
                                     key={index}
-                                    className={cn("bg-white hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
+                                    className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
                                 >
                                     <th scope="row" className={cn("px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", task.id === chosen_task_id && 'text-white')}>
                                         {task.name}
