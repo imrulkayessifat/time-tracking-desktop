@@ -19,7 +19,7 @@ export const useTaskTimer = (
     pauseTask?: (projectId: number, taskId: number) => void
 ) => {
     // Create a unique key for the task
-    const projectKey = `task_${projectId}_-1`
+    const parentTaskKey = `task_${projectId}_-1`;
     const taskKey = `task_${projectId}_${taskId}`;
 
     const getCurrentDate = () => {
@@ -41,6 +41,45 @@ export const useTaskTimer = (
         const stored = localStorage.getItem('taskTimers');
         return stored ? JSON.parse(stored) : {};
     };
+
+
+
+    const calculateTotalSeconds = (time: TaskTime): number => {
+        return time.hours * 3600 + time.minutes * 60 + time.seconds;
+    };
+
+    // Convert total seconds to TaskTime format
+    const secondsToTaskTime = (totalSeconds: number): { hours: number; minutes: number; seconds: number } => {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return { hours, minutes, seconds };
+    };
+
+    // Update parent task time by aggregating all child tasks
+    const updateParentTaskTime = () => {
+        const timers = getAllTimers();
+        let totalSeconds = 0;
+
+        // Sum up all times for tasks in the same project
+        Object.entries(timers).forEach(([key, timer]) => {
+            const [_, timerProjectId, timerTaskId] = key.split('_');
+            if (timerProjectId === projectId.toString() && timerTaskId !== '-1') {
+                totalSeconds += calculateTotalSeconds(timer);
+            }
+        });
+
+        // Update parent task with aggregated time
+        const timeComponents = secondsToTaskTime(totalSeconds);
+        timers[parentTaskKey] = {
+            ...timeComponents,
+            isRunning: false,
+            date: getCurrentDate()
+        };
+
+        localStorage.setItem('taskTimers', JSON.stringify(timers));
+    };
+
 
     // Find and stop any running timer
     const stopRunningTimer = () => {
@@ -119,6 +158,10 @@ export const useTaskTimer = (
             date: getCurrentDate()
         };
         localStorage.setItem('taskTimers', JSON.stringify(timers));
+        if (taskId !== -1) {
+            updateParentTaskTime();
+        }
+
     }, [hours, minutes, seconds, isRunning, taskKey]);
 
     const start = useCallback(() => {
@@ -139,6 +182,10 @@ export const useTaskTimer = (
                 date: getCurrentDate()
             };
             localStorage.setItem('taskTimers', JSON.stringify(timers));
+            if (taskId !== -1) {
+                updateParentTaskTime();
+            }
+
         }
     }, [pauseStopwatch, taskKey, hours, minutes, seconds]);
 
