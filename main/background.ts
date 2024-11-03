@@ -104,7 +104,7 @@ ipcMain.on('toggle-expand', (_, isExpanded) => {
     console.log(isExpanded)
     const [width, height] = mainWindow.getSize();
     const newWidth = !isExpanded ? 1250 : 500
-    mainWindow.setMinimumSize(!isExpanded ? 1000 : 500, 720)
+    mainWindow.setMinimumSize(!isExpanded ? 1000 : 360, 720)
     mainWindow.setMaximumSize(!isExpanded ? 99999 : 500, 99999)
     // console.log(mainWindow.getMaximumSize())
     mainWindow.setSize(newWidth, 720, true);

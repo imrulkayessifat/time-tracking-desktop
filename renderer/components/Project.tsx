@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 import Loader from "./Loader"
 import { cn } from "../lib/utils";
@@ -8,6 +7,7 @@ import { useSelectTask } from "./hooks/task/use-select-task";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useGetProjects } from "./hooks/project/use-get-projects"
 import { useTimerCleanup } from "./hooks/timer/useTimerCleanup";
+import { useGetTimer } from "./hooks/timer/useGetTimer";
 
 interface ProjectMeta {
   total_records: number;
@@ -38,6 +38,8 @@ const Project: React.FC<ProjectsProps> = ({
   const { chosen_project_id, setTask } = useSelectTask()
   const { setProjectTask } = useSelectProjectTask()
   const { cleanupTimers } = useTimerCleanup();
+  const { getProjectTime } = useGetTimer();
+
   const { data, isLoading } = useGetProjects({ page, token })
   const { project_id, setProject } = useSelectProject()
 
@@ -70,6 +72,10 @@ const Project: React.FC<ProjectsProps> = ({
     )
   }
 
+  const formatTime = (hours: number, minutes: number, seconds: number): string => {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
   return (
     <>
       <div className="relative overflow-x-auto">
@@ -98,24 +104,27 @@ const Project: React.FC<ProjectsProps> = ({
             ) : (
               <tbody>
                 {
-                  projects.map((project, index) => (
-                    <tr
-                      onClick={() => {
-                        setProject(project.id, -1)
-                        setProjectTask(project.id, -1)
-                        setTask(-1, -1)
-                      }}
-                      key={index}
-                      className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
-                    >
-                      <th scope="row" className={cn("px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
-                        {project.name}
-                      </th>
-                      <td className="px-6 py-4">
-                        00:00:00
-                      </td>
-                    </tr>
-                  ))
+                  projects.map((project, index) => {
+                    const { hours, minutes, seconds } = getProjectTime(project.id);
+                    return (
+                      <tr
+                        onClick={() => {
+                          setProject(project.id, -1)
+                          setProjectTask(project.id, -1)
+                          setTask(-1, -1)
+                        }}
+                        key={index}
+                        className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
+                      >
+                        <th scope="row" className={cn("px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
+                          {project.name}
+                        </th>
+                        <td className="px-6 py-4">
+                          {formatTime(hours, minutes, seconds)}
+                        </td>
+                      </tr>
+                    )
+                  })
                 }
               </tbody>
             )

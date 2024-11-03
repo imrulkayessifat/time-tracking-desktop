@@ -6,7 +6,7 @@ import { useGetTasks } from './hooks/task/use-get-tasks';
 import { useSelectTask } from './hooks/task/use-select-task';
 import { useSelectProject } from './hooks/project/use-select-project';
 import { useSelectProjectTask } from './hooks/use-select-projecttask';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from '../components/ui/select';
+import { useGetTimer } from './hooks/timer/useGetTimer';
 
 interface TaskMeta {
     total_records: number;
@@ -34,6 +34,7 @@ const Task: React.FC<TaskProps> = ({
     const [taskPage, setTaskPage] = useState(1)
     const { project_id, setProject } = useSelectProject()
     const { setProjectTask } = useSelectProjectTask()
+    const { getTaskTime } = useGetTimer();
     const { chosen_project_id, chosen_task_id, setTask } = useSelectTask()
 
     const projectIdToUse = project_id === -1 ? chosen_project_id : project_id
@@ -60,6 +61,10 @@ const Task: React.FC<TaskProps> = ({
             setTaskPage(prev => prev + 1)
         }
     }
+
+    const formatTime = (hours: number, minutes: number, seconds: number): string => {
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    };
 
     return (
         <>
@@ -92,27 +97,30 @@ const Task: React.FC<TaskProps> = ({
                         ) : (
                             <tbody>
                                 {
-                                    tasks.map((task, index) => (
-                                        <tr
-                                            onClick={() => {
-                                                setTask(task.project_id, task.id)
-                                                setProjectTask(task.project_id, task.id)
-                                                setProject(-1, -1)
-                                            }}
-                                            key={index}
-                                            className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
-                                        >
-                                            <th scope="row" className={cn("px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", task.id === chosen_task_id && 'text-white')}>
-                                                {task.name}
-                                            </th>
-                                            <td className="px-6 py-4 text-sm">
-                                                {task.createdAt.split('T')[0]}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                00:00:00
-                                            </td>
-                                        </tr>
-                                    ))
+                                    tasks.map((task, index) => {
+                                        const { hours, minutes, seconds } = getTaskTime(task.project_id, task.id);
+                                        return (
+                                            <tr
+                                                onClick={() => {
+                                                    setTask(task.project_id, task.id)
+                                                    setProjectTask(task.project_id, task.id)
+                                                    setProject(-1, -1)
+                                                }}
+                                                key={index}
+                                                className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
+                                            >
+                                                <th scope="row" className={cn("px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", task.id === chosen_task_id && 'text-white')}>
+                                                    {task.name}
+                                                </th>
+                                                <td className="px-6 py-4 text-sm">
+                                                    {task.createdAt.split('T')[0]}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {formatTime(hours, minutes, seconds)}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
                                 }
                             </tbody>
                         )
