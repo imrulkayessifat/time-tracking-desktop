@@ -11,6 +11,7 @@ import Task from "./Task";
 import { cn } from "../lib/utils";
 import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { useSelectTask } from "./hooks/task/use-select-task";
+import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useSelectProject } from "./hooks/project/use-select-project";
 import {
   Select,
@@ -48,6 +49,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   const [searchTask, setSearchTask] = useState<TaskData>()
 
   const { chosen_project_id, chosen_task_id } = useSelectTask()
+  const { init_project_id } = useSelectProjectTask()
   const { project_id } = useSelectProject()
 
   // const pauseTask = async (project_id: number, task_id: number) => {
@@ -170,7 +172,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
 
   const handleSearch = async (e: MouseEvent<HTMLButtonElement>): Promise<void> => {
     e.preventDefault();
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/project/${project_id}?page=1&limit=5&query=${searchValue}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/project/${init_project_id}?page=1&limit=5&query=${searchValue}`, {
       method: 'GET',
       headers: {
         'Authorization': `${token}`,
