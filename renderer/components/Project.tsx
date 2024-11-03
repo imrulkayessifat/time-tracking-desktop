@@ -77,31 +77,47 @@ const Project: React.FC<ProjectsProps> = ({
               </th>
             </tr>
           </thead>
-          <tbody>
-            {
-              projects.map((project, index) => (
-                <tr
-                  onClick={() => {
-                    setProject(project.id, -1)
-                    setTask(-1, -1)
-                  }}
-                  key={index}
-                  className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
-                >
-                  <th scope="row" className={cn("px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
-                    {project.name}
-                  </th>
-                  <td className="px-6 py-4">
-                    00:00:00
+          {
+            projects.length === 0 ? (
+              <tbody>
+                <tr>
+                  <td colSpan={2}>
+                    <div className='w-full h-48 flex flex-col items-center justify-center'>
+                      <img src="/images/empty.svg" alt="No projects found" className="max-w-[200px]" />
+                      <span className='text-black'>No project assigned here</span>
+                    </div>
                   </td>
                 </tr>
-              ))
-            }
-          </tbody>
+              </tbody>
+            ) : (
+              <tbody>
+                {
+                  projects.map((project, index) => (
+                    <tr
+                      onClick={() => {
+                        setProject(project.id, -1)
+                        setTask(-1, -1)
+                      }}
+                      key={index}
+                      className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
+                    >
+                      <th scope="row" className={cn("px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
+                        {project.name}
+                      </th>
+                      <td className="px-6 py-4">
+                        00:00:00
+                      </td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            )
+          }
+
         </table>
       </div>
       {
-        meta && (
+        projects.length !== 0 && meta && (
           <div className="flex justify-between my-4 w-full">
             <div className="flex gap-2 items-center">
               <p className="text-[14px] leading-5 font-medium">Result Per Page</p>

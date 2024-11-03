@@ -56,13 +56,6 @@ const Task: React.FC<TaskProps> = ({
             setTaskPage(prev => prev + 1)
         }
     }
-    if (tasks.length === 0) {
-        return (
-            <div className='flex items-center justify-center'>
-                <p>No project selected or project task empty</p>
-            </div>
-        )
-    }
 
     return (
         <>
@@ -80,34 +73,49 @@ const Task: React.FC<TaskProps> = ({
                             </th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {
-                            tasks.map((task, index) => (
-                                <tr
-                                    onClick={() => {
-                                        setTask(task.project_id, task.id)
-                                        setProject(-1, -1)
-                                    }}
-                                    key={index}
-                                    className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
-                                >
-                                    <th scope="row" className={cn("px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", task.id === chosen_task_id && 'text-white')}>
-                                        {task.name}
-                                    </th>
-                                    <td className="px-6 py-4 text-sm">
-                                        {task.createdAt.split('T')[0]}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        00:00:00
+                    {
+                        tasks.length === 0 ? (
+                            <tbody>
+                                <tr>
+                                    <td colSpan={3}>
+                                        <div className='w-full h-48 flex flex-col items-center justify-center'>
+                                            <img src="/images/empty.svg" alt="No tasks found" className="max-w-[200px]" />
+                                            <span className='text-black'>No task assigned here</span>
+                                        </div>
                                     </td>
                                 </tr>
-                            ))
-                        }
-                    </tbody>
+                            </tbody>
+                        ) : (
+                            <tbody>
+                                {
+                                    tasks.map((task, index) => (
+                                        <tr
+                                            onClick={() => {
+                                                setTask(task.project_id, task.id)
+                                                setProject(-1, -1)
+                                            }}
+                                            key={index}
+                                            className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
+                                        >
+                                            <th scope="row" className={cn("px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", task.id === chosen_task_id && 'text-white')}>
+                                                {task.name}
+                                            </th>
+                                            <td className="px-6 py-4 text-sm">
+                                                {task.createdAt.split('T')[0]}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                00:00:00
+                                            </td>
+                                        </tr>
+                                    ))
+                                }
+                            </tbody>
+                        )
+                    }
                 </table>
             </div>
             {
-                meta && (
+                tasks.length !== 0 && meta && (
                     <div className="flex justify-between my-4 w-full">
                         <div className="flex gap-2 items-center">
                             <p className="text-[14px] leading-5 font-medium">Result Per Page</p>
