@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import { Dot } from 'react-animated-dots';
-import { FormEvent, useState } from "react"
+import { FormEvent, useState, useEffect } from "react"
 import { useSession } from 'next-auth/react';
 import { getSession, signIn } from 'next-auth/react';
 
@@ -13,11 +13,16 @@ const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(' ');
 
+    useEffect(() => {
+        window.electron.ipcRenderer.send('toggle-expand', true);
+    }, [])
+    
     if (status === 'loading') {
         return (
             <Loader />
         )
     }
+
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
