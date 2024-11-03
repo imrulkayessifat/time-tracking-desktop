@@ -19,6 +19,7 @@ export const useTaskTimer = (
     pauseTask?: (projectId: number, taskId: number) => void
 ) => {
     // Create a unique key for the task
+    const projectKey = `task_${projectId}_-1`
     const taskKey = `task_${projectId}_${taskId}`;
 
     const getCurrentDate = () => {

@@ -5,6 +5,7 @@ import { cn } from '../lib/utils';
 import { useGetTasks } from './hooks/task/use-get-tasks';
 import { useSelectTask } from './hooks/task/use-select-task';
 import { useSelectProject } from './hooks/project/use-select-project';
+import { useSelectProjectTask } from './hooks/use-select-projecttask';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from '../components/ui/select';
 
 interface TaskMeta {
@@ -21,20 +22,23 @@ interface TaskData {
 
 interface TaskProps {
     token: string;
+    status: string;
     searchTask: TaskData;
 }
 
 const Task: React.FC<TaskProps> = ({
     token,
+    status,
     searchTask
 }) => {
     const [taskPage, setTaskPage] = useState(1)
     const { project_id, setProject } = useSelectProject()
+    const { setProjectTask } = useSelectProjectTask()
     const { chosen_project_id, chosen_task_id, setTask } = useSelectTask()
 
     const projectIdToUse = project_id === -1 ? chosen_project_id : project_id
 
-    const { data, isLoading } = useGetTasks({ taskPage, token, projectId: projectIdToUse })
+    const { data, isLoading } = useGetTasks({ taskPage, token, projectId: projectIdToUse, status })
 
     if (isLoading) {
         return (
@@ -92,6 +96,7 @@ const Task: React.FC<TaskProps> = ({
                                         <tr
                                             onClick={() => {
                                                 setTask(task.project_id, task.id)
+                                                setProjectTask(task.project_id, task.id)
                                                 setProject(-1, -1)
                                             }}
                                             key={index}
@@ -116,21 +121,7 @@ const Task: React.FC<TaskProps> = ({
             </div>
             {
                 tasks.length !== 0 && meta && (
-                    <div className="flex justify-between my-4 w-full">
-                        <div className="flex gap-2 items-center">
-                            <p className="text-[14px] leading-5 font-medium">Result Per Page</p>
-                            <Select defaultValue="5">
-                                <SelectTrigger isArrow={false} className="w-8 h-8 rounded-md p-2 appearance-none">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent side="right" align="start">
-                                    <SelectGroup>
-                                        <SelectItem value="5">5</SelectItem>
-                                        <SelectItem value="10">10</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    <div className="flex my-4 w-full">
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={handlePrevPage}
@@ -139,7 +130,7 @@ const Task: React.FC<TaskProps> = ({
                                 <img src="/images/arrowleft.png" className="" />
                                 <span className="text-gray-950 leading-5 font-light">Back</span>
                             </button>
-                            <button className="w-8 h-8 bg-[#294DFF] text-white rounded-md text-lg p-[3px]">{taskPage}</button>
+                            {/* <button className="w-8 h-8 bg-[#294DFF] text-white rounded-md text-lg p-[3px]">{taskPage}</button> */}
                             <button
                                 onClick={handleNextPage}
                                 disabled={meta.total_pages === Number(meta.current_page)}

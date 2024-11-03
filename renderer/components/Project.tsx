@@ -5,6 +5,7 @@ import Loader from "./Loader"
 import { cn } from "../lib/utils";
 import { useSelectProject } from "./hooks/project/use-select-project";
 import { useSelectTask } from "./hooks/task/use-select-task";
+import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useGetProjects } from "./hooks/project/use-get-projects"
 import { useTimerCleanup } from "./hooks/timer/useTimerCleanup";
 
@@ -22,15 +23,20 @@ interface ProjectData {
 
 interface ProjectsProps {
   token: string;
+  isExpanded: boolean;
+  toggleExpand: () => void
   searchProject: ProjectData
 }
 
 const Project: React.FC<ProjectsProps> = ({
   token,
+  isExpanded,
+  toggleExpand,
   searchProject
 }) => {
   const [page, setPage] = useState(1)
   const { chosen_project_id, setTask } = useSelectTask()
+  const { setProjectTask } = useSelectProjectTask()
   const { cleanupTimers } = useTimerCleanup();
   const { data, isLoading } = useGetProjects({ page, token })
   const { project_id, setProject } = useSelectProject()
@@ -96,6 +102,7 @@ const Project: React.FC<ProjectsProps> = ({
                     <tr
                       onClick={() => {
                         setProject(project.id, -1)
+                        setProjectTask(project.id, -1)
                         setTask(-1, -1)
                       }}
                       key={index}
@@ -119,20 +126,6 @@ const Project: React.FC<ProjectsProps> = ({
       {
         projects.length !== 0 && meta && (
           <div className="flex justify-between my-4 w-full">
-            <div className="flex gap-2 items-center">
-              <p className="text-[14px] leading-5 font-medium">Result Per Page</p>
-              <Select defaultValue="5">
-                <SelectTrigger isArrow={false} className="w-8 h-8 rounded-md p-2 appearance-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent side="right" align="start">
-                  <SelectGroup>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrevPage}
@@ -141,7 +134,7 @@ const Project: React.FC<ProjectsProps> = ({
                 <img src="/images/arrowleft.png" className="" />
                 <span className="text-gray-950 leading-5 font-light">Back</span>
               </button>
-              <button className="w-8 h-8 bg-[#294DFF] text-white rounded-md text-lg p-[3px]">{page}</button>
+              {/* <button className="w-8 h-8 bg-[#294DFF] text-white rounded-md text-lg p-[3px]">{page}</button> */}
               <button
                 onClick={handleNextPage}
                 disabled={meta.total_pages === Number(meta.current_page)}
@@ -150,6 +143,13 @@ const Project: React.FC<ProjectsProps> = ({
                 <img src="/images/next.png" />
               </button>
             </div>
+            <button onClick={toggleExpand}>
+              {isExpanded ? (
+                <img src="/images/toggleleft.svg" />
+              ) : (
+                <img src="/images/toggleright.svg" />
+              )}
+            </button>
           </div>
         )
       }

@@ -39,9 +39,10 @@ if (isProd) {
 
   mainWindow = createWindow('main', {
     height: 720,
-    width: 1000,
+    width: 500,
     minHeight: 720,
-    minWidth: 1000,
+    minWidth: 360,
+    maxWidth: 500,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -95,6 +96,18 @@ app.on('before-quit', () => {
 
   if (configurationProcessor) {
     configurationProcessor.stopProcessing()
+  }
+});
+
+ipcMain.on('toggle-expand', (_, isExpanded) => {
+  if (mainWindow) {
+    console.log(isExpanded)
+    const [width, height] = mainWindow.getSize();
+    const newWidth = !isExpanded ? 1250 : 500
+    mainWindow.setMinimumSize(!isExpanded ? 1000 : 500, 720)
+    mainWindow.setMaximumSize(!isExpanded ? 99999 : 500, 99999)
+    // console.log(mainWindow.getMaximumSize())
+    mainWindow.setSize(newWidth, 720, true);
   }
 });
 

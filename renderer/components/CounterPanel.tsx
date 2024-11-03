@@ -11,6 +11,8 @@ import { cn } from '../lib/utils';
 import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { useSelectProject } from "./hooks/project/use-select-project";
 import { X } from "lucide-react";
+import { useSelectTask } from "./hooks/task/use-select-task";
+import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 
 
 interface ProjectMeta {
@@ -25,14 +27,17 @@ interface ProjectData {
   meta: ProjectMeta;
 }
 interface CounterPanelProps {
-  token: string
+  token: string;
+  isExpanded: boolean;
+  toggleExpand: () => void
 }
 
-const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
+const CounterPanel: React.FC<CounterPanelProps> = ({ token, isExpanded, toggleExpand }) => {
 
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchProject, setSearchProject] = useState<ProjectData>()
   const { project_id, task_id } = useSelectProject();
+  const { init_project_id, init_task_id } = useSelectProjectTask()
 
   const pauseTask = async (project_id: number, task_id: number) => {
     window.electron.ipcRenderer.send('idle-stopped', { projectId: project_id, taskId: task_id });
@@ -66,19 +71,19 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
     isRunning,
     start,
     pause,
-  } = useTaskTimer(task_id, project_id, pauseTask);
+  } = useTaskTimer(init_task_id, init_project_id, pauseTask);
 
   useEffect(() => {
     if (isRunning && window.electron) {
       window.electron.ipcRenderer.send('timer-update', {
-        project_id: project_id,
-        selectedTaskId: task_id,
+        project_id: init_project_id,
+        selectedTaskId: init_task_id,
         hours,
         minutes,
         seconds
       });
     }
-  }, [hours, minutes, seconds, isRunning, project_id, task_id]);
+  }, [hours, minutes, seconds, isRunning, init_project_id, init_task_id]);
 
   useEffect(() => {
     if (project_id !== -1) {
@@ -138,10 +143,10 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   const handleTimerToggle = async () => {
     if (!isRunning) {
       start();
-      await startTask(project_id, task_id);
+      await startTask(init_project_id, init_task_id);
     } else {
       pause();
-      await pauseTask(project_id, task_id);
+      await pauseTask(init_project_id, init_task_id);
     }
   };
 
@@ -171,7 +176,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
   };
 
   return (
-    <div className='flex flex-col min-w-1/2 w-1/2 p-5 gap-4 border-r'>
+    <div className={cn('flex flex-col w-full  px-5 gap-4', isExpanded && 'w-1/2')}>
       <div className="flex flex-col gap-8">
         <p className='text-xl leading-[25px] font-normal'>My Projects</p>
         <p className='text-base leading-5 font-normal bg-[#294DFF] h-9 py-2 text-center text-white'>
@@ -180,11 +185,11 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
         <div className="flex items-center justify-center">
           <button
             onClick={handleTimerToggle}
-            disabled={project_id === -1}
+            disabled={init_project_id === -1}
           >
             {
               !isRunning ? (
-                <img src={`${project_id !== -1 ? '/images/start.png' : '/images/disable.png'}`} className={cn("w-[50px] h-[50px] cursor-pointer", project_id === -1 && 'cursor-not-allowed')} />
+                <img src={`${init_project_id !== -1 ? '/images/start.png' : '/images/disable.png'}`} className={cn("w-[50px] h-[50px] cursor-pointer", init_project_id === -1 && 'cursor-not-allowed')} />
               ) : (
                 <img src="/images/pause.png" className={cn("w-[50px] h-[50px] cursor-pointer")} />
               )
@@ -222,7 +227,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token }) => {
         </form>
       </div>
 
-      <Project token={token} searchProject={searchProject} />
+      <Project isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} searchProject={searchProject} />
     </div>
   );
 };

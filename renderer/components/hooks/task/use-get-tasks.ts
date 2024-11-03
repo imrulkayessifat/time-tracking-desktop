@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 interface UseGetTaskProps {
     taskPage: number;
+    status: string
     projectId: number;
     token: string;
 }
@@ -15,11 +16,11 @@ interface TaskData {
     };
 }
 
-export const useGetTasks = ({ taskPage, token, projectId }: UseGetTaskProps) => {
+export const useGetTasks = ({ taskPage, token, projectId, status }: UseGetTaskProps) => {
     const query = useQuery<TaskData>({
-        queryKey: ["tasks", taskPage, projectId],
+        queryKey: ["tasks", taskPage, projectId, status],
         queryFn: async () => {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/project/${projectId}?page=${taskPage}&limit=5`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/project/${projectId}?page=${taskPage}&limit=5&status=${status}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `${token}`,

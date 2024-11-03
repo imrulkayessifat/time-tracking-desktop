@@ -55,11 +55,11 @@ const Login = () => {
 
     }
     return (
-        <div className='flex items-center justify-center h-screen'>
+        <div className='flex pt-[120px] h-screen'>
             {
                 !session && (
-                    <div className='w-[540px] h-[412px]'>
-                        <div className='flex flex-col gap-8 items-center justify-center p-[30px]'>
+                    <div className='w-full min-w-[320px] h-[340px]'>
+                        <div className='flex flex-col gap-8 items-center p-[30px]'>
                             <img src='/Logo.png' />
                             <form onSubmit={handleSubmit} className='flex flex-col space-y-6'>
                                 <div className='flex flex-col gap-4'>
@@ -68,13 +68,13 @@ const Login = () => {
                                             <span>{error}</span>
                                         </p>
                                     </div>
-                                    <div>
+                                    <div className='flex flex-col gap-1'>
                                         <span className='text-base leading-5 font-normal'>Email*</span>
-                                        <input disabled={isLoading} type="email" name="email" placeholder="Enter your email" required className='border rounded-[6px] px-3 py-2 w-[480px] h-[42px]' />
+                                        <input disabled={isLoading} type="email" name="email" placeholder="Enter your email" required className='border rounded-[6px] px-3 py-2 w-full min-w-[320px] h-[42px]' />
                                     </div>
-                                    <div>
+                                    <div className='flex flex-col gap-1'>
                                         <span className='text-base leading-5 font-normal'>Password*</span>
-                                        <input disabled={isLoading} type="password" name="password" placeholder="Enter password" required className='border rounded-[6px] px-3 py-2 w-[480px] h-[42px]' />
+                                        <input disabled={isLoading} type="password" name="password" placeholder="Enter password" required className='border rounded-[6px] px-3 py-2 w-full min-w-[320px] h-[42px]' />
                                         <p className='text-[#294DFF] text-right mt-[10px] underline'>
                                             <a href="">Forget password</a>
                                         </p>
