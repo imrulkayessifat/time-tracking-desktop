@@ -37,11 +37,13 @@ interface TaskData {
 
 interface TasksPanelProps {
   isExpanded: boolean;
+  handleTimerToggle: () => Promise<void>
   token: string
 }
 
 const TasksPanel: React.FC<TasksPanelProps> = ({
   token,
+  handleTimerToggle,
   isExpanded
 }) => {
   const [status, setStatus] = useState('pending');
@@ -78,9 +80,6 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   // };
 
   // const {
-  //   seconds,
-  //   minutes,
-  //   hours,
   //   isRunning,
   //   start,
   //   pause,
@@ -265,7 +264,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
           </form>
         </div>
       </div>
-      <Task token={token} searchTask={searchTask} status={status} />
+      <Task token={token} handleTimerToggle={handleTimerToggle} searchTask={searchTask} status={status} />
     </div>
   )
 }

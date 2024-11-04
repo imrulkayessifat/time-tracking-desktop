@@ -24,7 +24,8 @@ interface ProjectData {
 interface ProjectsProps {
   token: string;
   isExpanded: boolean;
-  toggleExpand: () => void
+  toggleExpand: () => void;
+  handleTimerToggle: () => Promise<void>;
   searchProject: ProjectData
 }
 
@@ -32,11 +33,12 @@ const Project: React.FC<ProjectsProps> = ({
   token,
   isExpanded,
   toggleExpand,
+  handleTimerToggle,
   searchProject
 }) => {
   const [page, setPage] = useState(1)
   const { chosen_project_id, setTask } = useSelectTask()
-  const { setProjectTask } = useSelectProjectTask()
+  const { init_project_id, init_task_id, setProjectTask } = useSelectProjectTask()
   const { cleanupTimers } = useTimerCleanup();
   const { getProjectTime } = useGetTimer();
 
@@ -105,7 +107,7 @@ const Project: React.FC<ProjectsProps> = ({
               <tbody>
                 {
                   projects.map((project, index) => {
-                    const { hours, minutes, seconds } = getProjectTime(project.id);
+                    const { hours, minutes, seconds, isRunning } = getProjectTime(project.id);
                     return (
                       <tr
                         onClick={() => {
@@ -116,8 +118,20 @@ const Project: React.FC<ProjectsProps> = ({
                         key={index}
                         className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
                       >
-                        <th scope="row" className={cn("px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
-                          {project.name}
+                        <th scope="row" className={cn("flex gap-3 px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
+                          <button
+                            onClick={handleTimerToggle}
+                            disabled={init_project_id === -1}
+                          >
+                            {
+                              !isRunning ? (
+                                <img src={`${init_project_id === project.id && init_task_id === -1 ? '/images/individualstart.svg' : '/images/disable.png'}`} className={cn("w-[20px] h-[20px] cursor-pointer", init_project_id === -1 && 'cursor-not-allowed')} />
+                              ) : (
+                                <img src="/images/pause.png" className={cn("w-[20px] h-[20px] cursor-pointer")} />
+                              )
+                            }
+                          </button>
+                          <span>{project.name}</span>
                         </th>
                         <td className="px-6 py-4">
                           {formatTime(hours, minutes, seconds)}

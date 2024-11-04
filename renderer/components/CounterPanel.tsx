@@ -28,62 +28,76 @@ interface ProjectData {
 }
 interface CounterPanelProps {
   token: string;
+  hours: number
+  minutes: number
+  seconds: number
+  isRunning: boolean
   isExpanded: boolean;
+  handleTimerToggle: () => Promise<void>
   toggleExpand: () => void
 }
 
-const CounterPanel: React.FC<CounterPanelProps> = ({ token, isExpanded, toggleExpand }) => {
+const CounterPanel: React.FC<CounterPanelProps> = ({
+  token,
+  isExpanded,
+  toggleExpand,
+  handleTimerToggle,
+  hours,
+  minutes,
+  seconds,
+  isRunning
+}) => {
 
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchProject, setSearchProject] = useState<ProjectData>()
   const { project_id, task_id } = useSelectProject();
   const { init_project_id, init_task_id } = useSelectProjectTask()
 
-  const pauseTask = async (project_id: number, task_id: number) => {
-    window.electron.ipcRenderer.send('idle-stopped', { projectId: project_id, taskId: task_id });
-    const requestBody = task_id === -1
-      ? { project_id }
-      : { project_id, task_id };
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `${token}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-    const { success } = await res.json();
-    if (!success) {
-      toast.error(`Track Pause Something went wrong ${project_id} ${task_id}`, {
-        duration: 1000,
-      });
-      return;
-    }
-    toast.success(`Task track paused : ${project_id} ${task_id}`, {
-      duration: 1000,
-    });
-  };
+  // const pauseTask = async (project_id: number, task_id: number) => {
+  //   window.electron.ipcRenderer.send('idle-stopped', { projectId: project_id, taskId: task_id });
+  //   const requestBody = task_id === -1
+  //     ? { project_id }
+  //     : { project_id, task_id };
+  //   const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Authorization': `${token}`
+  //     },
+  //     body: JSON.stringify(requestBody)
+  //   });
+  //   const { success } = await res.json();
+  //   if (!success) {
+  //     toast.error(`Track Pause Something went wrong ${project_id} ${task_id}`, {
+  //       duration: 1000,
+  //     });
+  //     return;
+  //   }
+  //   toast.success(`Task track paused : ${project_id} ${task_id}`, {
+  //     duration: 1000,
+  //   });
+  // };
 
-  const {
-    seconds,
-    minutes,
-    hours,
-    isRunning,
-    start,
-    pause,
-  } = useTaskTimer(init_task_id, init_project_id, pauseTask);
+  // const {
+  //   seconds,
+  //   minutes,
+  //   hours,
+  //   isRunning,
+  //   start,
+  //   pause,
+  // } = useTaskTimer(init_task_id, init_project_id, pauseTask);
 
-  useEffect(() => {
-    if (isRunning && window.electron) {
-      window.electron.ipcRenderer.send('timer-update', {
-        project_id: init_project_id,
-        selectedTaskId: init_task_id,
-        hours,
-        minutes,
-        seconds
-      });
-    }
-  }, [hours, minutes, seconds, isRunning, init_project_id, init_task_id]);
+  // useEffect(() => {
+  //   if (isRunning && window.electron) {
+  //     window.electron.ipcRenderer.send('timer-update', {
+  //       project_id: init_project_id,
+  //       selectedTaskId: init_task_id,
+  //       hours,
+  //       minutes,
+  //       seconds
+  //     });
+  //   }
+  // }, [hours, minutes, seconds, isRunning, init_project_id, init_task_id]);
 
   useEffect(() => {
     if (project_id !== -1) {
@@ -94,61 +108,61 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token, isExpanded, toggleEx
   }, [project_id])
 
   // Effect for electron IPC communication
-  useEffect(() => {
-    if (!window.electron) return;
+  // useEffect(() => {
+  //   if (!window.electron) return;
 
-    const handleToggleTimer = () => {
-      if (isRunning) {
-        pause();
-      } else {
-        start();
-      }
-      window.electron.ipcRenderer.send('ds', !isRunning);
-    };
+  //   const handleToggleTimer = () => {
+  //     if (isRunning) {
+  //       pause();
+  //     } else {
+  //       start();
+  //     }
+  //     window.electron.ipcRenderer.send('ds', !isRunning);
+  //   };
 
-    const unsubscribe = window.electron.ipcRenderer.on('toggle-timer', handleToggleTimer);
-    return unsubscribe;
-  }, [isRunning, pause, start]);
+  //   const unsubscribe = window.electron.ipcRenderer.on('toggle-timer', handleToggleTimer);
+  //   return unsubscribe;
+  // }, [isRunning, pause, start]);
 
-  const startTask = async (project_id: number, task_id: number) => {
-    window.electron.ipcRenderer.send('idle-started', { project_id, task_id });
-    const requestBody = task_id === -1
-      ? { project_id }
-      : { project_id, task_id };
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/start`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `${token}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-    const { success } = await res.json();
+  // const startTask = async (project_id: number, task_id: number) => {
+  //   window.electron.ipcRenderer.send('idle-started', { project_id, task_id });
+  //   const requestBody = task_id === -1
+  //     ? { project_id }
+  //     : { project_id, task_id };
+  //   const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/start`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Authorization': `${token}`
+  //     },
+  //     body: JSON.stringify(requestBody)
+  //   });
+  //   const { success } = await res.json();
 
-    if (!success) {
-      toast.error(`Track Start : Something went wrong ${project_id} ${task_id}`, {
-        duration: 1000,
-      });
-      return;
-    }
-    toast.success(`Task track started : ${project_id} ${task_id}`, {
-      duration: 1000,
-    });
-  };
+  //   if (!success) {
+  //     toast.error(`Track Start : Something went wrong ${project_id} ${task_id}`, {
+  //       duration: 1000,
+  //     });
+  //     return;
+  //   }
+  //   toast.success(`Task track started : ${project_id} ${task_id}`, {
+  //     duration: 1000,
+  //   });
+  // };
 
   const formatTime = (value: number) => {
     return value.toString().padStart(2, '0');
   };
 
-  const handleTimerToggle = async () => {
-    if (!isRunning) {
-      start();
-      await startTask(init_project_id, init_task_id);
-    } else {
-      pause();
-      await pauseTask(init_project_id, init_task_id);
-    }
-  };
+  // const handleTimerToggle = async () => {
+  //   if (!isRunning) {
+  //     start();
+  //     await startTask(init_project_id, init_task_id);
+  //   } else {
+  //     pause();
+  //     await pauseTask(init_project_id, init_task_id);
+  //   }
+  // };
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>): void => {
     setSearchValue(event.target.value);
@@ -227,7 +241,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({ token, isExpanded, toggleEx
         </form>
       </div>
 
-      <Project isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} searchProject={searchProject} />
+      <Project isExpanded={isExpanded} handleTimerToggle={handleTimerToggle} toggleExpand={toggleExpand} token={token} searchProject={searchProject} />
     </div>
   );
 };

@@ -23,17 +23,19 @@ interface TaskData {
 interface TaskProps {
     token: string;
     status: string;
+    handleTimerToggle: () => Promise<void>
     searchTask: TaskData;
 }
 
 const Task: React.FC<TaskProps> = ({
     token,
     status,
+    handleTimerToggle,
     searchTask
 }) => {
     const [taskPage, setTaskPage] = useState(1)
     const { project_id, setProject } = useSelectProject()
-    const { setProjectTask } = useSelectProjectTask()
+    const { init_project_id, init_task_id, setProjectTask } = useSelectProjectTask()
     const { getTaskTime } = useGetTimer();
     const { chosen_project_id, chosen_task_id, setTask } = useSelectTask()
 
@@ -98,7 +100,7 @@ const Task: React.FC<TaskProps> = ({
                             <tbody>
                                 {
                                     tasks.map((task, index) => {
-                                        const { hours, minutes, seconds } = getTaskTime(task.project_id, task.id);
+                                        const { hours, minutes, seconds, isRunning } = getTaskTime(task.project_id, task.id);
                                         return (
                                             <tr
                                                 onClick={() => {
@@ -109,8 +111,20 @@ const Task: React.FC<TaskProps> = ({
                                                 key={index}
                                                 className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
                                             >
-                                                <th scope="row" className={cn("px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", task.id === chosen_task_id && 'text-white')}>
-                                                    {task.name}
+                                                <th scope="row" className={cn("flex gap-3 px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", task.id === chosen_task_id && 'text-white')}>
+                                                    <button
+                                                        onClick={handleTimerToggle}
+                                                        disabled={init_project_id === -1}
+                                                    >
+                                                        {
+                                                            !isRunning ? (
+                                                                <img src={`${init_project_id === task.project_id && init_task_id === task.id ? '/images/individualstart.svg' : '/images/disable.png'}`} className={cn("w-[20px] h-[20px] cursor-pointer", init_project_id === -1 && 'cursor-not-allowed')} />
+                                                            ) : (
+                                                                <img src="/images/pause.png" className={cn("w-[20px] h-[20px] cursor-pointer")} />
+                                                            )
+                                                        }
+                                                    </button>
+                                                    <span>{task.name}</span>
                                                 </th>
                                                 <td className="px-6 py-4 text-sm">
                                                     {task.createdAt.split('T')[0]}

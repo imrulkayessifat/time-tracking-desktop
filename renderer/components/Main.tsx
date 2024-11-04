@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/router";
+import { toast } from "sonner"
 
 import {
   DropdownMenu,
@@ -10,6 +11,8 @@ import {
 } from "./ui/dropdown-menu";
 import TasksPanel from "./TasksPanel";
 import CounterPanel from "./CounterPanel";
+import { useSelectProjectTask } from "./hooks/use-select-projecttask";
+import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 
 interface MainProps {
   token: string
@@ -24,7 +27,106 @@ const Main: React.FC<MainProps> = ({
     setIsExpanded((prev) => !prev);
     window.electron.ipcRenderer.send('toggle-expand', isExpanded);
   };
-  console.log(isExpanded)
+  const { init_project_id, init_task_id } = useSelectProjectTask()
+
+  const pauseTask = async (project_id: number, task_id: number) => {
+    window.electron.ipcRenderer.send('idle-stopped', { projectId: project_id, taskId: task_id });
+    const requestBody = task_id === -1
+      ? { project_id }
+      : { project_id, task_id };
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${token}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+    const { success } = await res.json();
+    if (!success) {
+      toast.error(`Track Pause Something went wrong ${project_id} ${task_id}`, {
+        duration: 1000,
+      });
+      return;
+    }
+    toast.success(`Task track paused : ${project_id} ${task_id}`, {
+      duration: 1000,
+    });
+  };
+
+  const {
+    seconds,
+    minutes,
+    hours,
+    isRunning,
+    start,
+    pause,
+  } = useTaskTimer(init_task_id, init_project_id, pauseTask);
+
+  useEffect(() => {
+    if (isRunning && window.electron) {
+      window.electron.ipcRenderer.send('timer-update', {
+        project_id: init_project_id,
+        selectedTaskId: init_task_id,
+        hours,
+        minutes,
+        seconds
+      });
+    }
+  }, [hours, minutes, seconds, isRunning, init_project_id, init_task_id]);
+
+  // Effect for electron IPC communication
+  useEffect(() => {
+    if (!window.electron) return;
+
+    const handleToggleTimer = () => {
+      if (isRunning) {
+        pause();
+      } else {
+        start();
+      }
+      window.electron.ipcRenderer.send('ds', !isRunning);
+    };
+
+    const unsubscribe = window.electron.ipcRenderer.on('toggle-timer', handleToggleTimer);
+    return unsubscribe;
+  }, [isRunning, pause, start]);
+
+  const startTask = async (project_id: number, task_id: number) => {
+    window.electron.ipcRenderer.send('idle-started', { project_id, task_id });
+    const requestBody = task_id === -1
+      ? { project_id }
+      : { project_id, task_id };
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${token}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+    const { success } = await res.json();
+
+    if (!success) {
+      toast.error(`Track Start : Something went wrong ${project_id} ${task_id}`, {
+        duration: 1000,
+      });
+      return;
+    }
+    toast.success(`Task track started : ${project_id} ${task_id}`, {
+      duration: 1000,
+    });
+  };
+
+  const handleTimerToggle = async () => {
+    if (!isRunning) {
+      start();
+      await startTask(init_project_id, init_task_id);
+    } else {
+      pause();
+      await pauseTask(init_project_id, init_task_id);
+    }
+  };
   return (
     <div className="flex flex-col w-full h-screen">
       <div className="flex justify-end mt-[10px]">
@@ -46,10 +148,10 @@ const Main: React.FC<MainProps> = ({
         </DropdownMenu>
       </div>
       <div className="flex w-full">
-        <CounterPanel isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} />
+        <CounterPanel hours={hours} minutes={minutes} seconds={seconds} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} />
         {
           isExpanded && (
-            <TasksPanel isExpanded={isExpanded} token={token} />
+            <TasksPanel handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} token={token} />
           )
         }
       </div>
