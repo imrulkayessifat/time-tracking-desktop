@@ -145,7 +145,7 @@ export async function readFirefoxHistory() {
     const latestVisits = await queryFirefoxDatabase(dbPath);
     
     if (latestVisits.length > 0) {
-      console.log("Latest visited URLs: ", latestVisits);
+      // console.log("Latest visited URLs: ", latestVisits);
       return latestVisits[0]; // Returning the most recent visit
     } else {
       console.log('No recent history found.');

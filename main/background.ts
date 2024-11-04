@@ -124,11 +124,12 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
 
   if (elapsedMinutes >= interval) {
     if (info.project_id !== -1) {
-      startTracking(info.project_id, info.selectedTaskId);
+      // startTracking(info.project_id, info.selectedTaskId);
       captureAndSaveScreenshot(info);
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
+  startTracking(info.project_id, info.selectedTaskId);
 });
 
 ipcMain.on('idle-started', (_, { project_id, task_id }) => {
