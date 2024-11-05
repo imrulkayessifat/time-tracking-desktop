@@ -9,6 +9,7 @@ import serve from 'electron-serve'
 
 import { createWindow } from './helpers'
 import startTracking from './helpers/active-log'
+import startDurationTracking from './helpers/active-duration'
 import { TaskIdleTracker } from './helpers/tracker/idle-tracker'
 import { setupAuthIPC } from './helpers/auth-ipc-handler';
 import captureAndSaveScreenshot from './helpers/capture-screenshot'
@@ -22,11 +23,11 @@ const isProd = process.env.NODE_ENV === 'production'
 let mainWindow: BrowserWindow | null = null;
 let lastScreenshotTime = { minutes: -1, hours: -1 };
 
-
 let screenshotProcessor: ScreenshotProcessor;
 let activityProcessor: ActivityProcessor;
 let idleTracker: TaskIdleTracker;
 let configurationProcessor: ConfigurationProcessor;
+let apiEndpoint: string;
 
 if (isProd) {
   serve({ directory: 'app' })
@@ -65,7 +66,8 @@ if (isProd) {
 
   setupAuthIPC();
   // Load configuration
-  const { apiEndpoint, intervalMs } = await loadProcessorConfig();
+  const { apiEndpoint: configApiEndpoint, intervalMs } = await loadProcessorConfig();
+  apiEndpoint = configApiEndpoint;
   screenshotProcessor = new ScreenshotProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
   activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/configuration`, 120000)
@@ -124,12 +126,12 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
 
   if (elapsedMinutes >= interval) {
     if (info.project_id !== -1) {
-      // startTracking(info.project_id, info.selectedTaskId);
+      startTracking(info.project_id, info.selectedTaskId);
       captureAndSaveScreenshot(info);
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
-  startTracking(info.project_id, info.selectedTaskId);
+  startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
 });
 
 ipcMain.on('idle-started', (_, { project_id, task_id }) => {
