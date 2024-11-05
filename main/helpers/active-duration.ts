@@ -1,3 +1,4 @@
+import { getFirefoxActiveTab } from './activetab/getFirefoxActiveTab';
 import { readFirefoxHistory } from './history/firefox-history';
 import { readChromeHistory } from './history/chrome-history';
 import { readSafariHistory } from './history/safari-history';
@@ -109,20 +110,20 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                     end_time: lastActiveWindow.end_time,
                     ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
                 };
-                const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({
-                        data: [
-                            {
-                                ...payload
-                            }
-                        ]
-                    })
-                });
+                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+                //     method: 'POST',
+                //     headers: getAuthHeaders(),
+                //     body: JSON.stringify({
+                //         data: [
+                //             {
+                //                 ...payload
+                //             }
+                //         ]
+                //     })
+                // });
 
-                const data = await response.json()
-                console.log("Previous active window log:", data);
+                // const data = await response.json()
+                // console.log("Previous active window log:", data);
             }
 
             // Initialize new active window data
@@ -157,28 +158,28 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
         inactivityTimeout = setTimeout(async () => {
             if (lastActiveWindow) {
                 lastActiveWindow.end_time = currentTime;
-                const payload = {
-                    project_id: lastActiveWindow.project_id,
-                    app_name: lastActiveWindow.app_name,
-                    start_time: lastActiveWindow.start_time,
-                    end_time: lastActiveWindow.end_time,
-                    ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
-                };
-                
-                const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({
-                        data: [
-                            {
-                                ...payload
-                            }
-                        ]
-                    })
-                });
+                // const payload = {
+                //     project_id: lastActiveWindow.project_id,
+                //     app_name: lastActiveWindow.app_name,
+                //     start_time: lastActiveWindow.start_time,
+                //     end_time: lastActiveWindow.end_time,
+                //     ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
+                // };
 
-                const data = await response.json()
-                console.log("Tracking stopped, final active window duration log:", data);
+                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+                //     method: 'POST',
+                //     headers: getAuthHeaders(),
+                //     body: JSON.stringify({
+                //         data: [
+                //             {
+                //                 ...payload
+                //             }
+                //         ]
+                //     })
+                // });
+
+                // const data = await response.json()
+                // console.log("Tracking stopped, final active window duration log:", data);
                 lastActiveWindow = null; // Reset after logging
             }
         }, INACTIVITY_DURATION);
