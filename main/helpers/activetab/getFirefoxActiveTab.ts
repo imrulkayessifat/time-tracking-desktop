@@ -3,29 +3,15 @@ import path from 'path';
 import { homedir } from 'os';
 import { promises as fs } from 'fs';
 import { copyFile } from 'fs/promises';
-const { uncompress } = require('lz4-napi');
+import * as lz4 from 'lz4js';
 
-interface FirefoxTab {
+interface FirefoxActiveTab {
     url: string;
     title: string;
-    lastAccessed: number;
-    isActive: boolean;
+    last_accessed: number;
 }
 
-// Helper functions remain the same
-async function findDefaultProfile() {
-    const profilesPath = await getFirefoxProfilePath();
-    const profiles = await fs.readdir(profilesPath);
-    const defaultProfile = profiles.find(profile =>
-        profile.endsWith('.default') || profile.endsWith('.default-release')
-    );
-
-    if (!defaultProfile) {
-        throw new Error('No default Firefox profile found');
-    }
-    return path.join(profilesPath, defaultProfile);
-}
-
+// Reusing the profile path functions from the original code
 function getFirefoxProfilePath() {
     switch (process.platform) {
         case 'win32':
@@ -37,170 +23,185 @@ function getFirefoxProfilePath() {
     }
 }
 
-async function copySessionFile(sessionPath: string): Promise<string> {
+async function findDefaultProfile() {
+    const profilesPath = getFirefoxProfilePath();
+    const profiles = await fs.readdir(profilesPath);
+    const defaultProfile = profiles.find(profile =>
+        profile.endsWith('.default') || profile.endsWith('.default-release')
+    );
+
+    if (!defaultProfile) {
+        throw new Error('No default Firefox profile found');
+    }
+    return path.join(profilesPath, defaultProfile);
+}
+
+async function copySessionStoreFiles(filePath: string): Promise<string> {
     const timestamp = Date.now();
     const tempPath = path.join(app.getPath('temp'), `recovery-${timestamp}.jsonlz4`);
-    await copyFile(sessionPath, tempPath);
+
+    await copyFile(filePath, tempPath);
     return tempPath;
 }
 
-async function decompressLz4File(inputPath: string): Promise<Buffer> {
-    // Read the compressed file
-    const compressedData = await fs.readFile(inputPath);
+async function decompressLZ4(input: Buffer): Promise<Buffer> {
+    // Read the uncompressed size from the header (4 bytes, little-endian)
+    const uncompressedSize = input.readUInt32LE(0);
 
-    if (!Buffer.isBuffer(compressedData)) {
-        throw new Error('Invalid input: Expected Buffer');
+    // Create output buffer of the specified size
+    const output = Buffer.alloc(uncompressedSize);
+
+    // Get the compressed data (skipping the 4-byte header)
+    const compressed = input.slice(4);
+
+    let pos = 0;  // Position in compressed data
+    let outPos = 0;  // Position in output buffer
+
+    while (pos < compressed.length) {
+        // Read token
+        const token = compressed[pos++];
+
+        // Get literal length
+        let literalLength = token >> 4;
+        if (literalLength === 15) {
+            let len;
+            do {
+                len = compressed[pos++];
+                literalLength += len;
+            } while (len === 255);
+        }
+
+        // Copy literals
+        compressed.copy(output, outPos, pos, pos + literalLength);
+        pos += literalLength;
+        outPos += literalLength;
+
+        if (pos >= compressed.length) break;
+
+        // Get match offset
+        const offset = compressed.readUInt16LE(pos);
+        pos += 2;
+
+        // Get match length
+        let matchLength = token & 0x0F;
+        if (matchLength === 15) {
+            let len;
+            do {
+                len = compressed[pos++];
+                matchLength += len;
+            } while (len === 255);
+        }
+        matchLength += 4;
+
+        // Copy match
+        let matchPos = outPos - offset;
+        while (matchLength--) {
+            output[outPos++] = output[matchPos++];
+        }
     }
 
-    // Firefox's LZ4 files start with a magic number "mozLz40\0" (8 bytes)
-    const header = compressedData.slice(0, 8).toString();
+    return output;
+}
 
-    // Debug logging
-    console.log('File size:', compressedData.length);
-    console.log('Header:', header);
-    console.log('Header bytes:', Array.from(compressedData.slice(0, 8)));
-
-    if (header !== 'mozLz40\0') {
-        throw new Error('Invalid Firefox session file format');
-    }
-
-    // Skip the 8-byte header
-    const withoutHeader = compressedData.slice(8);
-
-    // First 4 bytes contain the original size (little-endian)
-    const originalSize = withoutHeader.readUInt32LE(0);
-    console.log('Original size:', originalSize);
-
-    // Get the actual compressed data (skip first 4 bytes containing size)
-    const compressedBuffer = withoutHeader.slice(4);
-
+async function readJSONLZ4File(filePath: string): Promise<any> {
     try {
+        const data = await fs.readFile(filePath);
 
-        // Call uncompress with explicit Buffer types
-        const decompressed = await uncompress(compressedBuffer);
+        // Check for Mozilla LZ4 magic number
+        const magic = data.slice(0, 8);
+        const expectedMagic = Buffer.from('mozLz40\0', 'utf8');
 
-        // Debug: Log the first few bytes of decompressed data
-        console.log('First 100 bytes of decompressed data:',
-            decompressed.slice(0, 100).toString('hex'));
-        console.log('First 100 chars of decompressed string:',
-            decompressed.slice(0, 100).toString('utf8'));
+        if (!magic.equals(expectedMagic)) {
+            throw new Error('invalid magic number');
+        }
 
-        return decompressed;
+        // Get the compressed data (skipping 8-byte header)
+        const compressed = data.slice(8);
+
+        try {
+            // Try custom decompression first
+            const decompressed = await decompressLZ4(compressed);
+            const jsonString = decompressed.toString('utf8');
+            return JSON.parse(jsonString);
+        } catch (decompressionError) {
+            console.error('Custom decompression failed:', decompressionError);
+
+            // Fallback to lz4js library
+            const decompressedSize = compressed.readUInt32LE(0);
+            const compressedData = compressed.slice(4);
+            const decompressedBuffer = Buffer.alloc(decompressedSize);
+            lz4.decompress(compressedData, decompressedBuffer);
+
+            const jsonString = decompressedBuffer.toString('utf8');
+            return JSON.parse(jsonString);
+        }
     } catch (error) {
-        console.error('Decompression error details:', error);
-        throw new Error(`Decompression failed: ${error.message}`);
+        throw new Error(`Failed to read session file: ${error.message}`);
     }
 }
 
-export async function getFirefoxActiveTab(): Promise<FirefoxTab | null> {
+export async function getFirefoxActiveTab(): Promise<FirefoxActiveTab | null> {
     try {
         const profilePath = await findDefaultProfile();
-        const sessionStorePath = path.join(profilePath, 'sessionstore-backups', 'recovery.jsonlz4');
 
-        console.log('Session file path:', sessionStorePath);
+        // Firefox stores session information in multiple possible files
+        const sessionFiles = [
+            // 'sessionstore.jsonlz4',
+            'sessionstore-backups/recovery.jsonlz4',
+            // 'sessionstore-backups/previous.jsonlz4'
+        ];
 
-        // Check if session file exists
-        try {
-            await fs.access(sessionStorePath);
-        } catch (error) {
-            throw new Error(`Firefox session file not found: ${sessionStorePath}`);
+        let sessionData = null;
+
+        // Try each possible session file location
+        for (const sessionFile of sessionFiles) {
+            const filePath = path.join(profilePath, sessionFile);
+            try {
+                await fs.access(filePath);
+
+                sessionData = await readJSONLZ4File(filePath);
+
+            } catch (error) {
+                // File doesn't exist or isn't accessible, try next one
+                continue;
+            }
         }
 
-        // Create a temporary copy of the session file
-        const tempSessionPath = await copySessionFile(sessionStorePath);
-        console.log('Temporary session file created at:', tempSessionPath);
-
-        try {
-            // Decompress the session file
-            const decompressedData = await decompressLz4File(tempSessionPath);
-
-            if (!decompressedData || !Buffer.isBuffer(decompressedData)) {
-                throw new Error('Invalid decompressed data format');
-            }
-
-            let sessionData;
-            try {
-                // Try different encodings if UTF-8 fails
-                const encodings = ['utf8', 'utf16le', 'latin1'];
-                let jsonString = '';
-                let validJson = false;
-
-                for (const encoding of encodings) {
-                    try {
-                        jsonString = decompressedData.toString(encoding as BufferEncoding);
-                        // Test if it's valid JSON
-                        JSON.parse(jsonString);
-                        validJson = true;
-                        console.log(`Successfully parsed using ${encoding} encoding`);
-                        break;
-                    } catch (e) {
-                        console.log(`Failed to parse with ${encoding} encoding:`, e.message);
-                        continue;
-                    }
-                }
-
-                if (!validJson) {
-                    // If all encodings fail, try to clean the string
-                    jsonString = decompressedData.toString('utf8')
-                        .replace(/^\uFEFF/, '') // Remove BOM if present
-                        .trim();
-
-                    // Log the start of the string for debugging
-                    console.log('Clean JSON string start:', jsonString.substring(0, 100));
-
-                    sessionData = JSON.parse(jsonString);
-                } else {
-                    sessionData = JSON.parse(jsonString);
-                }
-            } catch (error) {
-                console.error('JSON Parse Error:', error);
-                console.log('Decompressed data length:', decompressedData.length);
-                throw new Error(`Failed to parse session data: ${error.message}`);
-            }
-
-            if (!sessionData?.windows?.length) {
-                throw new Error('No windows found in session data');
-            }
-
-            // Find the most recently active window
-            const activeWindow = sessionData.windows.reduce((latest: any, current: any) => {
-                return (!latest || current.lastAccessed > latest.lastAccessed) ? current : latest;
-            }, null);
-
-            if (!activeWindow?.tabs?.length) {
-                return null;
-            }
-
-            // Find the active tab in the most recent window
-            const activeTab = activeWindow.tabs.find((tab: any) => tab.active);
-
-            if (!activeTab?.entries?.length || !activeTab.index) {
-                return null;
-            }
-
-            // Get the most recent entry in the tab's history
-            const currentEntry = activeTab.entries[activeTab.index - 1];
-
-            if (!currentEntry?.url || !currentEntry?.title) {
-                return null;
-            }
-
-            return {
-                url: currentEntry.url,
-                title: currentEntry.title,
-                lastAccessed: activeTab.lastAccessed || Date.now(),
-                isActive: true
-            };
-        } finally {
-            // Clean up temporary file
-            try {
-                await fs.unlink(tempSessionPath);
-            } catch (error) {
-                console.error('Failed to cleanup temporary session file:', error);
-            }
+        if (!sessionData) {
+            throw new Error('No valid session file found');
         }
+
+        // Find the most recently accessed window
+        const activeWindow = sessionData.windows.reduce((latest: any, window: any) => {
+            console.log("latest:",latest)
+            console.log("window:",window)
+            return (!latest || window.lastAccessed > latest.lastAccessed) ? window : latest;
+        }, null);
+
+        if (!activeWindow || !activeWindow.tabs) {
+            return null;
+        }
+
+        // Find the most recently accessed tab
+        const activeTab = activeWindow.tabs.reduce((latest: any, tab: any) => {
+            return (!latest || tab.lastAccessed > latest.lastAccessed) ? tab : latest;
+        }, null);
+
+        if (!activeTab || !activeTab.entries || activeTab.entries.length === 0) {
+            return null;
+        }
+
+        // Get the current entry from the tab
+        const currentEntry = activeTab.entries[activeTab.index - 1] || activeTab.entries[activeTab.entries.length - 1];
+
+        // For debugging
+        return {
+            url: currentEntry.url,
+            title: currentEntry.title,
+            last_accessed: activeWindow.lastAccessed
+        };
+
     } catch (error) {
-        console.error('Firefox active tab error:', error);
-        throw new Error(`Failed to read Firefox active tab: ${error.message}`);
+        throw new Error(`Failed to get Firefox active tab: ${error.message}`);
     }
 }

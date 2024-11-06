@@ -118,8 +118,8 @@ ipcMain.on('message', async (event, arg) => {
 })
 
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
-  // const interval = configurationProcessor.getScreenShotInterval();
-  const interval = 2
+  const interval = configurationProcessor.getScreenShotInterval() || 2;
+  // const interval = 2
 
   console.log("interval", interval)
   const elapsedMinutes = (info.hours * 60 + info.minutes) - (lastScreenshotTime.hours * 60 + lastScreenshotTime.minutes);
@@ -131,7 +131,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
-  startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
+  // startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
 });
 
 ipcMain.on('idle-started', (_, { project_id, task_id }) => {

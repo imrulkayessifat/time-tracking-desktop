@@ -47,7 +47,7 @@ const getBrowserHistory = async (name: string) => {
     if (browserName.includes('chrome')) {
         return await readChromeHistory();
     } else if (browserName.includes('firefox')) {
-        return await readFirefoxHistory();
+        return await getFirefoxActiveTab();
     } else if (browserName.includes('safari')) {
         return await readSafariHistory();
     } else if (browserName.includes('edge')) {
@@ -97,92 +97,97 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
         const result: Result = await activeWindow();
         const currentTime = getLocalTime();
 
-        // Check if this window is different from the last tracked one
-        if (!lastActiveWindow || lastActiveWindow.app_name !== result.owner.name) {
-            if (lastActiveWindow) {
-                // Update the end_time of the previous window when a new window is detected
-                lastActiveWindow.end_time = currentTime;
-
-                const payload = {
-                    project_id: lastActiveWindow.project_id,
-                    app_name: lastActiveWindow.app_name,
-                    start_time: lastActiveWindow.start_time,
-                    end_time: lastActiveWindow.end_time,
-                    ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
-                };
-                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                //     method: 'POST',
-                //     headers: getAuthHeaders(),
-                //     body: JSON.stringify({
-                //         data: [
-                //             {
-                //                 ...payload
-                //             }
-                //         ]
-                //     })
-                // });
-
-                // const data = await response.json()
-                // console.log("Previous active window log:", data);
-            }
-
-            // Initialize new active window data
-            let newWindow: DataType = {
-                project_id,
-                task_id,
-                app_name: result.owner.name,
-                url: '',
-                start_time: currentTime, // New window's start_time is the current time
-                end_time: currentTime // Initialize end_time as start_time; will update when a new window is detected
-            };
-
-            // Check if the current window is a browser and get its history
-            if (isBrowser(result.owner.name)) {
-                const browserHistory = await getBrowserHistory(result.owner.name);
-                console.log("active", browserHistory)
-                newWindow.url = browserHistory?.url ?? '';
-            }
-
-            if (isMacResult(result) && result?.url) {
-                newWindow.url = result.url ?? '';
-            }
-
-            // Set the new active window as the lastActiveWindow
-            lastActiveWindow = newWindow;
+        // Check if the current window is different from the last tracked one
+        // or if the URL has changed in the browser
+        let currentUrl = '';
+        if (isBrowser(result.owner.name)) {
+            const browserHistory = await getBrowserHistory(result.owner.name);
+            currentUrl = browserHistory?.url ?? '';
+        } else if (isMacResult(result) && result?.url) {
+            currentUrl = result.url;
         }
-        if (inactivityTimeout) {
-            clearTimeout(inactivityTimeout);
-        }
+
+        console.log("currenturl", currentUrl)
+
+        // Check if window has changed (either different app or different URL)
+        // if (!lastActiveWindow ||
+        //     lastActiveWindow.app_name !== result.owner.name ||
+        //     (currentUrl && lastActiveWindow.url !== currentUrl)) {
+
+        //     if (lastActiveWindow) {
+        //         // Update the end_time of the previous window when a new window is detected
+        //         lastActiveWindow.end_time = currentTime;
+
+        //         const payload = {
+        //             project_id: lastActiveWindow.project_id,
+        //             app_name: lastActiveWindow.app_name,
+        //             url: lastActiveWindow.url,
+        //             start_time: lastActiveWindow.start_time,
+        //             end_time: lastActiveWindow.end_time,
+        //             ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
+        //         };
+
+        //         // Uncomment when ready to send data
+        //         // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+        //         //     method: 'POST',
+        //         //     headers: getAuthHeaders(),
+        //         //     body: JSON.stringify({
+        //         //         data: [
+        //         //             {
+        //         //                 ...payload
+        //         //             }
+        //         //         ]
+        //         //     })
+        //         // });
+        //         // const data = await response.json()
+        //         console.log("Previous active window log:", lastActiveWindow);
+        //     }
+
+        //     // Initialize new active window data
+        //     lastActiveWindow = {
+        //         project_id,
+        //         task_id,
+        //         app_name: result.owner.name,
+        //         url: currentUrl,
+        //         start_time: currentTime,
+        //         end_time: currentTime
+        //     };
+        // }
+
+        // if (inactivityTimeout) {
+        //     clearTimeout(inactivityTimeout);
+        // }
 
         // Set a new timeout to log the current active window when tracking stops
-        inactivityTimeout = setTimeout(async () => {
-            if (lastActiveWindow) {
-                lastActiveWindow.end_time = currentTime;
-                // const payload = {
-                //     project_id: lastActiveWindow.project_id,
-                //     app_name: lastActiveWindow.app_name,
-                //     start_time: lastActiveWindow.start_time,
-                //     end_time: lastActiveWindow.end_time,
-                //     ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
-                // };
+        // inactivityTimeout = setTimeout(async () => {
+        //     if (lastActiveWindow) {
+        //         lastActiveWindow.end_time = currentTime;
+        //         const payload = {
+        //             project_id: lastActiveWindow.project_id,
+        //             app_name: lastActiveWindow.app_name,
+        //             url: lastActiveWindow.url,
+        //             start_time: lastActiveWindow.start_time,
+        //             end_time: lastActiveWindow.end_time,
+        //             ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
+        //         };
 
-                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                //     method: 'POST',
-                //     headers: getAuthHeaders(),
-                //     body: JSON.stringify({
-                //         data: [
-                //             {
-                //                 ...payload
-                //             }
-                //         ]
-                //     })
-                // });
-
-                // const data = await response.json()
-                // console.log("Tracking stopped, final active window duration log:", data);
-                lastActiveWindow = null; // Reset after logging
-            }
-        }, INACTIVITY_DURATION);
+        //         // Uncomment when ready to send data
+        //         // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+        //         //     method: 'POST',
+        //         //     headers: getAuthHeaders(),
+        //         //     body: JSON.stringify({
+        //         //         data: [
+        //         //             {
+        //         //                 ...payload
+        //         //             }
+        //         //         ]
+        //         //     })
+        //         // });
+        //         // const data = await response.json()
+        //         console.log("Tracking stopped, final active window duration log:", lastActiveWindow);
+        //         lastActiveWindow = null;
+        //     }
+        // }, INACTIVITY_DURATION);
 
     } catch (error) {
         console.error('Error tracking duration active window:', error);
