@@ -2,11 +2,20 @@ import { app } from 'electron';
 import path from 'path';
 import { homedir } from 'os';
 import { promises as fs } from 'fs';
+const protobuf = require("protobufjs");
 
 interface EdgeActiveTab {
     url: string;
     title: string;
 }
+
+interface SNSSEntry {
+    type: number;
+    data: Buffer;
+}
+
+type BufferEncodingType = 'utf8' | 'utf16le' | 'ascii';
+
 
 function getEdgeProfilePath(): string {
     switch (process.platform) {
@@ -27,8 +36,6 @@ function getEdgeProfilePath(): string {
 async function findLatestSessionFile(sessionsPath: string): Promise<string | null> {
     try {
         const files = await fs.readdir(sessionsPath);
-
-        // Get both Session and Tabs files
         const sessionFiles = files.filter(file =>
             file.startsWith('Session_') && !file.endsWith('journal')
         );
@@ -43,9 +50,7 @@ async function findLatestSessionFile(sessionsPath: string): Promise<string | nul
             })
         );
 
-        // Sort by modification time, most recent first
         fileStats.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
-
         return fileStats[0].filePath;
     } catch (error) {
         console.error('Error finding latest session file:', error);
@@ -53,47 +58,26 @@ async function findLatestSessionFile(sessionsPath: string): Promise<string | nul
     }
 }
 
-function parseSnappyBuffer(buffer: Buffer): Buffer {
-    // Skip the first 8 bytes (SNAPPY header)
-    const dataBuffer = buffer.slice(8);
+async function readSessionFile(filePath: string): Promise<any> {
+    const fileData = await fs.readFile(filePath);
+    const textDecoder = new TextDecoder("utf-8");
 
-    try {
-        // Try to find JSON data in the buffer
-        const textDecoder = new TextDecoder();
-        const text = textDecoder.decode(dataBuffer);
-
-        // Look for JSON-like structures
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            return Buffer.from(jsonMatch[0]);
+    // Search for ASCII or UTF-8 strings in the binary file
+    let decodedText = "";
+    for (let i = 0; i < fileData.length; i++) {
+        // Check for readable ASCII characters (rough approach)
+        const charCode = fileData[i];
+        if (charCode >= 32 && charCode <= 126) {
+            decodedText += String.fromCharCode(charCode);
+        } else {
+            if (decodedText.length > 4) { // Print only meaningful sequences
+                // console.log("Found string:", decodedText);
+            }
+            decodedText = "";
         }
-    } catch (error) {
-        console.error('Error parsing buffer:', error);
     }
-
-    return buffer;
-}
-
-async function readSessionFile(filePath: string): Promise<any[]> {
-    try {
-        // Read the file
-        const buffer = await fs.readFile(filePath);
-
-        // Parse the buffer
-        const parsedBuffer = parseSnappyBuffer(buffer);
-
-        try {
-            // Try to parse as JSON
-            const data = JSON.parse(parsedBuffer.toString());
-            return [data];
-        } catch (error) {
-            console.error('Error parsing JSON:', error);
-            return [];
-        }
-    } catch (error) {
-        console.error('Error reading file:', error);
-        return [];
-    }
+    console.warn("decode", decodedText)
+    return decodedText
 }
 
 export async function getEdgeActiveTab(): Promise<EdgeActiveTab | null> {
@@ -104,14 +88,12 @@ export async function getEdgeActiveTab(): Promise<EdgeActiveTab | null> {
 
         console.log('Sessions path:', sessionsPath);
 
-        // Check if sessions directory exists
         try {
             await fs.access(sessionsPath);
-        } catch (error) {
+        } catch {
             throw new Error('Edge Sessions directory not found');
         }
 
-        // Find the most recent session file
         const sessionFile = await findLatestSessionFile(sessionsPath);
         if (!sessionFile) {
             throw new Error('No session files found');
@@ -119,10 +101,7 @@ export async function getEdgeActiveTab(): Promise<EdgeActiveTab | null> {
 
         console.log('Reading session file:', sessionFile);
 
-        // Read and parse the session file
         const tabData = await readSessionFile(sessionFile);
-
-        // Find the most recently active tab
         let activeTab = null;
         let latestTimestamp = 0;
 
@@ -133,7 +112,6 @@ export async function getEdgeActiveTab(): Promise<EdgeActiveTab | null> {
                         for (const tab of window.tabs) {
                             if (tab.active && (!latestTimestamp || tab.timestamp > latestTimestamp)) {
                                 latestTimestamp = tab.timestamp;
-                                // Get the last entry if there are multiple
                                 const entries = tab.entries || [];
                                 const lastEntry = entries[entries.length - 1] || tab;
                                 activeTab = {

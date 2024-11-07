@@ -2,7 +2,9 @@ import AuthTokenStore from '../auth-token-store';
 
 interface ConfigurationResponse {
     data: {
-        screen_shot_interval: number;
+        config: {
+            screen_shot_interval: number;
+        }
     }
 }
 
@@ -14,7 +16,7 @@ export class ConfigurationProcessor {
     constructor(
         private apiEndpoint: string,
         private intervalMs: number = 30000
-    ) {}
+    ) { }
 
     private getAuthHeaders(): Headers {
         const headers = new Headers({
@@ -33,7 +35,7 @@ export class ConfigurationProcessor {
 
     // Get the current screenshot interval
     public getScreenShotInterval(): number | null {
-        return this.currentConfig?.screen_shot_interval ?? null;
+        return this.currentConfig?.config?.screen_shot_interval ?? null;
     }
 
     // Start the processing loop
@@ -79,7 +81,7 @@ export class ConfigurationProcessor {
 
         try {
             console.log('Making API call for configuration');
-            
+
             const response = await fetch(this.apiEndpoint, {
                 method: 'GET',
                 headers: this.getAuthHeaders()
@@ -92,7 +94,7 @@ export class ConfigurationProcessor {
             const configData: ConfigurationResponse = await response.json();
             this.currentConfig = configData.data;
 
-            console.log('Successfully updated configuration:', this.currentConfig);
+            console.log('Successfully updated configuration:', this.currentConfig.config);
 
         } catch (error) {
             console.error('Error fetching configuration:', error);

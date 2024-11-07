@@ -109,84 +109,84 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
         console.log("currenturl", currentUrl)
 
         // Check if window has changed (either different app or different URL)
-        // if (!lastActiveWindow ||
-        //     lastActiveWindow.app_name !== result.owner.name ||
-        //     (currentUrl && lastActiveWindow.url !== currentUrl)) {
+        if (!lastActiveWindow ||
+            lastActiveWindow.app_name !== result.owner.name ||
+            (currentUrl && lastActiveWindow.url !== currentUrl)) {
 
-        //     if (lastActiveWindow) {
-        //         // Update the end_time of the previous window when a new window is detected
-        //         lastActiveWindow.end_time = currentTime;
+            if (lastActiveWindow) {
+                // Update the end_time of the previous window when a new window is detected
+                lastActiveWindow.end_time = currentTime;
 
-        //         const payload = {
-        //             project_id: lastActiveWindow.project_id,
-        //             app_name: lastActiveWindow.app_name,
-        //             url: lastActiveWindow.url,
-        //             start_time: lastActiveWindow.start_time,
-        //             end_time: lastActiveWindow.end_time,
-        //             ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
-        //         };
+                const payload = {
+                    project_id: lastActiveWindow.project_id,
+                    app_name: lastActiveWindow.app_name,
+                    url: lastActiveWindow.url,
+                    start_time: lastActiveWindow.start_time,
+                    end_time: lastActiveWindow.end_time,
+                    ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
+                };
 
-        //         // Uncomment when ready to send data
-        //         // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-        //         //     method: 'POST',
-        //         //     headers: getAuthHeaders(),
-        //         //     body: JSON.stringify({
-        //         //         data: [
-        //         //             {
-        //         //                 ...payload
-        //         //             }
-        //         //         ]
-        //         //     })
-        //         // });
-        //         // const data = await response.json()
-        //         console.log("Previous active window log:", lastActiveWindow);
-        //     }
+                // Uncomment when ready to send data
+                const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        data: [
+                            {
+                                ...payload
+                            }
+                        ]
+                    })
+                });
+                const data = await response.json()
+                console.log("Previous active window log:", data);
+            }
 
-        //     // Initialize new active window data
-        //     lastActiveWindow = {
-        //         project_id,
-        //         task_id,
-        //         app_name: result.owner.name,
-        //         url: currentUrl,
-        //         start_time: currentTime,
-        //         end_time: currentTime
-        //     };
-        // }
+            // Initialize new active window data
+            lastActiveWindow = {
+                project_id,
+                task_id,
+                app_name: result.owner.name,
+                url: currentUrl,
+                start_time: currentTime,
+                end_time: currentTime
+            };
+        }
 
-        // if (inactivityTimeout) {
-        //     clearTimeout(inactivityTimeout);
-        // }
+        if (inactivityTimeout) {
+            clearTimeout(inactivityTimeout);
+        }
 
         // Set a new timeout to log the current active window when tracking stops
-        // inactivityTimeout = setTimeout(async () => {
-        //     if (lastActiveWindow) {
-        //         lastActiveWindow.end_time = currentTime;
-        //         const payload = {
-        //             project_id: lastActiveWindow.project_id,
-        //             app_name: lastActiveWindow.app_name,
-        //             url: lastActiveWindow.url,
-        //             start_time: lastActiveWindow.start_time,
-        //             end_time: lastActiveWindow.end_time,
-        //             ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
-        //         };
+        inactivityTimeout = setTimeout(async () => {
+            if (lastActiveWindow) {
+                lastActiveWindow.end_time = currentTime;
+                const payload = {
+                    project_id: lastActiveWindow.project_id,
+                    app_name: lastActiveWindow.app_name,
+                    url: lastActiveWindow.url,
+                    start_time: lastActiveWindow.start_time,
+                    end_time: lastActiveWindow.end_time,
+                    ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
+                };
 
-        //         // Uncomment when ready to send data
-        //         // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-        //         //     method: 'POST',
-        //         //     headers: getAuthHeaders(),
-        //         //     body: JSON.stringify({
-        //         //         data: [
-        //         //             {
-        //         //                 ...payload
-        //         //             }
-        //         //         ]
-        //         //     })
-        //         // });
-        //         // const data = await response.json()
-        //         console.log("Tracking stopped, final active window duration log:", lastActiveWindow);
-        //         lastActiveWindow = null;
-        //     }
-        // }, INACTIVITY_DURATION);
+                // Uncomment when ready to send data
+                const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        data: [
+                            {
+                                ...payload
+                            }
+                        ]
+                    })
+                });
+                const data = await response.json()
+                console.log("Tracking stopped, final active window duration log:", data);
+                lastActiveWindow = null;
+            }
+        }, INACTIVITY_DURATION);
 
     } catch (error) {
         console.error('Error tracking duration active window:', error);

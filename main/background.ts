@@ -70,8 +70,8 @@ if (isProd) {
   apiEndpoint = configApiEndpoint;
   screenshotProcessor = new ScreenshotProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
   activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
-  configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/configuration`, 120000)
-  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 60);
+  configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
+  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 15);
 
   // Initialize the processor with loaded config
   screenshotProcessor.startProcessing();
@@ -131,7 +131,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
-  // startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
+  startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
 });
 
 ipcMain.on('idle-started', (_, { project_id, task_id }) => {

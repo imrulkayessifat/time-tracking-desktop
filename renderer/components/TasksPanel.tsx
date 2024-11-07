@@ -46,12 +46,14 @@ interface TaskData {
 
 interface TasksPanelProps {
   isExpanded: boolean;
+  hasTaskStorePermission: boolean;
   handleTimerToggle: () => Promise<void>
   token: string
 }
 
 const TasksPanel: React.FC<TasksPanelProps> = ({
   token,
+  hasTaskStorePermission,
   handleTimerToggle,
   isExpanded
 }) => {
@@ -148,7 +150,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         <div className="w-full flex justify-between">
           <p className='text-xl leading-[25px] font-normal'>Tasks</p>
           {
-            project_id !== -1 && (
+            hasTaskStorePermission && project_id !== -1 && (
               <Dialog>
                 <DialogTrigger asChild>
                   <button className="flex justify-between items-center gap-4 text-[#294DFF]">

@@ -26,7 +26,7 @@ export class TaskIdleTracker {
     private activeTaskKey: string | null;
     private idlePeriods: IdlePeriod[];
 
-    constructor(private apiEndpoint: string, idleThresholdSeconds: number = 60) {
+    constructor(private apiEndpoint: string, idleThresholdSeconds: number = 15) {
         this.taskIdleTimes = new Map();
         this.idleThreshold = idleThresholdSeconds;
         this.idleCheckInterval = null;
@@ -94,8 +94,8 @@ export class TaskIdleTracker {
 
         if (!isNowIdle && !!activeTaskState.endTime) {
             this.idlePeriods.push({
-                project_id: activeTaskState.taskId,
-                task_id: activeTaskState.projectId,
+                project_id: activeTaskState.projectId,
+                task_id: activeTaskState.taskId,
                 start_time: activeTaskState.startTime,
                 end_time: activeTaskState.endTime
             })
@@ -103,7 +103,7 @@ export class TaskIdleTracker {
         }
 
         if (systemIdleTime === 0 || systemIdleTime === 1) {
-            activeTaskState.startTime = new Date(Date.now()).toISOString();
+            activeTaskState.startTime = new Date().toISOString();
         }
 
         if (isNowIdle) {
@@ -113,7 +113,7 @@ export class TaskIdleTracker {
             }
             // Add one second to total idle time
             activeTaskState.totalIdleTime += 1;
-            activeTaskState.endTime = new Date(Date.now()).toISOString();
+            activeTaskState.endTime = new Date().toISOString();
         } else if (wasIdle) {
             // Just became active
             activeTaskState.isIdle = false;
@@ -143,12 +143,12 @@ export class TaskIdleTracker {
 
             const transformedIdlePeriods = this.idlePeriods.map(period => {
                 if (period.task_id === -1) {
-                  // Destructure the period and omit task_id when it's -1
-                  const { task_id, ...periodWithoutTaskId } = period;
-                  return periodWithoutTaskId;
+                    // Destructure the period and omit task_id when it's -1
+                    const { task_id, ...periodWithoutTaskId } = period;
+                    return periodWithoutTaskId;
                 }
                 return period;
-              });
+            });
 
             if (this.idlePeriods.length > 0) {
                 const res = await fetch(this.apiEndpoint, {
@@ -160,8 +160,8 @@ export class TaskIdleTracker {
                     })
                 });
 
-                const { message } = await res.json()
-                console.log(message)
+                const { message, data } = await res.json()
+                console.log("idle time api : ", message, data)
                 this.idlePeriods = []
             }
 

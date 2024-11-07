@@ -23,6 +23,7 @@ const Main: React.FC<MainProps> = ({
 }) => {
   const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [hasTaskStorePermission, setHasTaskStorePermission] = useState(false);
   const toggleExpand = () => {
     setIsExpanded((prev) => !prev);
     window.electron.ipcRenderer.send('toggle-expand', isExpanded);
@@ -92,6 +93,27 @@ const Main: React.FC<MainProps> = ({
     return unsubscribe;
   }, [isRunning, pause, start]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/init-system`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `${token}`,
+        },
+      });
+
+      const { data } = await res.json();
+      const permission = data.permission_routes.includes("task.store");
+      setHasTaskStorePermission(permission);
+    };
+
+    if (token) {
+      fetchData();
+    }
+  }, [token]);
+
   const startTask = async (project_id: number, task_id: number) => {
     window.electron.ipcRenderer.send('idle-started', { project_id, task_id });
     const requestBody = task_id === -1
@@ -127,6 +149,7 @@ const Main: React.FC<MainProps> = ({
       await pauseTask(init_project_id, init_task_id);
     }
   };
+
   return (
     <div className="flex flex-col w-full h-screen">
       <div className="flex justify-end mt-[10px]">
@@ -151,7 +174,7 @@ const Main: React.FC<MainProps> = ({
         <CounterPanel hours={hours} minutes={minutes} seconds={seconds} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} />
         {
           isExpanded && (
-            <TasksPanel handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} token={token} />
+            <TasksPanel hasTaskStorePermission={hasTaskStorePermission} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} token={token} />
           )
         }
       </div>

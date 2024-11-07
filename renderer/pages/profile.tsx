@@ -11,7 +11,8 @@ const ProfilePage = () => {
         return <ClientSideRedirect />;
     }
 
-    console.log("session",session)
+    console.log("session", session)
+
     if (status === "loading") {
         return (
             <Loader />
