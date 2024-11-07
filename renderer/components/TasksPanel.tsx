@@ -2,7 +2,9 @@ import {
   useState,
   useEffect,
   ChangeEvent,
-  MouseEvent
+  MouseEvent,
+  FormEvent,
+  useTransition
 } from "react";
 import { toast } from "sonner"
 import { DivideIcon, X } from 'lucide-react';
@@ -19,6 +21,7 @@ import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { useSelectTask } from "./hooks/task/use-select-task";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useSelectProject } from "./hooks/project/use-select-project";
+import { useCreateTask } from "./hooks/task/use-create-task";
 import {
   Select,
   SelectContent,
@@ -53,10 +56,12 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   isExpanded
 }) => {
   const [status, setStatus] = useState('pending');
+  const [isPending, startTransition] = useTransition();
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchTask, setSearchTask] = useState<TaskData>()
 
   const { chosen_project_id, chosen_task_id } = useSelectTask()
+  const mutation = useCreateTask({ token })
   const { init_project_id } = useSelectProjectTask()
   const { project_id } = useSelectProject()
 
@@ -97,6 +102,46 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
     setSearchTask(undefined);
   };
 
+  const createTask = async (data: any) => {
+    const { success } = await mutation.mutateAsync(data)
+    console.log("success", success)
+    if (!success) {
+      return { error: 'Task create failed!' }
+    }
+
+    return { success: 'Task create successfully' }
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const formData = new FormData(event.currentTarget)
+    const name = formData.get('name')
+    const description = formData.get('description')
+    const data = {
+      name,
+      project_id,
+      description
+    }
+    startTransition(() => {
+      const promise = createTask(data)
+
+      toast.promise(promise, {
+        loading: 'Creating Subscription...',
+        success: (data) => {
+          if (data.error) {
+            return `Creating Subscription failed: ${data.error}`
+          } else {
+
+            return `Creating Subscription successful: ${data.success}`
+          }
+        },
+        error: 'An unexpected error occurred',
+      })
+    });
+
+  }
+
   return (
     <div className={cn('flex flex-col h-screen px-5 gap-4 border-l', isExpanded && 'w-1/2')}>
       <div className="flex flex-col gap-8">
@@ -111,36 +156,38 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
                     <span>Create Tasks</span>
                   </button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[594px] sm:max-h-[337px] m-[0px] p-[26px]">
-                  <div className="flex flex-col gap-6">
-                    <div className="flex justify-between">
-                      <p className="font-medium text-xl">New Task</p>
-                      <DialogPrimitive.Close className=" rounded-sm ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-                        <X className="h-4 w-4" />
-                        {/* <span className="sr-only">Close</span> */}
-                      </DialogPrimitive.Close>
-                    </div>
+                <DialogContent className="sm:max-w-[594px] sm:min-h-[337px] m-[0px] p-[26px]">
+                  <form onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-6">
-                      <div className="flex flex-col gap-1 w-full">
-                        <span className="font-light text-[14px]">Task*</span>
-                        <input className="h-9 p-[10px] rounded-md border border-[#D5D5D5]" placeholder="Add task" />
+                      <div className="flex justify-between">
+                        <p className="font-medium text-xl">New Task</p>
+                        <DialogPrimitive.Close disabled={isPending} className=" rounded-sm ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                          <X className="h-4 w-4" />
+                          {/* <span className="sr-only">Close</span> */}
+                        </DialogPrimitive.Close>
                       </div>
-                    </div>
-                    <div className="flex flex-col gap-6">
-                      <div className="flex flex-col gap-1 w-full">
-                        <span className="font-light text-[14px]">Task Details*</span>
-                        <textarea className="h-16 p-[10px] rounded-md border border-[#D5D5D5]" placeholder="Details...">
+                      <div className="flex flex-col gap-6">
+                        <div className="flex flex-col gap-1 w-full">
+                          <span className="font-light text-[14px]">Task*</span>
+                          <input disabled={isPending} type="text" name="name" required className="min-h-9 p-[10px] rounded-md border border-[#D5D5D5]" placeholder="Add task" />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-6">
+                        <div className="flex flex-col gap-1 w-full">
+                          <span className="font-light text-[14px]">Task Details*</span>
+                          <textarea disabled={isPending} name="description" required className="min-h-16 p-[10px] rounded-md border border-[#D5D5D5]" placeholder="Details...">
 
-                        </textarea>
+                          </textarea>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-[18px]">
+                        <DialogPrimitive.Close>
+                          <button disabled={isPending} className="h-9 w-[100px] font-normal text-[14px] py-[8px] px-[28.5px] rounded-md border border-[#D5D5D5]">Cancel</button>
+                        </DialogPrimitive.Close>
+                        <button disabled={isPending} type="submit" className="h-9 w-[100px] font-normal text-[14px] py-[8px] px-[28.5px] rounded-md border border-[#D5D5D5] text-white bg-[#294DFF]">Save</button>
                       </div>
                     </div>
-                    <div className="flex justify-end gap-[18px]">
-                      <DialogPrimitive.Close>
-                        <button className="h-9 w-[100px] font-normal text-[14px] py-[8px] px-[28.5px] rounded-md border border-[#D5D5D5]">Cancel</button>
-                      </DialogPrimitive.Close>
-                      <button className="h-9 w-[100px] font-normal text-[14px] py-[8px] px-[28.5px] rounded-md border border-[#D5D5D5] text-white bg-[#294DFF]">Save</button>
-                    </div>
-                  </div>
+                  </form>
                 </DialogContent>
               </Dialog>
             )

@@ -11,12 +11,12 @@ const sanitizeFileName = (fileName: string): string => {
     return fileName.replace(/[<>:"/\\|?*]/g, '_');
 };
 
-const captureAndSaveScreenshot = async (time: { 
-    project_id: number, 
-    selectedTaskId: number, 
-    hours: number, 
-    minutes: number, 
-    seconds: number 
+const captureAndSaveScreenshot = async (time: {
+    project_id: number,
+    selectedTaskId: number,
+    hours: number,
+    minutes: number,
+    seconds: number
 }): Promise<string[]> => {
     const savedFiles: string[] = [];
 
@@ -44,10 +44,11 @@ const captureAndSaveScreenshot = async (time: {
 
             if (source?.thumbnail) {
                 // Create a sanitized filename
-                const timestamp = new Date().toISOString().replace(/:/g, '-');
-                const fileName = sanitizeFileName(
-                    `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1}.png`
-                );
+                const timestamp = new Date().toISOString();
+                // const fileName = sanitizeFileName(
+
+                // );
+                const fileName = `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1}.png`
                 const filePath = path.join(baseScreenshotPath, fileName);
 
                 try {

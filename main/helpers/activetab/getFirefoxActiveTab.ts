@@ -8,7 +8,7 @@ import * as lz4 from 'lz4js';
 interface FirefoxActiveTab {
     url: string;
     title: string;
-    last_accessed: number;
+    // last_accessed: number;
 }
 
 // Reusing the profile path functions from the original code
@@ -148,6 +148,7 @@ export async function getFirefoxActiveTab(): Promise<FirefoxActiveTab | null> {
         const sessionFiles = [
             // 'sessionstore.jsonlz4',
             'sessionstore-backups/recovery.jsonlz4',
+            // 'sessionstore-backups/recovery.baklz4',
             // 'sessionstore-backups/previous.jsonlz4'
         ];
 
@@ -158,8 +159,18 @@ export async function getFirefoxActiveTab(): Promise<FirefoxActiveTab | null> {
             const filePath = path.join(profilePath, sessionFile);
             try {
                 await fs.access(filePath);
+                const tempFilePath = await copySessionStoreFiles(filePath);
 
-                sessionData = await readJSONLZ4File(filePath);
+                try {
+                    sessionData = await readJSONLZ4File(tempFilePath);
+                    await fs.unlink(tempFilePath).catch(console.error);
+                    console.log(`Successfully read session data from ${sessionFile}`);
+                    break;
+                } catch (error) {
+                    console.error(`Failed to read session file ${sessionFile}:`, error);
+                    await fs.unlink(tempFilePath).catch(console.error);
+                    continue;
+                }
 
             } catch (error) {
                 // File doesn't exist or isn't accessible, try next one
@@ -171,18 +182,43 @@ export async function getFirefoxActiveTab(): Promise<FirefoxActiveTab | null> {
             throw new Error('No valid session file found');
         }
 
+        const data = sessionData.windows[0].tabs
+        const processedData = data.map(item => {
+            return {
+                entries: item.entries,
+                lastAccessed: new Date(item.lastAccessed).toISOString().replace('T', ' ').slice(0, 19),
+                storage: item.storage,
+                formdata: item.formdata
+            };
+        });
+        processedData.sort((a, b) =>
+            new Date(b.lastAccessed).getTime() - new Date(a.lastAccessed).getTime()
+        );
+
+        console.log("session", processedData)
+
+
         // Find the most recently accessed window
         const activeWindow = sessionData.windows.reduce((latest: any, window: any) => {
-            console.log("latest:",latest)
-            console.log("window:",window)
             return (!latest || window.lastAccessed > latest.lastAccessed) ? window : latest;
         }, null);
 
         if (!activeWindow || !activeWindow.tabs) {
             return null;
         }
+        const windowForLogging = {
 
-        // Find the most recently accessed tab
+            tabs: activeWindow.tabs.map(tab => {
+                const { image, ...tabWithoutImage } = tab;
+                return tabWithoutImage;
+            })
+        };
+        windowForLogging.tabs.forEach(tab => {
+            if (tab.lastAccessed) {
+                tab.lastAccessed = new Date(tab.lastAccessed).toISOString();
+            }
+        });
+
         const activeTab = activeWindow.tabs.reduce((latest: any, tab: any) => {
             return (!latest || tab.lastAccessed > latest.lastAccessed) ? tab : latest;
         }, null);
@@ -198,7 +234,7 @@ export async function getFirefoxActiveTab(): Promise<FirefoxActiveTab | null> {
         return {
             url: currentEntry.url,
             title: currentEntry.title,
-            last_accessed: activeWindow.lastAccessed
+            // last_accessed: activeWindow.lastAccessed
         };
 
     } catch (error) {

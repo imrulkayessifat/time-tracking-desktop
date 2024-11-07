@@ -1,8 +1,7 @@
 import { getFirefoxActiveTab } from './activetab/getFirefoxActiveTab';
-import { readFirefoxHistory } from './history/firefox-history';
-import { readChromeHistory } from './history/chrome-history';
+import { getChromeActiveTab } from './activetab/getChromeActiveTab';
 import { readSafariHistory } from './history/safari-history';
-import { readEdgeHistory } from './history/edge-history';
+import { getEdgeActiveTab } from './activetab/getEdgeActiveTab';
 
 import AuthTokenStore from './auth-token-store';
 
@@ -45,13 +44,13 @@ function isMacResult(result: Result): result is MacResult {
 const getBrowserHistory = async (name: string) => {
     const browserName = name.toLowerCase();
     if (browserName.includes('chrome')) {
-        return await readChromeHistory();
+        return await getChromeActiveTab();
     } else if (browserName.includes('firefox')) {
         return await getFirefoxActiveTab();
     } else if (browserName.includes('safari')) {
         return await readSafariHistory();
     } else if (browserName.includes('edge')) {
-        return await readEdgeHistory();
+        return await getEdgeActiveTab();
     }
     return null;
 };

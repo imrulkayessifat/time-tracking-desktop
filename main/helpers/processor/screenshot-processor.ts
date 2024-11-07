@@ -21,7 +21,7 @@ export class ScreenshotProcessor {
     private processingInterval: NodeJS.Timeout | null = null;
     private isProcessing: boolean = false;
 
-    constructor(private apiEndpoint: string, private intervalMs: number = 60000) {
+    constructor(private apiEndpoint: string, private intervalMs: number = 10000) {
         this.screenshotPath = path.join(app.getPath('userData'), 'ASD_Screenshots');
     }
 
@@ -144,12 +144,14 @@ export class ScreenshotProcessor {
 
             // Prepare API payload
             const payload = {
-                project_id: imageInfo.projectId,
-                timestamp: imageInfo.timestamp,
-                image: base64Image,
-                ...(imageInfo.taskId !== -1 && { task_id: imageInfo.taskId })
+                data: [{
+                    project_id: imageInfo.projectId,
+                    time: imageInfo.timestamp,
+                    image: base64Image,
+                    task_id: 4
+                    // ...(imageInfo.taskId !== -1 && { task_id: imageInfo.taskId })
+                }]
             };
-
             // Make API call
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
@@ -157,8 +159,10 @@ export class ScreenshotProcessor {
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) {
-                throw new Error(`API call failed: ${response.statusText}`);
+            const { success, message, data } = await response.json()
+
+            if (!success) {
+                throw new Error(`API call failed: ${message}`);
             }
 
             console.log('API call successful, deleting image:', fileName);
@@ -166,8 +170,8 @@ export class ScreenshotProcessor {
             await fs.promises.unlink(filePath);
 
             return {
-                success: true,
-                message: 'Successfully processed and deleted image',
+                success,
+                message,
                 fileName
             };
 
