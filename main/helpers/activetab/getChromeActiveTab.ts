@@ -1,6 +1,6 @@
 const CDP = require('chrome-remote-interface');
 
-export async function getChromeActiveTab() {
+export async function getChromeAllTabs() {
     try {
         const client = await CDP();
         await client.Runtime.enable();

@@ -1,7 +1,7 @@
-import { getFirefoxActiveTab } from './activetab/getFirefoxActiveTab';
-import { getChromeActiveTab } from './activetab/getChromeActiveTab';
+import { readFirefoxTabs } from './activetab/getFirefoxActiveTab';
+import { getChromeAllTabs } from './activetab/getChromeActiveTab';
 import { readSafariHistory } from './history/safari-history';
-import { getEdgeActiveTab } from './activetab/getEdgeActiveTab';
+import { readEdgeTabs } from './activetab/getEdgeActiveTab';
 
 import AuthTokenStore from './auth-token-store';
 
@@ -44,13 +44,13 @@ function isMacResult(result: Result): result is MacResult {
 const getBrowserHistory = async (name: string) => {
     const browserName = name.toLowerCase();
     if (browserName.includes('chrome')) {
-        return await getChromeActiveTab();
+        return await getChromeAllTabs();
     } else if (browserName.includes('firefox')) {
-        return await getFirefoxActiveTab();
+        return await readFirefoxTabs();
     } else if (browserName.includes('safari')) {
         return await readSafariHistory();
     } else if (browserName.includes('edge')) {
-        return await getEdgeActiveTab();
+        return await readEdgeTabs();
     }
     return null;
 };
@@ -127,19 +127,19 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                 };
 
                 // Uncomment when ready to send data
-                const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({
-                        data: [
-                            {
-                                ...payload
-                            }
-                        ]
-                    })
-                });
-                const data = await response.json()
-                console.log("Previous active window log:", data);
+                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+                //     method: 'POST',
+                //     headers: getAuthHeaders(),
+                //     body: JSON.stringify({
+                //         data: [
+                //             {
+                //                 ...payload
+                //             }
+                //         ]
+                //     })
+                // });
+                // const data = await response.json()
+                // console.log("Previous active window log:", data);
             }
 
             // Initialize new active window data
@@ -171,19 +171,19 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                 };
 
                 // Uncomment when ready to send data
-                const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({
-                        data: [
-                            {
-                                ...payload
-                            }
-                        ]
-                    })
-                });
-                const data = await response.json()
-                console.log("Tracking stopped, final active window duration log:", data);
+                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+                //     method: 'POST',
+                //     headers: getAuthHeaders(),
+                //     body: JSON.stringify({
+                //         data: [
+                //             {
+                //                 ...payload
+                //             }
+                //         ]
+                //     })
+                // });
+                // const data = await response.json()
+                // console.log("Tracking stopped, final active window duration log:", data);
                 lastActiveWindow = null;
             }
         }, INACTIVITY_DURATION);

@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "nextron",
     "build": "nextron build",
-    "rebuild": "electron-rebuild -f -w better-sqlite3",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
     "@cliqz-oss/firefox-client": "^0.3.1",
@@ -28,6 +28,7 @@
     "electron-serve": "^1.3.0",
     "electron-store": "^8.2.0",
     "foxdriver": "^1.0.6",
+    "get-chrome-tabs": "^1.0.0",
     "get-windows": "^9.2.0",
     "i": "^0.3.7",
     "jose": "^5.9.4",
@@ -35,6 +36,7 @@
     "level": "^8.0.1",
     "lucide-react": "^0.453.0",
     "lz4js": "^0.2.0",
+    "mozlz4a": "^1.1.0",
     "next-auth": "^4.24.8",
     "pidusage": "^3.0.2",
     "protobufjs": "^7.4.0",
@@ -42,7 +44,7 @@
     "react-icons": "^5.3.0",
     "react-timer-hook": "^3.0.8",
     "sonner": "^1.5.0",
-    "sqlite3": "^5.1.7",
+    "sqlite3": "^5.1.6",
     "tailwind-merge": "^2.5.4",
     "ws": "^8.18.0",
     "zustand": "^5.0.0"

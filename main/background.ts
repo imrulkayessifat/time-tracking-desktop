@@ -131,7 +131,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
-  startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
+  // startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
 });
 
 ipcMain.on('idle-started', (_, { project_id, task_id }) => {
