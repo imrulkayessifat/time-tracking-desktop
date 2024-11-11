@@ -16,7 +16,11 @@ const Login = () => {
     useEffect(() => {
         window.electron.ipcRenderer.send('toggle-expand', true);
     }, [])
-    
+
+    if (session) {
+        router.push('/profile')
+    }
+
     if (status === 'loading') {
         return (
             <Loader />

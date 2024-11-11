@@ -73,7 +73,7 @@ const isBrowser = (appName: string): boolean => {
 
 const startTracking = async (project_id: number, task_id: number) => {
     try {
-        // const { activeWindow } = await import('../../node_modules/get-windows');
+        const { activeWindow } = await import('../../node_modules/get-windows');
         const result: Result = await activeWindow();
         const stats = await pidusage(result.owner.processId)
 
