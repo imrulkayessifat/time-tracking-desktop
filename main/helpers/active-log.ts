@@ -5,6 +5,7 @@ import { readFirefoxHistory } from './history/firefox-history';
 import { readChromeHistory } from './history/chrome-history';
 import { readSafariHistory } from './history/safari-history';
 import { readEdgeHistory } from './history/edge-history';
+import {activeWindow} from 'get-windows';
 
 // Define platform-specific result types
 interface BaseResult {
@@ -72,7 +73,7 @@ const isBrowser = (appName: string): boolean => {
 
 const startTracking = async (project_id: number, task_id: number) => {
     try {
-        const { activeWindow } = await import('../../node_modules/get-windows');
+        // const { activeWindow } = await import('../../node_modules/get-windows');
         const result: Result = await activeWindow();
         const stats = await pidusage(result.owner.processId)
 

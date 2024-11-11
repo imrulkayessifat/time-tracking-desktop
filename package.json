@@ -8,8 +8,7 @@
   "scripts": {
     "dev": "nextron",
     "build": "nextron build",
-    "postinstall": "electron-builder install-app-deps",
-    "rebuild": "electron-rebuild -f -w better-sqlite3"
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@cliqz-oss/firefox-client": "^0.3.1",
@@ -20,6 +19,7 @@
     "@radix-ui/react-toast": "^1.2.2",
     "@tanstack/react-query": "^5.59.14",
     "@types/chrome-remote-interface": "^0.31.14",
+    "aws-sdk": "^2.1692.0",
     "better-sqlite3": "^11.4.0",
     "chrome-remote-interface": "^0.33.2",
     "class-variance-authority": "^0.7.0",
@@ -36,8 +36,10 @@
     "level": "^8.0.1",
     "lucide-react": "^0.453.0",
     "lz4js": "^0.2.0",
+    "mock-aws-s3": "^4.0.2",
     "mozlz4a": "^1.1.0",
     "next-auth": "^4.24.8",
+    "nock": "^13.5.6",
     "pidusage": "^3.0.2",
     "protobufjs": "^7.4.0",
     "react-animated-dots": "^1.1.0",
@@ -56,9 +58,8 @@
     "autoprefixer": "^10.4.19",
     "electron": "^31.0.1",
     "electron-builder": "^24.13.3",
-    "electron-rebuild": "^3.2.9",
     "next": "^14.2.4",
-    "nextron": "^9.1.0",
+    "nextron": "^9.4.0",
     "postcss": "^8.4.38",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
