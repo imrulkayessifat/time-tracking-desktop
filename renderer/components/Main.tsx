@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { signOut } from "next-auth/react";
 import { useRouter } from "next/router";
 import { toast } from "sonner"
 
@@ -13,6 +12,7 @@ import TasksPanel from "./TasksPanel";
 import CounterPanel from "./CounterPanel";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useTaskTimer } from "./hooks/timer/useTaskTimer";
+import { removeClientToken } from "../lib/auth";
 
 interface MainProps {
   token: string
@@ -161,7 +161,8 @@ const Main: React.FC<MainProps> = ({
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => {
-                signOut();
+                removeClientToken();
+                localStorage.removeItem('user');
                 router.push('/home')
               }}
             >
