@@ -92,8 +92,8 @@ const getLocalTime = (): Date => {
 
 const startDurationTracking = async (project_id: number, task_id: number, apiEndpoint: string) => {
     try {
-        const { activeWindow } = await import('../../node_modules/get-windows');
-        const result: Result = await activeWindow();
+        const getActiveWindow = (await import('active-win')).default;
+        const result: Result = await getActiveWindow();
         const currentTime = getLocalTime();
 
         // Check if the current window is different from the last tracked one

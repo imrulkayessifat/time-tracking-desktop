@@ -1,7 +1,6 @@
-const CDP = require('chrome-remote-interface');
-
 export async function getChromeAllTabs() {
     try {
+        const { default: CDP } = await import('chrome-remote-interface');
         const client = await CDP();
         await client.Runtime.enable();
         const info = await client.Runtime.evaluate({ expression: 'window.location.toString()' });
