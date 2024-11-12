@@ -35,7 +35,7 @@ export class ConfigurationProcessor {
 
     // Get the current screenshot interval
     public getScreenShotInterval(): number | null {
-        return this.currentConfig?.config?.screen_shot_interval ?? null;
+        return this.currentConfig?.config?.screen_shot_interval ?? 1;
     }
 
     // Start the processing loop

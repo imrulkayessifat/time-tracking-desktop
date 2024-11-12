@@ -35,9 +35,7 @@ if (isProd) {
   app.setPath('userData', `${app.getPath('userData')} (development)`)
 }
 
-; (async () => {
-  await app.whenReady()
-
+app.on('ready', async () => {
   mainWindow = createWindow('main', {
     height: 720,
     width: 500,
@@ -78,7 +76,8 @@ if (isProd) {
   activityProcessor.startProcessing();
   configurationProcessor.startProcessing();
   console.log('Screenshot processor started');
-})()
+});
+
 
 app.on('window-all-closed', () => {
   app.quit()
@@ -118,7 +117,7 @@ ipcMain.on('message', async (event, arg) => {
 })
 
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
-  const interval = configurationProcessor.getScreenShotInterval() || 2;
+  const interval = configurationProcessor?.getScreenShotInterval() ?? 2;
   // const interval = 2
 
   console.log("interval", interval)
@@ -126,7 +125,12 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
 
   if (elapsedMinutes >= interval) {
     if (info.project_id !== -1) {
-      startTracking(info.project_id, info.selectedTaskId);
+      if (typeof startTracking === 'function') {
+        startTracking(info.project_id, info.selectedTaskId);
+      } else {
+        console.error("startTracking function is undefined");
+      }
+
       captureAndSaveScreenshot(info);
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
@@ -134,11 +138,11 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
   // startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
 });
 
-ipcMain.on('idle-started', (_, { project_id, task_id }) => {
-  idleTracker.startTracking(project_id, task_id);
-})
+// ipcMain.on('idle-started', (_, { project_id, task_id }) => {
+//   idleTracker.startTracking(project_id, task_id);
+// })
 
-ipcMain.on('idle-stopped', (_, { projectId, taskId }) => {
-  const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
-});
+// ipcMain.on('idle-stopped', (_, { projectId, taskId }) => {
+//   const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
+// });
 
