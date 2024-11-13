@@ -12,6 +12,14 @@ const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
     } catch {
         // Directory doesn't exist, create it
         await fs.promises.mkdir(dirPath, { recursive: true });
+        if (process.platform === 'win32') {
+            const { exec } = require('child_process');
+            exec(`attrib -h "${dirPath}"`, (error: any) => {
+                if (error) {
+                    console.warn('Failed to remove hidden attribute:', error);
+                }
+            });
+        }
     }
 };
 
