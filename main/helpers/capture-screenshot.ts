@@ -1,42 +1,54 @@
 import * as fs from 'fs';
-import {
-    app,
-    desktopCapturer,
-    screen
-} from 'electron';
+import { app, desktopCapturer, screen } from 'electron';
 import path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
     try {
-        await fs.promises.access(dirPath);
-    } catch {
-        // Directory doesn't exist, create it
-        await fs.promises.mkdir(dirPath, { recursive: true });
-        if (process.platform === 'win32') {
-            const { exec } = require('child_process');
-            exec(`attrib -h "${dirPath}"`, (error: any) => {
-                if (error) {
+        // Normalize the path to handle Windows path separators correctly
+        const normalizedPath = path.normalize(dirPath);
+
+        // Check if directory exists
+        try {
+            await fs.promises.access(normalizedPath);
+        } catch {
+            // Directory doesn't exist, create it
+            await fs.promises.mkdir(normalizedPath, { recursive: true });
+
+            // For Windows: Remove hidden attribute and ensure proper permissions
+            if (process.platform === 'win32') {
+                try {
+                    await execAsync(`attrib -h "${normalizedPath}"`);
+                } catch (error) {
                     console.warn('Failed to remove hidden attribute:', error);
                 }
-            });
+            }
         }
+    } catch (error) {
+        console.error('Error ensuring directory exists:', error);
+        throw error;
     }
 };
 
 const captureAndSaveScreenshot = async (time: {
-    project_id: number,
-    selectedTaskId: number,
-    hours: number,
-    minutes: number,
-    seconds: number
+    project_id: number;
+    selectedTaskId: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
 }): Promise<string[]> => {
     const savedFiles: string[] = [];
 
     try {
         const displays = screen.getAllDisplays();
-        const baseScreenshotPath = path.join(app.getPath('userData'), 'ASD_Screenshots');
+        const baseScreenshotPath = path.normalize(
+            path.join(app.getPath('userData'), 'ASD_Screenshots')
+        );
 
-        // Ensure the directory exists before trying to save files
+        // Ensure the directory exists before proceeding
         await ensureDirectoryExists(baseScreenshotPath);
 
         for (let i = 0; i < displays.length; i++) {
@@ -44,14 +56,17 @@ const captureAndSaveScreenshot = async (time: {
             const { bounds } = display;
 
             try {
+                // Get screen sources
                 const sources = await desktopCapturer.getSources({
                     types: ['screen'],
                     thumbnailSize: { width: bounds.width, height: bounds.height }
                 });
 
-                const source = sources.find(s =>
-                    s.display_id === display.id.toString() ||
-                    (s.id.startsWith('screen:') && sources.length === 1)
+                // Find the correct source for this display
+                const source = sources.find(
+                    (s) =>
+                        s.display_id === display.id.toString() ||
+                        (s.id.startsWith('screen:') && sources.length === 1)
                 );
 
                 if (!source?.thumbnail) {
@@ -59,19 +74,22 @@ const captureAndSaveScreenshot = async (time: {
                     continue;
                 }
 
+                // Create filename with sanitized timestamp
                 const timestamp = new Date().toISOString();
-                const fileName = `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1}.png`
-                const filePath = path.join(baseScreenshotPath, fileName);
+                const fileName = `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1
+                    }.png`;
+                const filePath = path.normalize(path.join(baseScreenshotPath, fileName));
 
-                try {
-                    await fs.promises.writeFile(filePath, source.thumbnail.toPNG());
-                    console.log(`Screenshot saved for display ${i + 1}: ${filePath}`);
-                    savedFiles.push(filePath);
-                } catch (writeError) {
-                    console.error(`Error writing screenshot for display ${i + 1}:`, writeError);
-                    // Continue with other displays instead of throwing
-                    continue;
+                // Ensure the PNG data is valid before writing
+                const pngBuffer = source.thumbnail.toPNG();
+                if (!pngBuffer || pngBuffer.length === 0) {
+                    throw new Error('Invalid PNG data generated');
                 }
+
+                // Write file with explicit encoding
+                await fs.promises.writeFile(filePath, pngBuffer, { encoding: 'binary' });
+                console.log(`Screenshot saved for display ${i + 1}: ${filePath}`);
+                savedFiles.push(filePath);
             } catch (displayError) {
                 console.error(`Error processing display ${i + 1}:`, displayError);
                 // Continue with other displays
