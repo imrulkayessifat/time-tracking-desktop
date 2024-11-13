@@ -28,8 +28,8 @@ let screenshotProcessor: ScreenshotProcessor;
 let activityProcessor: ActivityProcessor;
 let idleTracker: TaskIdleTracker;
 let configurationProcessor: ConfigurationProcessor;
-let apiEndpoint: string="http://134.122.116.126:9091/api/v1";
-let intervalMs : number = 120000;
+let apiEndpoint: string = "http://134.122.116.126:9091/api/v1";
+let intervalMs: number = 120000;
 
 if (isProd) {
   serve({ directory: 'app' })
@@ -152,7 +152,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
-  // startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
+  startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
 });
 
 ipcMain.on('idle-started', (_, { project_id, task_id }) => {
