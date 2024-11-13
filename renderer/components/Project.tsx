@@ -81,8 +81,8 @@ const Project: React.FC<ProjectsProps> = ({
   return (
     <>
       <div className="relative overflow-x-auto">
-        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+        <table className="w-full text-sm text-left rtl:text-right text-gray-500">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
               <th scope="col" className="px-6 py-3">
                 Project
@@ -116,9 +116,9 @@ const Project: React.FC<ProjectsProps> = ({
                           setTask(-1, -1)
                         }}
                         key={index}
-                        className={cn("bg-white dark:bg-gray-800 dark:border-gray-700 cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
+                        className={cn("bg-white cursor-pointer", index !== projects.length - 1 && 'border-b', (project.id === project_id || project.id === chosen_project_id) && ' bg-[#294DFF] text-white')}
                       >
-                        <th scope="row" className={cn("flex gap-3 px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
+                        <th scope="row" className={cn("flex gap-3 px-6 py-4 font-medium text-gray-900 whitespace-nowrap", (project.id === project_id || project.id === chosen_project_id) && 'text-white')}>
                           <button
                             onClick={handleTimerToggle}
                             disabled={init_project_id === -1}

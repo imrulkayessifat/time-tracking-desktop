@@ -1,15 +1,15 @@
 import { useEffect } from 'react';
-import Cookies from 'js-cookie';
+import { getClientSideUser } from '../../lib/auth';
 import { TOKEN_NAME } from '../../lib/auth'; // Import your token name constant
 
 export const useAuthSync = () => {
     useEffect(() => {
         // Get token from cookie
-        const token = Cookies.get(TOKEN_NAME);
+        const userData = getClientSideUser();
 
-        if (token) {
+        if (userData && userData.token) {
             // Send token to main process through electron IPC
-            window.electron.ipcRenderer.send('update-auth-token', token);
+            window.electron.ipcRenderer.send('update-auth-token', userData.token);
         }
     }, []);
 };

@@ -1,4 +1,5 @@
 import path from 'path'
+import log from 'electron-log';
 import {
   app,
   BrowserWindow,
@@ -27,13 +28,24 @@ let screenshotProcessor: ScreenshotProcessor;
 let activityProcessor: ActivityProcessor;
 let idleTracker: TaskIdleTracker;
 let configurationProcessor: ConfigurationProcessor;
-let apiEndpoint: string;
+let apiEndpoint: string="http://134.122.116.126:9091/api/v1";
+let intervalMs : number = 120000;
 
 if (isProd) {
   serve({ directory: 'app' })
 } else {
   app.setPath('userData', `${app.getPath('userData')} (development)`)
 }
+
+if (isProd) {
+  log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'main.log');
+} else {
+  log.transports.console.level = 'debug';
+  // log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'main.log');
+}
+
+console.log = log.info;
+console.error = log.error;
 
 app.on('ready', async () => {
   mainWindow = createWindow('main', {
@@ -64,8 +76,10 @@ app.on('ready', async () => {
 
   setupAuthIPC();
   // Load configuration
-  const { apiEndpoint: configApiEndpoint, intervalMs } = await loadProcessorConfig();
-  apiEndpoint = configApiEndpoint;
+  // const { apiEndpoint: configApiEndpoint, intervalMs } = await loadProcessorConfig();
+  // apiEndpoint = configApiEndpoint;
+
+  console.log("api endpoint :", apiEndpoint, intervalMs)
   screenshotProcessor = new ScreenshotProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
   activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
@@ -85,7 +99,11 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   console.log('App is quitting, stopping screenshot processor...');
-  idleTracker.clearAll();
+  try {
+    idleTracker.clearAll();
+  } catch (error) {
+    console.error('Error clearing idle tracking:', error);
+  }
 
   if (screenshotProcessor) {
     screenshotProcessor.stopProcessing();
@@ -125,12 +143,11 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
 
   if (elapsedMinutes >= interval) {
     if (info.project_id !== -1) {
-      if (typeof startTracking === 'function') {
+      try {
         startTracking(info.project_id, info.selectedTaskId);
-      } else {
-        console.error("startTracking function is undefined");
+      } catch (error) {
+        console.error('Error starting timer tracking:', error);
       }
-
       captureAndSaveScreenshot(info);
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
@@ -138,11 +155,19 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
   // startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
 });
 
-// ipcMain.on('idle-started', (_, { project_id, task_id }) => {
-//   idleTracker.startTracking(project_id, task_id);
-// })
+ipcMain.on('idle-started', (_, { project_id, task_id }) => {
+  try {
+    idleTracker.startTracking(project_id, task_id);
+  } catch (error) {
+    console.error('Error starting idle tracking:', error);
+  }
+})
 
-// ipcMain.on('idle-stopped', (_, { projectId, taskId }) => {
-//   const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
-// });
+ipcMain.on('idle-stopped', (_, { projectId, taskId }) => {
+  try {
+    const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
+  } catch (error) {
+    console.error('Error stoping idle tracking:', error);
+  }
+});
 
