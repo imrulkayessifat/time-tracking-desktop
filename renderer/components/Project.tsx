@@ -66,14 +66,6 @@ const Project: React.FC<ProjectsProps> = ({
     }
   }
 
-  if (projects.length === 0) {
-    return (
-      <div className='flex items-center justify-center'>
-        <p>No project available</p>
-      </div>
-    )
-  }
-
   const formatTime = (hours: number, minutes: number, seconds: number): string => {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
