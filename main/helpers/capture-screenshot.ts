@@ -6,6 +6,11 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
+const sanitizeFilename = (filename: string): string => {
+    // Replace invalid characters with underscores
+    return filename.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+};
+
 const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
     try {
         // Normalize the path to handle Windows path separators correctly
@@ -76,8 +81,9 @@ const captureAndSaveScreenshot = async (time: {
 
                 // Create filename with sanitized timestamp
                 const timestamp = new Date().toISOString();
-                const fileName = `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1
-                    }.png`;
+                const fileName = sanitizeFilename(
+                    `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1}.png`
+                );
                 const filePath = path.normalize(path.join(baseScreenshotPath, fileName));
 
                 // Ensure the PNG data is valid before writing

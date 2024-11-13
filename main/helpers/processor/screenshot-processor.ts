@@ -93,10 +93,12 @@ export class ScreenshotProcessor {
             return null;
         }
 
+        console.log("match 3", match[3])
+
         const result = {
             projectId: parseInt(match[1]),
             taskId: parseInt(match[2]),
-            timestamp: match[3],
+            timestamp: match[3].replaceAll("_", ":"),
         };
         return result;
     }
