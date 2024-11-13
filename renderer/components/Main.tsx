@@ -163,6 +163,7 @@ const Main: React.FC<MainProps> = ({
               onClick={() => {
                 removeClientToken();
                 localStorage.removeItem('user');
+                localStorage.removeItem('taskTimers');
                 router.push('/home')
               }}
             >

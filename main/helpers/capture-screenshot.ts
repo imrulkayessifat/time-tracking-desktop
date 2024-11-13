@@ -6,11 +6,6 @@ import {
 } from 'electron';
 import path from 'path';
 
-const sanitizeFileName = (fileName: string): string => {
-    // Replace invalid characters with underscores
-    return fileName.replace(/[<>:"/\\|?*]/g, '_');
-};
-
 const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
     try {
         await fs.promises.access(dirPath);
@@ -57,9 +52,7 @@ const captureAndSaveScreenshot = async (time: {
                 }
 
                 const timestamp = new Date().toISOString();
-                const fileName = sanitizeFileName(
-                    `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1}.png`
-                );
+                const fileName = `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1}.png`
                 const filePath = path.join(baseScreenshotPath, fileName);
 
                 try {
