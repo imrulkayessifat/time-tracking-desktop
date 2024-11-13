@@ -11,6 +11,15 @@ const sanitizeFileName = (fileName: string): string => {
     return fileName.replace(/[<>:"/\\|?*]/g, '_');
 };
 
+const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
+    try {
+        await fs.promises.access(dirPath);
+    } catch {
+        // Directory doesn't exist, create it
+        await fs.promises.mkdir(dirPath, { recursive: true });
+    }
+};
+
 const captureAndSaveScreenshot = async (time: {
     project_id: number,
     selectedTaskId: number,
@@ -22,53 +31,61 @@ const captureAndSaveScreenshot = async (time: {
 
     try {
         const displays = screen.getAllDisplays();
-        // Use app.getPath('userData') instead of 'logs' for better compatibility
         const baseScreenshotPath = path.join(app.getPath('userData'), 'ASD_Screenshots');
 
-        // Create directory if it doesn't exist
-        await fs.promises.mkdir(baseScreenshotPath, { recursive: true });
+        // Ensure the directory exists before trying to save files
+        await ensureDirectoryExists(baseScreenshotPath);
 
         for (let i = 0; i < displays.length; i++) {
             const display = displays[i];
             const { bounds } = display;
 
-            const sources = await desktopCapturer.getSources({
-                types: ['screen'],
-                thumbnailSize: { width: bounds.width, height: bounds.height }
-            });
+            try {
+                const sources = await desktopCapturer.getSources({
+                    types: ['screen'],
+                    thumbnailSize: { width: bounds.width, height: bounds.height }
+                });
 
-            const source = sources.find(s =>
-                s.display_id === display.id.toString() ||
-                (s.id.startsWith('screen:') && sources.length === 1)
-            );
+                const source = sources.find(s =>
+                    s.display_id === display.id.toString() ||
+                    (s.id.startsWith('screen:') && sources.length === 1)
+                );
 
-            if (source?.thumbnail) {
-                // Create a sanitized filename
+                if (!source?.thumbnail) {
+                    console.error(`No source found for display ${i + 1}`);
+                    continue;
+                }
+
                 const timestamp = new Date().toISOString();
-                // const fileName = sanitizeFileName(
-
-                // );
-                const fileName = `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1}.png`
+                const fileName = sanitizeFileName(
+                    `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1}.png`
+                );
                 const filePath = path.join(baseScreenshotPath, fileName);
 
                 try {
-                    // Use async file writing
                     await fs.promises.writeFile(filePath, source.thumbnail.toPNG());
                     console.log(`Screenshot saved for display ${i + 1}: ${filePath}`);
                     savedFiles.push(filePath);
                 } catch (writeError) {
                     console.error(`Error writing screenshot for display ${i + 1}:`, writeError);
-                    throw writeError;
+                    // Continue with other displays instead of throwing
+                    continue;
                 }
-            } else {
-                console.error(`No source found for display ${i + 1}`);
+            } catch (displayError) {
+                console.error(`Error processing display ${i + 1}:`, displayError);
+                // Continue with other displays
+                continue;
             }
+        }
+
+        if (savedFiles.length === 0) {
+            throw new Error('No screenshots were captured successfully');
         }
 
         return savedFiles;
     } catch (error) {
         console.error('Error capturing screenshot:', error);
-        throw error; // Re-throw the error for handling by the caller
+        throw error;
     }
 };
 
