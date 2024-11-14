@@ -23,7 +23,6 @@ export const useTaskTimer = (
     projectId: number,
     pauseTask?: (projectId: number, taskId: number) => void
 ) => {
-    // Create a unique key for the task
     const parentTaskKey = `task_${projectId}_-1`;
     const taskKey = `task_${projectId}_${taskId}`;
 
@@ -36,7 +35,6 @@ export const useTaskTimer = (
         return { hours, minutes, seconds };
     };
 
-    // Get stored time for this task
     const getStoredTime = (): TaskTime | null => {
         if (typeof window === 'undefined') return null;
         const stored = localStorage.getItem('taskTimers');
@@ -45,41 +43,52 @@ export const useTaskTimer = (
         return timers[taskKey] || null;
     };
 
-    // Get all stored timers
+    const getStoredTimeParent = (): TaskTime | null => {
+        if (typeof window === 'undefined') return null;
+        const stored = localStorage.getItem('taskTimers');
+        if (!stored) return null;
+        const timers: TaskTimerStore = JSON.parse(stored);
+        return timers[parentTaskKey] || null;
+    };
+
     const getAllTimers = (): TaskTimerStore => {
         if (typeof window === 'undefined') return {};
         const stored = localStorage.getItem('taskTimers');
         return stored ? JSON.parse(stored) : {};
     };
 
-    const updateParentTaskTime = (currentTimers: TaskTimerStore) => {
-        if (taskId === -1) return; // Don't update if this is already a parent task
+    const updateParentTaskTime = (currentTimers: TaskTimerStore, taskDuration?: string, isRunning = false) => {
+        if (taskId === -1) return;
 
         const parentTime = currentTimers[parentTaskKey] || {
             hours: 0,
             minutes: 0,
             seconds: 0,
-            isRunning: false,
+            isRunning,
             date: getCurrentDate()
         };
 
-        // Add one second to parent task
-        parentTime.seconds += 1;
-
-        // Handle time overflow
-        if (parentTime.seconds >= 60) {
-            parentTime.minutes += Math.floor(parentTime.seconds / 60);
-            parentTime.seconds = parentTime.seconds % 60;
+        if (taskDuration) {
+            const { hours, minutes, seconds } = parseDuration(taskDuration);
+            parentTime.hours += hours;
+            parentTime.minutes += minutes;
+            parentTime.seconds += seconds;
+        } else {
+            parentTime.seconds += 1;
+            if (parentTime.seconds >= 60) {
+                parentTime.minutes += Math.floor(parentTime.seconds / 60);
+                parentTime.seconds = parentTime.seconds % 60;
+            }
+            if (parentTime.minutes >= 60) {
+                parentTime.hours += Math.floor(parentTime.minutes / 60);
+                parentTime.minutes = parentTime.minutes % 60;
+            }
         }
-        if (parentTime.minutes >= 60) {
-            parentTime.hours += Math.floor(parentTime.minutes / 60);
-            parentTime.minutes = parentTime.minutes % 60;
-        }
 
+        parentTime.isRunning = isRunning; // Only set to running if specified
         currentTimers[parentTaskKey] = parentTime;
     };
 
-    // Find and stop any running timer
     const stopRunningTimer = () => {
         const timers = getAllTimers();
         let updated = false;
@@ -87,7 +96,6 @@ export const useTaskTimer = (
         Object.entries(timers).forEach(async ([key, timer]) => {
             if (timer.isRunning && key !== taskKey) {
                 const [_, projectId, taskId] = key.split('_');
-                console.log("isRunning : ", projectId, taskId)
                 timer.isRunning = false;
                 updated = true;
                 await pauseTask(parseInt(projectId), parseInt(taskId))
@@ -99,7 +107,6 @@ export const useTaskTimer = (
         }
     };
 
-    // Calculate offset date for the stopwatch
     const getOffsetDate = (initialDuration?: string) => {
         const now = new Date();
         if (initialDuration) {
@@ -111,6 +118,25 @@ export const useTaskTimer = (
         }
 
         const storedTime = getStoredTime();
+        if (storedTime) {
+            now.setHours(now.getHours() + storedTime.hours);
+            now.setMinutes(now.getMinutes() + storedTime.minutes);
+            now.setSeconds(now.getSeconds() + storedTime.seconds);
+        }
+        return now;
+    };
+
+    const getOffsetDateParent = (initialDuration?: string) => {
+        const now = new Date();
+        if (initialDuration) {
+            const { hours, minutes, seconds } = parseDuration(initialDuration);
+            now.setHours(now.getHours() + hours);
+            now.setMinutes(now.getMinutes() + minutes);
+            now.setSeconds(now.getSeconds() + seconds);
+            return now;
+        }
+
+        const storedTime = getStoredTimeParent();
         if (storedTime) {
             now.setHours(now.getHours() + storedTime.hours);
             now.setMinutes(now.getMinutes() + storedTime.minutes);
@@ -132,26 +158,21 @@ export const useTaskTimer = (
         offsetTimestamp: getOffsetDate()
     });
 
-    // Reset timer when switching tasks
     useEffect(() => {
-        stopRunningTimer(); // Stop any running timer when switching tasks
-
+        stopRunningTimer();
         const storedTime = getStoredTime();
         if (storedTime) {
-            // If there's stored time, set it
             const date = new Date();
             date.setHours(date.getHours() + storedTime.hours);
             date.setMinutes(date.getMinutes() + storedTime.minutes);
             date.setSeconds(date.getSeconds() + storedTime.seconds);
-            reset(date, storedTime.isRunning); // Maintain the running state from storage
+            reset(date, storedTime.isRunning);
         } else {
-            // If no stored time, reset to 0
             const date = new Date();
             reset(date, false);
         }
     }, [taskId, projectId, reset]);
 
-    // Save timer state when it changes
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
@@ -165,36 +186,53 @@ export const useTaskTimer = (
             date: getCurrentDate()
         };
 
-        // Update the current task state
         timers[taskKey] = currentState;
 
-        // Only update parent if the actual time changed (not just isRunning state)
-        // and the timer is running
         if (isRunning &&
-            previousState && // Make sure we have a previous state
+            previousState &&
             (previousState.hours !== hours ||
                 previousState.minutes !== minutes ||
                 previousState.seconds !== seconds)) {
-            updateParentTaskTime(timers);
+            updateParentTaskTime(timers, undefined, false);
         }
 
         localStorage.setItem('taskTimers', JSON.stringify(timers));
 
     }, [hours, minutes, seconds, isRunning, taskKey]);
 
-    const start = useCallback((initialDuration?: string) => {
-        stopRunningTimer();
-        if (initialDuration) {
-            const offsetDate = getOffsetDate(initialDuration);
+    const start = useCallback((projectDuration?: string, signal?: boolean, taskDuration?: string) => {
+        const timers = getAllTimers();
+        console.log("duration : ", projectDuration, taskDuration)
+        if (projectDuration) {
+            const offsetDateParent = getOffsetDateParent(projectDuration);
+
+            const { hours, minutes, seconds } = parseDuration(projectDuration);
+            timers[parentTaskKey] = {
+                hours,
+                minutes,
+                seconds,
+                isRunning: false,  // Keep parent task non-running if signal is true
+                date: getCurrentDate()
+            };
+
+            if (!signal) {
+                reset(offsetDateParent, false);
+            }
+        }
+
+        if (taskDuration && signal) {
+            const offsetDate = getOffsetDate(taskDuration);
             reset(offsetDate, true);
         } else {
             startStopwatch();
         }
+
+        localStorage.setItem('taskTimers', JSON.stringify(timers));
+
     }, [startStopwatch, reset]);
 
     const pause = useCallback(() => {
         pauseStopwatch();
-        // Save final time when pausing
         if (typeof window !== 'undefined') {
             const timers = getAllTimers();
             timers[taskKey] = {

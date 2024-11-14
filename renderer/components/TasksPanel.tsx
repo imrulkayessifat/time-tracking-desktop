@@ -57,7 +57,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   handleTimerToggle,
   isExpanded
 }) => {
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('in_progress');
   const [isPending, startTransition] = useTransition();
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchTask, setSearchTask] = useState<TaskData>()
@@ -66,6 +66,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   const mutation = useCreateTask({ token })
   const { init_project_id } = useSelectProjectTask()
   const { project_id } = useSelectProject()
+
+  console.log("status : ", status)
 
   useEffect(() => {
     if (chosen_task_id !== -1) {
@@ -79,8 +81,19 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
     setSearchValue(event.target.value);
   };
   const handleStatusChange = (value) => {
-    setStatus(value);
+    if (value === '') {
+      console.log("value ", value);
+      setStatus('in_progress');
+    } else {
+      setStatus(value);
+    }
   };
+
+  const handleInProgressClick = (e) => {
+    e.stopPropagation(); // Prevent event bubbling
+    setStatus('in_progress');
+  };
+
 
 
   const handleSearch = async (e: MouseEvent<HTMLButtonElement>): Promise<void> => {
@@ -230,27 +243,30 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
           </form>
           <form className="flex items-center w-1/3">
             <div className="relative w-full">
-              <Select value={status} onValueChange={handleStatusChange}>
-                {
-                  status !== '' && (
-                    <button onClick={() => {
-                      handleStatusChange('')
-                    }} className="absolute inset-y-0 end-8 flex items-center ps-3">
-                      <X className="text-red-500 w-5 h-5" />
-                    </button>
-                  )
-                }
+              <Select
+                value={status}
+                onValueChange={handleStatusChange}
+              >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Todo" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
                     <SelectItem value="pending">To Do</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
+
+              {status !== 'in_progress' && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setStatus('in_progress') }}
+                  className="absolute inset-y-0 end-8 flex items-center ps-3"
+                  type="button"
+                >
+                  <X className="text-red-500 w-5 h-5" />
+                </button>
+              )}
             </div>
           </form>
         </div>

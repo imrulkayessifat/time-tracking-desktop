@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query";
 
 import Loader from "./Loader"
 import { cn } from "../lib/utils";
@@ -37,6 +38,7 @@ const Project: React.FC<ProjectsProps> = ({
   searchProject
 }) => {
   const [page, setPage] = useState(1)
+  const queryClient = useQueryClient();
   const { chosen_project_id, setTask } = useSelectTask()
   const { init_project_id, init_task_id, setProjectTask } = useSelectProjectTask()
   const { cleanupTimers } = useTimerCleanup();
@@ -104,6 +106,7 @@ const Project: React.FC<ProjectsProps> = ({
                       <tr
                         onClick={() => {
                           setProject(project.id, -1)
+                          queryClient.invalidateQueries({ queryKey: ["tasks"] })
                           setProjectTask(project.id, -1)
                           setTask(-1, -1)
                         }}

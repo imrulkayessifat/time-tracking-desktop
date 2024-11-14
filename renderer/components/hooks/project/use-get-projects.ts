@@ -18,7 +18,7 @@ export const useGetProjects = ({ page, token }: UseGetProjectProps) => {
     const query = useQuery<ProjectData>({
         queryKey: ["projects", page],
         queryFn: async () => {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/project?page=${page}&limit=5&status=active`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/project?page=${page}&limit=5`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `${token}`,

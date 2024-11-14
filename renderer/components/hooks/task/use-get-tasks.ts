@@ -26,7 +26,7 @@ export const useGetTasks = ({ taskPage, token, projectId, status }: UseGetTaskPr
             if (status) {
                 url += `&status=${status}`;
             }
-            console.log("url ", url)
+
             const res = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -52,6 +52,7 @@ export const useGetTasks = ({ taskPage, token, projectId, status }: UseGetTaskPr
             // const { data } = await res.json();
             // return data;
         },
+        gcTime: 0
     })
     return query;
 }

@@ -51,6 +51,7 @@ const Main: React.FC<MainProps> = ({
       });
       return;
     }
+    pause();
     toast.success(`Task track paused : ${project_id} ${task_id} ${message}`, {
       duration: 1000,
     });
@@ -136,7 +137,11 @@ const Main: React.FC<MainProps> = ({
       });
       return;
     }
-    start(data.duration);
+    if (task_id !== -1) {
+      start(data.project.duration, true, data.task.duration);
+    } else {
+      start(data.project.duration, false);
+    }
     toast.success(`Task track started : ${project_id} ${task_id} ${message}`, {
       duration: 1000,
     });
@@ -144,10 +149,10 @@ const Main: React.FC<MainProps> = ({
 
   const handleTimerToggle = async () => {
     if (!isRunning) {
-      start();
+      // start();
       await startTask(init_project_id, init_task_id);
     } else {
-      pause();
+      // pause();
       await pauseTask(init_project_id, init_task_id);
     }
   };
