@@ -30,6 +30,7 @@ export const useGetProjects = ({ page, token }: UseGetProjectProps) => {
             const { data } = await res.json();
             return data;
         },
+        gcTime:0
     })
     return query;
 }

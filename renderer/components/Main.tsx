@@ -31,28 +31,37 @@ const Main: React.FC<MainProps> = ({
   const { init_project_id, init_task_id } = useSelectProjectTask()
 
   const pauseTask = async (project_id: number, task_id: number) => {
-    window.electron.ipcRenderer.send('idle-stopped', { projectId: project_id, taskId: task_id });
-    const requestBody = task_id === -1
-      ? { project_id }
-      : { project_id, task_id };
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `${token}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-    const { success } = await res.json();
-    if (!success) {
-      toast.error(`Track Pause Something went wrong ${project_id} ${task_id}`, {
-        duration: 1000,
+    try {
+      const requestBody = task_id === -1
+        ? { project_id }
+        : { project_id, task_id };
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `${token}`
+        },
+        body: JSON.stringify(requestBody)
       });
-      return;
+      const { success, message } = await res.json();
+
+      if (success) {
+        toast.success(`Task track paused : ${project_id} ${task_id}`, {
+          duration: 1000,
+        });
+        return true;
+      } else {
+        toast.error(`Track Pause Something went wrong ${project_id} ${task_id} ${message}`, {
+          duration: 5000,
+        });
+        return false;
+      }
+    } catch (error) {
+      toast.error(`Track Pause Something went wrong ${project_id} ${task_id} ${error}`, {
+        duration: 5000,
+      });
+      return false;
     }
-    toast.success(`Task track paused : ${project_id} ${task_id}`, {
-      duration: 1000,
-    });
   };
 
   const {
@@ -76,23 +85,6 @@ const Main: React.FC<MainProps> = ({
     }
   }, [hours, minutes, seconds, isRunning, init_project_id, init_task_id]);
 
-  // Effect for electron IPC communication
-  useEffect(() => {
-    if (!window.electron) return;
-
-    const handleToggleTimer = () => {
-      if (isRunning) {
-        pause();
-      } else {
-        start();
-      }
-      window.electron.ipcRenderer.send('ds', !isRunning);
-    };
-
-    const unsubscribe = window.electron.ipcRenderer.on('toggle-timer', handleToggleTimer);
-    return unsubscribe;
-  }, [isRunning, pause, start]);
-
   useEffect(() => {
     const fetchData = async () => {
 
@@ -115,38 +107,53 @@ const Main: React.FC<MainProps> = ({
   }, [token]);
 
   const startTask = async (project_id: number, task_id: number) => {
-    window.electron.ipcRenderer.send('idle-started', { project_id, task_id });
-    const requestBody = task_id === -1
-      ? { project_id }
-      : { project_id, task_id };
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/start`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `${token}`
-      },
-      body: JSON.stringify(requestBody)
-    });
-    const { success } = await res.json();
-
-    if (!success) {
-      toast.error(`Track Start : Something went wrong ${project_id} ${task_id}`, {
-        duration: 1000,
+    try {
+      const requestBody = task_id === -1
+        ? { project_id }
+        : { project_id, task_id };
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `${token}`
+        },
+        body: JSON.stringify(requestBody)
       });
-      return;
+      const { success, message } = await res.json();
+
+      if (success) {
+        toast.success(`Task track started : ${project_id} ${task_id}`, {
+          duration: 1000,
+        });
+        return true;
+      } else {
+        toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${message}`, {
+          duration: 5000,
+        });
+        return false;
+      }
+    } catch (error) {
+      toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${error}`, {
+        duration: 5000,
+      });
+      return false;
     }
-    toast.success(`Task track started : ${project_id} ${task_id}`, {
-      duration: 1000,
-    });
   };
+
 
   const handleTimerToggle = async () => {
     if (!isRunning) {
-      start();
-      await startTask(init_project_id, init_task_id);
+      const startSuccess = await startTask(init_project_id, init_task_id);
+      if (startSuccess) {
+        start();
+        window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
+      }
     } else {
-      pause();
-      await pauseTask(init_project_id, init_task_id);
+      const pauseSuccess = await pauseTask(init_project_id, init_task_id);
+      if (pauseSuccess) {
+        pause();
+        window.electron.ipcRenderer.send('idle-started', { init_project_id, init_task_id });
+      }
     }
   };
 
