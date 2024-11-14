@@ -121,18 +121,24 @@ const Main: React.FC<MainProps> = ({
         },
         body: JSON.stringify(requestBody)
       });
-      const { success, message } = await res.json();
+      const { success, message, data } = await res.json();
 
       if (success) {
         toast.success(`Task track started : ${project_id} ${task_id}`, {
           duration: 1000,
         });
-        return true;
+        return {
+          startSuccess: true,
+          projectDuration: data.project.duration,
+          taskDuration: data.task.duration
+        };
       } else {
         toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${message}`, {
           duration: 5000,
         });
-        return false;
+        return {
+          startSuccess: false,
+        };
       }
     } catch (error) {
       toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${error}`, {
@@ -145,9 +151,13 @@ const Main: React.FC<MainProps> = ({
 
   const handleTimerToggle = async () => {
     if (!isRunning) {
-      const startSuccess = await startTask(init_project_id, init_task_id);
-      if (startSuccess) {
-        start();
+      const data = await startTask(init_project_id, init_task_id);
+      if (data && data.startSuccess) {
+        if (init_task_id !== -1) {
+          start(data.projectDuration, data.taskDuration);
+        } else {
+          start(data.projectDuration);
+        }
         window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
       }
     } else {

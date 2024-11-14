@@ -19,7 +19,7 @@ export const useTaskTimer = (
     pauseTask?: (projectId: number, taskId: number) => void
 ) => {
     // Create a unique key for the task
-    const parentTaskKey = `task_${projectId}_-1`;
+    const projectKey = `task_${projectId}_-1`;
     const taskKey = `task_${projectId}_${taskId}`;
 
     const getCurrentDate = () => {
@@ -34,6 +34,13 @@ export const useTaskTimer = (
         const timers: TaskTimerStore = JSON.parse(stored);
         return timers[taskKey] || null;
     };
+    const getStoredTimeProject = (): TaskTime | null => {
+        if (typeof window === 'undefined') return null;
+        const stored = localStorage.getItem('taskTimers');
+        if (!stored) return null;
+        const timers: TaskTimerStore = JSON.parse(stored);
+        return timers[projectKey] || null;
+    };
 
     // Get all stored timers
     const getAllTimers = (): TaskTimerStore => {
@@ -41,11 +48,15 @@ export const useTaskTimer = (
         const stored = localStorage.getItem('taskTimers');
         return stored ? JSON.parse(stored) : {};
     };
+    const parseDuration = (duration: string) => {
+        const [hours, minutes, seconds] = duration.split(':').map(Number);
+        return { hours, minutes, seconds };
+    };
 
     const updateParentTaskTime = (currentTimers: TaskTimerStore) => {
         if (taskId === -1) return; // Don't update if this is already a parent task
 
-        const parentTime = currentTimers[parentTaskKey] || {
+        const parentTime = currentTimers[projectKey] || {
             hours: 0,
             minutes: 0,
             seconds: 0,
@@ -66,7 +77,7 @@ export const useTaskTimer = (
             parentTime.minutes = parentTime.minutes % 60;
         }
 
-        currentTimers[parentTaskKey] = parentTime;
+        currentTimers[projectKey] = parentTime;
     };
 
     // Find and stop any running timer
@@ -90,9 +101,36 @@ export const useTaskTimer = (
     };
 
     // Calculate offset date for the stopwatch
-    const getOffsetDate = () => {
-        const storedTime = getStoredTime();
+    const getOffsetDate = (initialDuration?: string) => {
         const now = new Date();
+        if (initialDuration) {
+            const { hours, minutes, seconds } = parseDuration(initialDuration);
+            now.setHours(now.getHours() + hours);
+            now.setMinutes(now.getMinutes() + minutes);
+            now.setSeconds(now.getSeconds() + seconds);
+            return now;
+        }
+
+        const storedTime = getStoredTime();
+        if (storedTime) {
+            now.setHours(now.getHours() + storedTime.hours);
+            now.setMinutes(now.getMinutes() + storedTime.minutes);
+            now.setSeconds(now.getSeconds() + storedTime.seconds);
+        }
+        return now;
+    };
+
+    const getOffsetDateProject = (initialDuration?: string) => {
+        const now = new Date();
+        if (initialDuration) {
+            const { hours, minutes, seconds } = parseDuration(initialDuration);
+            now.setHours(now.getHours() + hours);
+            now.setMinutes(now.getMinutes() + minutes);
+            now.setSeconds(now.getSeconds() + seconds);
+            return now;
+        }
+
+        const storedTime = getStoredTimeProject();
         if (storedTime) {
             now.setHours(now.getHours() + storedTime.hours);
             now.setMinutes(now.getMinutes() + storedTime.minutes);
@@ -164,8 +202,65 @@ export const useTaskTimer = (
 
     }, [hours, minutes, seconds, isRunning, taskKey]);
 
-    const start = useCallback(() => {
+    const start = useCallback((projectDuration?: string, taskDuration?: string) => {
         stopRunningTimer(); // Stop any running timer before starting new one
+        console.log("duration : ", projectDuration, taskDuration)
+
+        const timers = getAllTimers();
+        if (projectDuration && taskDuration) {
+            // Update both project and task durations
+            const { hours: projHours, minutes: projMinutes, seconds: projSeconds } = parseDuration(projectDuration);
+            const { hours: taskHours, minutes: taskMinutes, seconds: taskSeconds } = parseDuration(taskDuration);
+
+            // Update project timer in localStorage
+            timers[projectKey] = {
+                hours: projHours,
+                minutes: projMinutes,
+                seconds: projSeconds,
+                isRunning: false,
+                date: getCurrentDate()
+            };
+
+            // Update task timer in localStorage
+            timers[taskKey] = {
+                hours: taskHours,
+                minutes: taskMinutes,
+                seconds: taskSeconds,
+                isRunning: true,
+                date: getCurrentDate()
+            };
+
+            localStorage.setItem('taskTimers', JSON.stringify(timers));
+
+            // Set the stopwatch to the task duration
+            const offsetDate = new Date();
+            offsetDate.setHours(offsetDate.getHours() + taskHours);
+            offsetDate.setMinutes(offsetDate.getMinutes() + taskMinutes);
+            offsetDate.setSeconds(offsetDate.getSeconds() + taskSeconds);
+            reset(offsetDate, true);
+        } else if (projectDuration) {
+            const { hours, minutes, seconds } = parseDuration(projectDuration);
+
+            // Update project timer in localStorage
+            timers[projectKey] = {
+                hours,
+                minutes,
+                seconds,
+                isRunning: true,
+                date: getCurrentDate()
+            };
+
+            localStorage.setItem('taskTimers', JSON.stringify(timers));
+
+            // Set the stopwatch
+            const offsetDate = new Date();
+            offsetDate.setHours(offsetDate.getHours() + hours);
+            offsetDate.setMinutes(offsetDate.getMinutes() + minutes);
+            offsetDate.setSeconds(offsetDate.getSeconds() + seconds);
+            reset(offsetDate, true);
+        }
+
+
         startStopwatch();
     }, [startStopwatch]);
 
