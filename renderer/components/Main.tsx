@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "sonner"
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ const Main: React.FC<MainProps> = ({
   token
 }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasTaskStorePermission, setHasTaskStorePermission] = useState(false);
   const toggleExpand = () => {
@@ -171,6 +173,7 @@ const Main: React.FC<MainProps> = ({
                 removeClientToken();
                 localStorage.removeItem('user');
                 localStorage.removeItem('taskTimers');
+                queryClient.clear()
                 router.push('/home')
               }}
             >
