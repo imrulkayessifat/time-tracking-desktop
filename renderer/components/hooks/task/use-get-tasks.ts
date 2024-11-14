@@ -20,6 +20,8 @@ export const useGetTasks = ({ taskPage, token, projectId, status }: UseGetTaskPr
     const query = useQuery<TaskData>({
         queryKey: ["tasks", taskPage, projectId, status],
         queryFn: async () => {
+
+            console.log("ffff", status)
             const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/project/${projectId}?page=${taskPage}&limit=5&status=${status}`, {
                 method: 'GET',
                 headers: {
