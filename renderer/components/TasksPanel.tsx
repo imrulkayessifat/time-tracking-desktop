@@ -57,7 +57,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   handleTimerToggle,
   isExpanded
 }) => {
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState('');
   const [isPending, startTransition] = useTransition();
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchTask, setSearchTask] = useState<TaskData>()
@@ -229,17 +229,29 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
             </div>
           </form>
           <form className="flex items-center w-1/3">
-            <Select value={status} onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="pending">To Do</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <div className="relative w-full">
+              <Select value={status} onValueChange={handleStatusChange}>
+                {
+                  status !== '' && (
+                    <button onClick={() => {
+                      handleStatusChange('')
+                    }} className="absolute inset-y-0 end-8 flex items-center ps-3">
+                      <X className="text-red-500 w-5 h-5" />
+                    </button>
+                  )
+                }
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Todo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="pending">To Do</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
           </form>
         </div>
       </div>

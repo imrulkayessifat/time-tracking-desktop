@@ -20,17 +20,37 @@ export const useGetTasks = ({ taskPage, token, projectId, status }: UseGetTaskPr
     const query = useQuery<TaskData>({
         queryKey: ["tasks", taskPage, projectId, status],
         queryFn: async () => {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/project/${projectId}?page=${taskPage}&limit=5&status=${status}`, {
+            let url = `${process.env.NEXT_PUBLIC_BASE_URL}/task/project/${projectId}?page=${taskPage}&limit=5`;
+
+            // Only append status if it's not an empty string
+            if (status) {
+                url += `&status=${status}`;
+            }
+            console.log("url ", url)
+            const res = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Authorization': `${token}`,
                 }
             });
+
             if (!res.ok) {
                 throw new Error("Failed to fetch tasks");
             }
+
             const { data } = await res.json();
             return data;
+            // const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/task/project/${projectId}?page=${taskPage}&limit=5&status=${status}`, {
+            //     method: 'GET',
+            //     headers: {
+            //         'Authorization': `${token}`,
+            //     }
+            // });
+            // if (!res.ok) {
+            //     throw new Error("Failed to fetch tasks");
+            // }
+            // const { data } = await res.json();
+            // return data;
         },
     })
     return query;

@@ -157,6 +157,8 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                     ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
                 };
 
+                console.log("inactivityTimeout : ", lastActiveWindow)
+
                 // Uncomment when ready to send data
                 const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
                     method: 'POST',

@@ -13,6 +13,11 @@ interface TaskTimerStore {
     [key: string]: TaskTime;
 }
 
+interface StartTaskResponse {
+    success: boolean;
+    duration?: string; // "HH:mm:ss" format
+}
+
 export const useTaskTimer = (
     taskId: number,
     projectId: number,
@@ -24,6 +29,11 @@ export const useTaskTimer = (
 
     const getCurrentDate = () => {
         return new Date().toISOString().split('T')[0];
+    };
+
+    const parseDuration = (duration: string) => {
+        const [hours, minutes, seconds] = duration.split(':').map(Number);
+        return { hours, minutes, seconds };
     };
 
     // Get stored time for this task
@@ -90,9 +100,17 @@ export const useTaskTimer = (
     };
 
     // Calculate offset date for the stopwatch
-    const getOffsetDate = () => {
-        const storedTime = getStoredTime();
+    const getOffsetDate = (initialDuration?: string) => {
         const now = new Date();
+        if (initialDuration) {
+            const { hours, minutes, seconds } = parseDuration(initialDuration);
+            now.setHours(now.getHours() + hours);
+            now.setMinutes(now.getMinutes() + minutes);
+            now.setSeconds(now.getSeconds() + seconds);
+            return now;
+        }
+
+        const storedTime = getStoredTime();
         if (storedTime) {
             now.setHours(now.getHours() + storedTime.hours);
             now.setMinutes(now.getMinutes() + storedTime.minutes);
@@ -164,10 +182,15 @@ export const useTaskTimer = (
 
     }, [hours, minutes, seconds, isRunning, taskKey]);
 
-    const start = useCallback(() => {
-        stopRunningTimer(); // Stop any running timer before starting new one
-        startStopwatch();
-    }, [startStopwatch]);
+    const start = useCallback((initialDuration?: string) => {
+        stopRunningTimer();
+        if (initialDuration) {
+            const offsetDate = getOffsetDate(initialDuration);
+            reset(offsetDate, true);
+        } else {
+            startStopwatch();
+        }
+    }, [startStopwatch, reset]);
 
     const pause = useCallback(() => {
         pauseStopwatch();

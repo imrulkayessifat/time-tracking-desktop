@@ -43,14 +43,15 @@ const Main: React.FC<MainProps> = ({
       },
       body: JSON.stringify(requestBody)
     });
-    const { success } = await res.json();
+    const { success, message } = await res.json();
+    console.log("task message : ", message)
     if (!success) {
-      toast.error(`Track Pause Something went wrong ${project_id} ${task_id}`, {
+      toast.error(`Track Pause Something went wrong ${project_id} ${task_id} ${message}`, {
         duration: 1000,
       });
       return;
     }
-    toast.success(`Task track paused : ${project_id} ${task_id}`, {
+    toast.success(`Task track paused : ${project_id} ${task_id} ${message}`, {
       duration: 1000,
     });
   };
@@ -127,15 +128,16 @@ const Main: React.FC<MainProps> = ({
       },
       body: JSON.stringify(requestBody)
     });
-    const { success } = await res.json();
+    const { success, data, message } = await res.json();
 
     if (!success) {
-      toast.error(`Track Start : Something went wrong ${project_id} ${task_id}`, {
+      toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${message}`, {
         duration: 1000,
       });
       return;
     }
-    toast.success(`Task track started : ${project_id} ${task_id}`, {
+    start(data.duration);
+    toast.success(`Task track started : ${project_id} ${task_id} ${message}`, {
       duration: 1000,
     });
   };
