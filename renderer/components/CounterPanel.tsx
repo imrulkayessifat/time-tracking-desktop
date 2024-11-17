@@ -5,6 +5,8 @@ import {
   useState
 } from "react";
 import { toast } from "sonner"
+import { RefreshCcw } from 'lucide-react';
+import { useQueryClient } from "@tanstack/react-query";
 
 import Project from "./Project";
 import { cn } from '../lib/utils';
@@ -47,7 +49,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
   seconds,
   isRunning
 }) => {
-
+  const queryClient = useQueryClient();
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchProject, setSearchProject] = useState<ProjectData>()
   const { project_id, task_id } = useSelectProject();
@@ -123,12 +125,19 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
                 <img src="/images/search.png" className="h-[26px] w-[26px] cursor-pointer" />
               </button>
             </div>
-            <input
-              value={searchValue}
-              onChange={handleSearchChange}
-              type="text"
-              className=" border block w-full ps-10 p-2.5"
-            />
+            <div className="flex gap-4">
+              <input
+                value={searchValue}
+                onChange={handleSearchChange}
+                type="text"
+                className=" border block w-full ps-10 p-2.5"
+              />
+              <button onClick={()=>{
+                queryClient.invalidateQueries({ queryKey: ["projects"] })
+              }} disabled={isRunning} className={cn("border rounded-md px-5",isRunning && "cursor-not-allowed")}>
+                <RefreshCcw />
+              </button>
+            </div>
             <div className={cn("absolute inset-y-0 end-2 flex items-center ps-3", searchValue.length === 0 && "hidden")}>
               <button
                 onClick={handleClearSearch}
