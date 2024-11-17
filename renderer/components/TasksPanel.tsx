@@ -66,7 +66,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
 
   const { chosen_project_id, chosen_task_id } = useSelectTask()
   const mutation = useCreateTask({ token })
-  const { init_project_id } = useSelectProjectTask()
+  const { init_project_id, init_task_id } = useSelectProjectTask()
   const { project_id } = useSelectProject()
 
   useEffect(() => {
@@ -150,6 +150,32 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       })
     });
 
+  }
+
+  const endTask = async (init_project_id: number, init_task_id: number) => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/end`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `${token}`
+      },
+      body: JSON.stringify({
+        project_id: init_project_id,
+        task_id: init_task_id
+      })
+    });
+    const { success, message } = await res.json();
+
+    if (success) {
+      toast.success(`Task end successfull : ${init_project_id} ${init_task_id} ${message}`, {
+        duration: 1000,
+      });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+    } else {
+      toast.error(`Track end : Something went wrong ${init_project_id} ${init_task_id} ${message}`, {
+        duration: 5000,
+      });
+    }
   }
 
   return (
@@ -263,6 +289,14 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         </div>
       </div>
       <Task token={token} handleTimerToggle={handleTimerToggle} searchTask={searchTask} status={status} />
+      <div className="mt-5 border-t">
+        <div className="flex items-center justify-between mt-3">
+          <p>Task Id : { init_task_id }</p>
+          <button onClick={() => {
+            endTask(init_project_id, init_task_id)
+          }} disabled={init_task_id === -1} className={cn("border rounded px-3 py-2", init_task_id === -1 && 'opacity-50')}>Completed</button>
+        </div>
+      </div>
     </div>
   )
 }
