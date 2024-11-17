@@ -17,19 +17,27 @@ const showNotification = (success: boolean, displayCount?: number, error?: strin
         return;
     }
 
-    if (success) {
-        new Notification({
-            title: 'Screenshot Captured',
-            body: `Successfully captured screenshot${displayCount && displayCount > 1 ? 's' : ''} from ${displayCount} display${displayCount && displayCount > 1 ? 's' : ''}`,
-            icon: path.join(app.getPath('userData'), 'screenshot-icon.png') // Optional: Add your own icon
-        }).show();
-    } else {
-        new Notification({
-            title: 'Screenshot Failed',
-            body: error || 'Failed to capture screenshot',
-            icon: path.join(app.getPath('userData'), 'error-icon.png') // Optional: Add your own icon
-        }).show();
-    }
+    const notificationOptions = {
+        title: success ? 'Screenshot Captured' : 'Screenshot Failed',
+        body: success
+            ? `Successfully captured screenshot${displayCount && displayCount > 1 ? 's' : ''} from ${displayCount} display${displayCount && displayCount > 1 ? 's' : ''}`
+            : (error || 'Failed to capture screenshot'),
+        icon: path.join(
+            app.getPath('userData'),
+            success ? 'screenshot-icon.png' : 'error-icon.png'
+        ),
+        timeoutType: 'default' as const,
+        closeTimeoutMs: 3000 // 3 seconds in milliseconds
+    };
+
+    const notification = new Notification(notificationOptions);
+    notification.show();
+
+    setTimeout(() => {
+        if (notification) {
+            notification.close();
+        }
+    }, 3000);
 };
 
 

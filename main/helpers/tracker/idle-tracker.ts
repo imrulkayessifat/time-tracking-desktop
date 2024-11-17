@@ -1,5 +1,5 @@
 // idle-tracker.ts
-import { powerMonitor } from 'electron';
+import { Notification, powerMonitor } from 'electron';
 
 import AuthTokenStore from '../auth-token-store';
 
@@ -25,6 +25,8 @@ export class TaskIdleTracker {
     private idleCheckInterval: NodeJS.Timeout | null;
     private activeTaskKey: string | null;
     private idlePeriods: IdlePeriod[];
+    private notificationShown: boolean = false;
+
 
     constructor(private apiEndpoint: string, idleThresholdSeconds: number = 15) {
         this.taskIdleTimes = new Map();
@@ -33,6 +35,24 @@ export class TaskIdleTracker {
         this.activeTaskKey = null;
         this.idlePeriods = []
     }
+
+    private showIdleNotification(systemIdleTime) {
+        const notification = new Notification({
+            title: 'System Idle Alert',
+            body: `Your system has been idle for ${systemIdleTime} seconds.`,
+            silent: false, // Set to true if you don't want sound 
+        });
+
+        notification.show();
+
+        setTimeout(() => {
+            if (notification) {
+                notification.close();
+            }
+        }, 3000);
+
+    }
+
 
     private getAuthHeaders(): Headers {
         const headers = new Headers({
@@ -91,6 +111,10 @@ export class TaskIdleTracker {
         const isNowIdle = systemIdleTime >= this.idleThreshold;
 
         console.log(systemIdleTime, this.idleThreshold)
+        if ((systemIdleTime % 15 === 0) && systemIdleTime !== 0) {
+            this.showIdleNotification(systemIdleTime);
+        }
+
 
         if (!isNowIdle && !!activeTaskState.endTime) {
             this.idlePeriods.push({
