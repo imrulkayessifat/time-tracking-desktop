@@ -80,12 +80,14 @@ const Main: React.FC<MainProps> = ({
       window.electron.ipcRenderer.send('timer-update', {
         project_id: init_project_id,
         selectedTaskId: init_task_id,
+        isRunning,
         hours,
         minutes,
         seconds
       });
     }
   }, [hours, minutes, seconds, isRunning, init_project_id, init_task_id]);
+
 
   useEffect(() => {
     const fetchData = async () => {

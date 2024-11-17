@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { app, desktopCapturer, screen } from 'electron';
+import { app, desktopCapturer, screen, Notification } from 'electron';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -10,6 +10,28 @@ const sanitizeFilename = (filename: string): string => {
     // Replace invalid characters with underscores
     return filename.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
 };
+
+const showNotification = (success: boolean, displayCount?: number, error?: string) => {
+    if (!Notification.isSupported()) {
+        console.log('Notifications are not supported on this system');
+        return;
+    }
+
+    if (success) {
+        new Notification({
+            title: 'Screenshot Captured',
+            body: `Successfully captured screenshot${displayCount && displayCount > 1 ? 's' : ''} from ${displayCount} display${displayCount && displayCount > 1 ? 's' : ''}`,
+            icon: path.join(app.getPath('userData'), 'screenshot-icon.png') // Optional: Add your own icon
+        }).show();
+    } else {
+        new Notification({
+            title: 'Screenshot Failed',
+            body: error || 'Failed to capture screenshot',
+            icon: path.join(app.getPath('userData'), 'error-icon.png') // Optional: Add your own icon
+        }).show();
+    }
+};
+
 
 const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
     try {
@@ -106,6 +128,7 @@ const captureAndSaveScreenshot = async (time: {
         if (savedFiles.length === 0) {
             throw new Error('No screenshots were captured successfully');
         }
+        showNotification(true, savedFiles.length);
 
         return savedFiles;
     } catch (error) {

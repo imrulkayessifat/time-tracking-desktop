@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('electron', {
     },
     invoke: async (channel: string, ...args: unknown[]): Promise<unknown> => {
       return await ipcRenderer.invoke(channel, ...args);
+    },
+    removeAllListeners: (channel: string) => {
+      ipcRenderer.removeAllListeners(channel);
     }
   }
 });
@@ -25,6 +28,7 @@ export type ElectronAPI = {
     send: (channel: string, data?: unknown) => void;
     on: (channel: string, func: (...args: unknown[]) => void) => () => void;
     invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
+    removeAllListeners: (channel: string) => void;
   },
 };
 

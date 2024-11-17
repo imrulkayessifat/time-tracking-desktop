@@ -4,7 +4,8 @@ import {
   app,
   BrowserWindow,
   ipcMain,
-  globalShortcut
+  globalShortcut,
+  dialog
 } from 'electron'
 import serve from 'electron-serve'
 
@@ -23,6 +24,8 @@ const isProd = process.env.NODE_ENV === 'production'
 
 let mainWindow: BrowserWindow | null = null;
 let lastScreenshotTime = { minutes: -1, hours: -1 };
+let isAnyRunningTask: boolean | null = null;
+let forceQuit = false;
 
 let screenshotProcessor: ScreenshotProcessor;
 let activityProcessor: ActivityProcessor;
@@ -74,6 +77,42 @@ app.on('ready', async () => {
     await mainWindow.loadURL(`http://localhost:${port}/home`)
   }
 
+  mainWindow.on('close', async (e) => {
+    if (forceQuit) {
+      return; // Allow the close if forceQuit is true
+    }
+
+    e.preventDefault(); // Prevents the window from closing
+    console.log("isAnyRunningTask : ", isAnyRunningTask)
+
+    if (isAnyRunningTask) {
+      await dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        buttons: ['OK'],
+        title: 'Task Running',
+        message: 'Please stop the running task before closing the application.',
+        defaultId: 0,
+      });
+      return; // Prevents the app from closing
+    }
+
+    // Only show quit confirmation if no task is running
+    const choice = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Yes', 'No'],
+      title: 'Confirm',
+      message: 'Are you sure you want to quit?',
+      defaultId: 1, // Default to "No"
+      cancelId: 1
+    });
+
+    if (choice.response === 0) {  // If user clicks "Yes"
+      forceQuit = true; // Set the flag to allow the close
+      mainWindow.close();
+    }
+  });
+
+
   setupAuthIPC();
   // Load configuration
   // const { apiEndpoint: configApiEndpoint, intervalMs } = await loadProcessorConfig();
@@ -84,8 +123,8 @@ app.on('ready', async () => {
   activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
   idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 15);
-});
 
+});
 
 app.on('window-all-closed', () => {
   app.quit()
@@ -112,10 +151,9 @@ ipcMain.on('message', async (event, arg) => {
   event.reply('message', `${arg} World!`)
 })
 
-ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, hours: number, minutes: number, seconds: number }) => {
+ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, isRunning: boolean, hours: number, minutes: number, seconds: number }) => {
   const interval = configurationProcessor?.getScreenShotInterval() ?? 2;
   // const interval = 2
-
   console.log("interval", interval)
   const elapsedMinutes = (info.hours * 60 + info.minutes) - (lastScreenshotTime.hours * 60 + lastScreenshotTime.minutes);
 
@@ -135,6 +173,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
 
 ipcMain.on('idle-started', (_, { projectId, taskId }) => {
   try {
+    isAnyRunningTask = true
     idleTracker.startTracking(projectId, taskId);
     screenshotProcessor.startProcessing();
     activityProcessor.startProcessing();
@@ -144,8 +183,9 @@ ipcMain.on('idle-started', (_, { projectId, taskId }) => {
   }
 })
 
-ipcMain.on('idle-stopped', (_, { projectId, taskId }) => {
+ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
   try {
+    isAnyRunningTask = false
     const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
     screenshotProcessor.stopProcessing();
     activityProcessor.stopProcessing()
