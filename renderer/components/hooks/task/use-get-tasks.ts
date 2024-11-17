@@ -34,6 +34,7 @@ export const useGetTasks = ({ taskPage, token, projectId, status }: UseGetTaskPr
             const { data } = await res.json();
             return data;
         },
+        gcTime: 0
     })
     return query;
 }

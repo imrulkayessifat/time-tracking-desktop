@@ -91,7 +91,10 @@ export const useTaskTimer = (
                 console.log("isRunning : ", projectId, taskId)
                 timer.isRunning = false;
                 updated = true;
-                await pauseTask(parseInt(projectId), parseInt(taskId))
+                if (parseInt(projectId) !== -1) {
+
+                    await pauseTask(parseInt(projectId), parseInt(taskId))
+                }
             }
         });
 

@@ -86,9 +86,7 @@ app.on('ready', async () => {
   idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 15);
 
   // Initialize the processor with loaded config
-  screenshotProcessor.startProcessing();
-  activityProcessor.startProcessing();
-  configurationProcessor.startProcessing();
+
   console.log('Screenshot processor started');
 });
 
@@ -99,23 +97,6 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   console.log('App is quitting, stopping screenshot processor...');
-  try {
-    idleTracker.clearAll();
-  } catch (error) {
-    console.error('Error clearing idle tracking:', error);
-  }
-
-  if (screenshotProcessor) {
-    screenshotProcessor.stopProcessing();
-  }
-
-  if (activityProcessor) {
-    activityProcessor.stopProcessing()
-  }
-
-  if (configurationProcessor) {
-    configurationProcessor.stopProcessing()
-  }
 });
 
 ipcMain.on('toggle-expand', (_, isExpanded) => {
@@ -158,6 +139,9 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
 ipcMain.on('idle-started', (_, { project_id, task_id }) => {
   try {
     idleTracker.startTracking(project_id, task_id);
+    screenshotProcessor.startProcessing();
+    activityProcessor.startProcessing();
+    configurationProcessor.startProcessing();
   } catch (error) {
     console.error('Error starting idle tracking:', error);
   }
@@ -166,6 +150,10 @@ ipcMain.on('idle-started', (_, { project_id, task_id }) => {
 ipcMain.on('idle-stopped', (_, { projectId, taskId }) => {
   try {
     const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
+    idleTracker.clearAll();
+    screenshotProcessor.stopProcessing();
+    activityProcessor.stopProcessing()
+    configurationProcessor.stopProcessing()
   } catch (error) {
     console.error('Error stoping idle tracking:', error);
   }

@@ -6,6 +6,7 @@ import { useAuth } from '../components/hooks/use-auth';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { getClientSideUser } from '../lib/auth';
+import { useAuthSync } from '../components/hooks/use-auth-sync';
 
 const ProfilePage = () => {
     const router = useRouter();
@@ -14,6 +15,7 @@ const ProfilePage = () => {
         token: null
     });
 
+    useAuthSync();
     useEffect(() => {
         const checkAuth = () => {
             const userData = getClientSideUser();
@@ -22,7 +24,6 @@ const ProfilePage = () => {
                 router.push('/home');
                 return;
             }
-
             setAuthState({
                 isLoading: false,
                 token: userData.token

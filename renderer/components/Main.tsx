@@ -34,6 +34,7 @@ const Main: React.FC<MainProps> = ({
 
   const pauseTask = async (project_id: number, task_id: number) => {
     try {
+      window.electron.ipcRenderer.send('idle-stopped', { init_project_id, init_task_id });
       const requestBody = task_id === -1
         ? { project_id }
         : { project_id, task_id };
@@ -110,6 +111,7 @@ const Main: React.FC<MainProps> = ({
 
   const startTask = async (project_id: number, task_id: number) => {
     try {
+      window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
       const requestBody = task_id === -1
         ? { project_id }
         : { project_id, task_id };
@@ -150,21 +152,22 @@ const Main: React.FC<MainProps> = ({
 
 
   const handleTimerToggle = async () => {
-    if (!isRunning) {
-      const data = await startTask(init_project_id, init_task_id);
-      if (data && data.startSuccess) {
-        if (init_task_id !== -1) {
-          start(data.projectDuration, data.taskDuration);
-        } else {
-          start(data.projectDuration);
+    if (init_project_id !== -1) {
+      if (!isRunning) {
+        const data = await startTask(init_project_id, init_task_id);
+        if (data && data.startSuccess) {
+          if (init_task_id !== -1) {
+            start(data.projectDuration, data.taskDuration);
+          } else {
+            start(data.projectDuration);
+          }
         }
-        window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
-      }
-    } else {
-      const pauseSuccess = await pauseTask(init_project_id, init_task_id);
-      if (pauseSuccess) {
-        pause();
-        window.electron.ipcRenderer.send('idle-started', { init_project_id, init_task_id });
+      } else {
+        const pauseSuccess = await pauseTask(init_project_id, init_task_id);
+        if (pauseSuccess) {
+          pause();
+
+        }
       }
     }
   };
