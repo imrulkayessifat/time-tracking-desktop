@@ -122,8 +122,10 @@ export class TaskIdleTracker {
 
     async stopTracking(projectId: number, taskId: number): Promise<number> {
         const taskKey = this.getTaskKey(projectId, taskId);
+        console.log("task Key : ", taskKey)
         const taskState = this.taskIdleTimes.get(taskKey);
         console.log("taskState : ", taskState)
+        console.log("idle periods : ", this.idlePeriods)
         if (taskState) {
             const totalIdleTime = taskState.totalIdleTime;
             this.taskIdleTimes.delete(taskKey);
@@ -138,8 +140,6 @@ export class TaskIdleTracker {
             if (this.activeTaskKey === taskKey) {
                 this.activeTaskKey = null;
             }
-
-            console.log("idle periods : ", this.idlePeriods)
 
             const transformedIdlePeriods = this.idlePeriods.map(period => {
                 if (period.task_id === -1) {

@@ -18,20 +18,12 @@ const nunito = Nunito({
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
     <QueryProvider>
-        <AuthSyncWrapper>
-          <main className={cn(nunito.className,"w-full h-full")}>
-            <Component {...pageProps} />
-          </main>
-          <Toaster richColors />
-        </AuthSyncWrapper>
+      <main className={cn(nunito.className, "w-full h-full")}>
+        <Component {...pageProps} />
+      </main>
+      <Toaster richColors />
     </QueryProvider>
   )
 }
-
-function AuthSyncWrapper({ children }: { children: React.ReactNode }) {
-  useAuthSync();
-  return <>{children}</>;
-}
-
 
 export default MyApp

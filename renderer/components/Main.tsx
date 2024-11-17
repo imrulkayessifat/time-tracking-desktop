@@ -148,13 +148,14 @@ const Main: React.FC<MainProps> = ({
       const startSuccess = await startTask(init_project_id, init_task_id);
       if (startSuccess) {
         start();
-        window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
+        console.log("idle key : ", init_project_id, init_task_id)
+        window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
       }
     } else {
       const pauseSuccess = await pauseTask(init_project_id, init_task_id);
       if (pauseSuccess) {
         pause();
-        window.electron.ipcRenderer.send('idle-started', { init_project_id, init_task_id });
+        window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
       }
     }
   };
