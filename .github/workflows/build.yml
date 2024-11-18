@@ -7,38 +7,71 @@ on:
     branches: [main]
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [windows-latest]
-        node-version: [18.x]
-
-    runs-on: ${{ matrix.os }}
-
+  build-macos:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 18.x
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18.x
           cache: "npm"
-
       - name: Install dependencies
         run: npm ci
-
       - name: Build Nextron App
         run: npm run build
+      - name: Build Nextron App for macOS
+        run: npm run electron:pack:mac
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: nextron-app-${{ matrix.os }}
+          path: |
+            dist/*.dmg
+          retention-days: 5
 
-      - name: Package Electron App
-        run: npm run electron:pack
-
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Nextron App
+        run: npm run build
+      - name: Build Nextron App for Windows
+        run: npm run electron:pack:win
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: nextron-app-${{ matrix.os }}
           path: |
             dist/*.exe
-            dist/*.dmg
+          retention-days: 5
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Nextron App
+        run: npm run build
+      - name: Build Nextron App for Linux
+        run: npm run electron:pack:linux
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: nextron-app-${{ matrix.os }}
+          path: |
             dist/*.AppImage
           retention-days: 5
