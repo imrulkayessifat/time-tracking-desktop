@@ -153,7 +153,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
                 <RefreshCcw />
               </button>
             </div>
-            <div className={cn("absolute inset-y-0 end-2 flex items-center ps-3", searchValue.length === 0 && "hidden")}>
+            <div className={cn("absolute inset-y-0 end-24 flex items-center ps-3", searchValue.length === 0 && "hidden")}>
               <button
                 onClick={handleClearSearch}
               >
