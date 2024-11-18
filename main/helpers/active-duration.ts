@@ -111,7 +111,7 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                     end_time: lastActiveWindow.end_time,
                     ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
                 };
-                console.log("last active window : ", lastActiveWindow)
+                console.log("last active window : ", payload)
 
                 // Uncomment when ready to send data
                 const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
@@ -119,9 +119,9 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
                         data: [
-                            {
-                                ...payload
-                            }
+
+                            payload
+
                         ]
                     })
                 });
@@ -157,15 +157,17 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                     ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
                 };
 
+                console.log("final active window :", payload);
+
                 // Uncomment when ready to send data
                 const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
                         data: [
-                            {
-                                ...payload
-                            }
+
+                            payload
+
                         ]
                     })
                 });

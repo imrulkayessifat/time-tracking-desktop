@@ -99,7 +99,7 @@ const startTracking = async (project_id: number, task_id: number) => {
         stmt.run(project_id, task_id, data.app_name, data.url)
         console.log("active window log : ", data)
     } catch (error) {
-        console.error('Error tracking active window:', error);
+        console.error('Error tracking active window:');
     }
 };
 
