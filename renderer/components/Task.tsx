@@ -104,6 +104,9 @@ const Task: React.FC<TaskProps> = ({
                                         return (
                                             <tr
                                                 onClick={() => {
+                                                    if (status === 'completed') {
+                                                        return; // Do nothing if status is completed
+                                                    }                                            
                                                     setTask(task.project_id, task.id)
                                                     setProjectTask(task.project_id, task.id)
                                                     setProject(-1, -1)
@@ -111,10 +114,10 @@ const Task: React.FC<TaskProps> = ({
                                                 key={index}
                                                 className={cn("bg-white cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
                                             >
-                                                <th scope="row" className={cn("flex gap-3 px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap", task.id === chosen_task_id && 'text-white')}>
+                                                <th scope="row" className={cn("flex gap-3 px-6 text-sm py-4 font-medium text-gray-900 whitespace-nowrap", task.id === chosen_task_id && 'text-white', status === 'completed' && 'cursor-not-allowed')}>
                                                     <button
                                                         onClick={handleTimerToggle}
-                                                        disabled={init_project_id === -1}
+                                                        disabled={init_project_id === -1 || status === 'completed'}
                                                     >
                                                         {
                                                             !isRunning ? (

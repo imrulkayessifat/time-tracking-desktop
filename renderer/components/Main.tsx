@@ -189,7 +189,7 @@ const Main: React.FC<MainProps> = ({
         <CounterPanel hours={hours} minutes={minutes} seconds={seconds} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} />
         {
           isExpanded && (
-            <TasksPanel hasTaskStorePermission={hasTaskStorePermission} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} token={token} />
+            <TasksPanel hasTaskStorePermission={hasTaskStorePermission} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} token={token} pause={pause} />
           )
         }
       </div>

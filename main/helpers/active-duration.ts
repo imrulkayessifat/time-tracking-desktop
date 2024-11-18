@@ -176,7 +176,7 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
         }, INACTIVITY_DURATION);
 
     } catch (error) {
-        console.error('Error tracking duration active window:', error);
+        console.error('Error tracking duration active window:');
     }
 };
 

@@ -9,6 +9,7 @@ import { RefreshCcw } from 'lucide-react';
 import { useQueryClient } from "@tanstack/react-query";
 
 import Project from "./Project";
+import { useSelectStatus } from "./hooks/task/use-status";
 import { cn } from '../lib/utils';
 import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { useSelectProject } from "./hooks/project/use-select-project";
@@ -50,6 +51,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
   isRunning
 }) => {
   const queryClient = useQueryClient();
+  const { status } = useSelectStatus();
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchProject, setSearchProject] = useState<ProjectData>()
   const { project_id, task_id } = useSelectProject();
@@ -62,6 +64,8 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
       })
     }
   }, [project_id])
+
+  console.log("counter status : ", status)
 
   const formatTime = (value: number) => {
     return value.toString().padStart(2, '0');
@@ -105,10 +109,21 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
             disabled={init_project_id === -1}
           >
             {
-              !isRunning ? (
-                <img src={`${init_project_id !== -1 ? '/images/start.png' : '/images/disable.png'}`} className={cn("w-[50px] h-[50px] cursor-pointer", init_project_id === -1 && 'cursor-not-allowed')} />
+              status === 'completed' ? (
+                <img
+                  src="/images/disable.png"
+                  className={cn("w-[50px] h-[50px] cursor-not-allowed")}
+                />
+              ) : !isRunning ? (
+                <img
+                  src={`${(init_project_id !== -1) ? '/images/start.png' : '/images/disable.png'}`}
+                  className={cn("w-[50px] h-[50px] cursor-pointer", init_project_id === -1 && 'cursor-not-allowed')}
+                />
               ) : (
-                <img src="/images/pause.png" className={cn("w-[50px] h-[50px] cursor-pointer")} />
+                <img
+                  src="/images/pause.png"
+                  className={cn("w-[50px] h-[50px] cursor-pointer")}
+                />
               )
             }
           </button>
@@ -132,9 +147,9 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
                 type="text"
                 className=" border block w-full ps-10 p-2.5"
               />
-              <button onClick={()=>{
+              <button onClick={() => {
                 queryClient.invalidateQueries({ queryKey: ["projects"] })
-              }} disabled={isRunning} className={cn("border rounded-md px-5",isRunning && "cursor-not-allowed")}>
+              }} disabled={isRunning} className={cn("border rounded-md px-5", isRunning && "cursor-not-allowed")}>
                 <RefreshCcw />
               </button>
             </div>

@@ -19,6 +19,7 @@ import {
 } from "./ui/dialog";
 import { cn } from "../lib/utils";
 import { useTaskTimer } from "./hooks/timer/useTaskTimer";
+import { useSelectStatus } from "./hooks/task/use-status";
 import { useSelectTask } from "./hooks/task/use-select-task";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useSelectProject } from "./hooks/project/use-select-project";
@@ -48,7 +49,9 @@ interface TaskData {
 interface TasksPanelProps {
   isExpanded: boolean;
   hasTaskStorePermission: boolean;
+  isRunning: boolean;
   handleTimerToggle: () => Promise<void>
+  pause: () => void;
   token: string
 }
 
@@ -56,10 +59,13 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   token,
   hasTaskStorePermission,
   handleTimerToggle,
+  isRunning,
+  pause,
   isExpanded
 }) => {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState('in_progress');
+  const { status, setStatus } = useSelectStatus()
+  // const [status, setStatus] = useState('in_progress');
   const [isPending, startTransition] = useTransition();
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchTask, setSearchTask] = useState<TaskData>()
@@ -289,14 +295,18 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         </div>
       </div>
       <Task token={token} handleTimerToggle={handleTimerToggle} searchTask={searchTask} status={status} />
-      <div className="mt-5 border-t">
+      {(init_task_id !== -1 && isRunning) && (<div className="mt-5 border-t">
+
         <div className="flex items-center justify-between mt-3">
-          <p>Task Id : { init_task_id }</p>
-          <button onClick={() => {
-            endTask(init_project_id, init_task_id)
+          <p>Task Id : {init_task_id}</p>
+          <button onClick={async () => {
+            await endTask(init_project_id, init_task_id)
+            pause()
+            window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
           }} disabled={init_task_id === -1} className={cn("border rounded px-3 py-2", init_task_id === -1 && 'opacity-50')}>Completed</button>
         </div>
       </div>
+      )}
     </div>
   )
 }
