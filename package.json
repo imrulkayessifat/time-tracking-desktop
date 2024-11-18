@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "nextron",
     "build": "nextron build",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "electron:pack": "electron-builder --mac --win --linux --publish never"
   },
   "dependencies": {
     "@cliqz-oss/firefox-client": "^0.3.1",

@@ -41,4 +41,6 @@ jobs:
             dist/*.exe
             dist/*.dmg
             dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
           retention-days: 5
