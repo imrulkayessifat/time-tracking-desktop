@@ -70,5 +70,8 @@
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.4.5"
+  },
+  "optionalDependencies": {
+    "dmg-license": "^1.0.11"
   }
 }
