@@ -70,10 +70,10 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchTask, setSearchTask] = useState<TaskData>()
 
-  const { chosen_project_id, chosen_task_id } = useSelectTask()
+  const { chosen_project_id, chosen_task_id, setTask } = useSelectTask()
   const mutation = useCreateTask({ token })
-  const { init_project_id, init_task_id } = useSelectProjectTask()
-  const { project_id } = useSelectProject()
+  const { init_project_id, init_task_id, setProjectTask } = useSelectProjectTask()
+  const { project_id, setProject } = useSelectProject()
 
   useEffect(() => {
     if (chosen_task_id !== -1) {
@@ -303,6 +303,9 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
             await endTask(init_project_id, init_task_id)
             pause()
             window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
+            setTask(-1, -1)
+            setProjectTask(-1, -1)
+            setProject(-1, -1)
           }} disabled={init_task_id === -1} className={cn("border rounded px-3 py-2", init_task_id === -1 && 'opacity-50')}>Completed</button>
         </div>
       </div>
