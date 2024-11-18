@@ -10,7 +10,7 @@
     "build": "nextron build",
     "build:linux": "nextron build --linux",
     "postinstall": "electron-builder install-app-deps",
-    "electron:pack": "electron-builder --mac --win --linux --publish always"
+    "electron:pack": "electron-builder --mac --win --publish never"
   },
   "dependencies": {
     "@cliqz-oss/firefox-client": "^0.3.1",

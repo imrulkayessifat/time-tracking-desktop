@@ -28,7 +28,7 @@ jobs:
         run: npm ci
 
       - name: Build Nextron App
-        run: npm run build:linux
+        run: npm run build
 
       - name: Package Electron App
         run: npm run electron:pack
@@ -40,4 +40,5 @@ jobs:
           path: |
             dist/*.exe
             dist/*.dmg
+            dist/*.AppImage
           retention-days: 5
