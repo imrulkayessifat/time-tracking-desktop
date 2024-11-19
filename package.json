@@ -60,6 +60,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@electron/notarize": "^2.5.0",
     "@tanstack/eslint-plugin-query": "^5.59.7",
     "@types/node": "^20.11.16",
     "@types/react": "^18.2.52",

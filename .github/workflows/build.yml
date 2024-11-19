@@ -11,6 +11,18 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Import Code Signing Certificates
+        env:
+          APPLE_DEVELOPER_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
+          APPLE_DEVELOPER_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+        run: |
+          echo "$APPLE_DEVELOPER_CERTIFICATE_P12_BASE64" | base64 --decode > certificate.p12
+          security create-keychain -p actions macos-build.keychain
+          security default-keychain -s macos-build.keychain
+          security unlock-keychain -p actions macos-build.keychain
+          security import certificate.p12 -k macos-build.keychain -P "$APPLE_DEVELOPER_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k actions macos-build.keychain
+
       - name: Use Node.js 18.x
         uses: actions/setup-node@v3
         with:
@@ -20,6 +32,15 @@ jobs:
         run: npm ci
       - name: Build Nextron App
         run: npm run build
+      - name: Build and Sign Nextron App for macOS
+        env:
+          APPLE_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          npm run electron:pack:mac -- --mac-sign --mac-notarize \
+            -c.mac.identity="$APPLE_IDENTITY" \
+            -c.afterSign=./electron-builder-notarize.ts
       - name: Build Nextron App for macOS
         run: npm run electron:pack:mac
       - name: Upload artifacts
