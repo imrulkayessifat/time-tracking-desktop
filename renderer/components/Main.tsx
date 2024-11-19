@@ -46,7 +46,7 @@ const Main: React.FC<MainProps> = ({
         body: JSON.stringify(requestBody)
       });
       const { success, message } = await res.json();
-
+      console.log("pause", success, message)
       if (success) {
         toast.success(`Task track paused : ${project_id} ${task_id}`, {
           duration: 1000,
@@ -74,6 +74,59 @@ const Main: React.FC<MainProps> = ({
     start,
     pause,
   } = useTaskTimer(init_task_id, init_project_id, pauseTask);
+
+  useEffect(() => {
+    // Listen for shutdown attempts
+    const handleShutdownAttempt = async () => {
+      if (isRunning) {
+        // Show warning toast with actions
+        toast.warning(
+          "Task is still running! Please stop the task before shutting down.",
+          {
+            duration: Infinity,
+            action: {
+              label: "Stop Task & Shutdown",
+              onClick: async () => {
+                try {
+                  // Attempt to pause the running task
+                  const pauseSuccess = await pauseTask(init_project_id, init_task_id);
+                  if (pauseSuccess) {
+                    pause();
+                    window.electron.ipcRenderer.send('idle-stopped', {
+                      projectId: init_project_id,
+                      taskId: init_task_id
+                    });
+                    // Allow shutdown
+                    window.electron.ipcRenderer.send('shutdown-response', true);
+                    // Force shutdown
+                    window.electron.ipcRenderer.send('force-shutdown');
+                  }
+                } catch (error) {
+                  console.error('Error stopping task during shutdown:', error);
+                  toast.error('Failed to stop task. Please try again.');
+                  window.electron.ipcRenderer.send('shutdown-response', false);
+                }
+              },
+            },
+          }
+        );
+      } else {
+        // If no task is running, allow shutdown
+        window.electron.ipcRenderer.send('shutdown-response', true);
+      }
+    };
+
+    // Add shutdown attempt listener and store the cleanup function
+    const cleanup = window.electron?.ipcRenderer.on('shutdown-attempted', handleShutdownAttempt);
+
+    // Use the cleanup function returned by the 'on' method
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, [isRunning, init_project_id, init_task_id, pause, pauseTask]);
+
 
   useEffect(() => {
     if (isRunning && window.electron) {

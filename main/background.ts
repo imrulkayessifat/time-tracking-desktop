@@ -126,6 +126,30 @@ app.on('ready', async () => {
 
 });
 
+app.on('will-quit', async (event) => {
+  if (isAnyRunningTask) {
+    event.preventDefault();
+
+    // Notify renderer about shutdown attempt
+    if (mainWindow) {
+      mainWindow.webContents.send('shutdown-attempted');
+
+      // Wait for renderer response
+      const result = await new Promise((resolve) => {
+        ipcMain.once('shutdown-response', (_, canShutdown) => {
+          resolve(canShutdown);
+        });
+      });
+
+      if (result) {
+        forceQuit = true;
+        app.quit();
+      }
+    }
+  }
+});
+
+
 app.on('window-all-closed', () => {
   app.quit()
 })
