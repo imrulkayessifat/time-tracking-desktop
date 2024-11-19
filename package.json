@@ -7,12 +7,11 @@
   "main": "app/background.js",
   "scripts": {
     "dev": "nextron",
-    "build": "nextron build",
-    "build:linux": "nextron build --linux",
-    "postinstall": "electron-builder install-app-deps",
-    "electron:pack:mac": "electron-builder --mac --publish never --afterSign=./electron-builder-notarize.ts",
-    "electron:pack:win": "electron-builder --win --publish never",
-    "electron:pack:linux": "electron-builder --linux --publish never"
+    "build": "nextron build --publish never",
+    "build:mac": "nextron build --mac --publish never",
+    "build:linux": "nextron build --linux --publish never",
+    "build:win": "nextron build --win --x64 --publish never",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@cliqz-oss/firefox-client": "^0.3.1",
