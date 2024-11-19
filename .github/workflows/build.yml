@@ -40,7 +40,6 @@ jobs:
         run: |
           npm run electron:pack:mac \
             -c.mac.identity="$APPLE_IDENTITY" \
-            -c.afterSign=./electron-builder-notarize.ts
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
