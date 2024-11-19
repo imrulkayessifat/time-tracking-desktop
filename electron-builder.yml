@@ -9,4 +9,11 @@ files:
     filter:
       - package.json
       - app
-publish: null
+mac:
+  notarize:
+    teamId: your-team-id
+  gatekeeperAssess: false
+  hardenedRuntime: true
+  entitlements: entitlements.plist
+  entitlementsInherit: entitlements.plist
+  category: public.app-category.developer-tools
