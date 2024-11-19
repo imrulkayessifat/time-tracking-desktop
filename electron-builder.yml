@@ -10,7 +10,7 @@ files:
       - package.json
       - app
 mac:
-  identity: "Developer ID Application: Jamil Hossain (2RN3564SKV)"
+  identity: "Jamil Hossain (2RN3564SKV)"
   notarize:
     teamId: 2RN3564SKV
   gatekeeperAssess: false
