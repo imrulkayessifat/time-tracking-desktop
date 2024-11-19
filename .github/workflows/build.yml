@@ -38,7 +38,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
         run: |
-          npm run electron:pack:mac -- --mac-sign --mac-notarize \
+          npm run electron:pack:mac \
             -c.mac.identity="$APPLE_IDENTITY" \
             -c.afterSign=./electron-builder-notarize.ts
       - name: Build Nextron App for macOS
