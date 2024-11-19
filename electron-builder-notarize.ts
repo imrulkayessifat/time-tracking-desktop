@@ -8,9 +8,10 @@ exports.default = async function notarizing(context) {
     }
 
     const appName = context.packager.appInfo.productFilename;
+    const appBundleId = context.packager.appInfo.id;
 
     return await notarize({
-        appBundleId: 'com.asd.timetracker',
+        appBundleId: appBundleId,
         appPath: `${appOutDir}/${appName}.app`,
         appleId: 'apps@asdbd.com',
         appleIdPassword: 'mjzv-dfxk-yxkt-fuct',

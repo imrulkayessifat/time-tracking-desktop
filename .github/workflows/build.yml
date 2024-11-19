@@ -41,8 +41,6 @@ jobs:
           npm run electron:pack:mac \
             -c.mac.identity="$APPLE_IDENTITY" \
             -c.afterSign=./electron-builder-notarize.ts
-      - name: Build Nextron App for macOS
-        run: npm run electron:pack:mac
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:

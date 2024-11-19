@@ -1,5 +1,6 @@
-appId: com.example.nextron
-productName: My Nextron App
+appId: com.asd.timetracker
+id: com.asd.timetracker
+productName: TimeTracker
 copyright: Copyright © 2018 Yoshihide Shiono
 directories:
   output: dist
