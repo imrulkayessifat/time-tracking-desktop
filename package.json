@@ -10,7 +10,7 @@
     "build": "nextron build",
     "build:linux": "nextron build --linux",
     "postinstall": "electron-builder install-app-deps",
-    "electron:pack:mac": "electron-builder --mac --publish never --mac-sign --mac-notarize",
+    "electron:pack:mac": "electron-builder --mac --publish never",
     "electron:pack:win": "electron-builder --win --publish never",
     "electron:pack:linux": "electron-builder --linux --publish never"
   },

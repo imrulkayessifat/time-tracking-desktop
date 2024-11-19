@@ -9,4 +9,14 @@ files:
     filter:
       - package.json
       - app
-publish: null
+mac:
+  category: public.app-category.productivity
+  identity: "${APPLE_SIGNING_IDENTITY}"
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  providerShortName: asd
+  signIgnore:
+    - "**/*"
+afterSign: ./electron-builder-notarize.js
