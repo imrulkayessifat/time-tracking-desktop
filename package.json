@@ -9,6 +9,7 @@
     "dev": "nextron",
     "build": "nextron build --publish never",
     "build:mac": "nextron build --mac --publish never",
+    "build:mac:universal": "nextron build --mac --universal --publish never",
     "build:linux": "nextron build --linux --publish never",
     "build:win": "nextron build --win --x64 --publish never",
     "postinstall": "electron-builder install-app-deps"
