@@ -1,5 +1,7 @@
 import Database from '../db';
 import AuthTokenStore from '../auth-token-store';
+import path from 'path';
+import { app } from 'electron';
 
 interface ActivityProcessingResult {
     success: boolean;
@@ -22,7 +24,9 @@ export class ActivityProcessor {
     private db: Database;
 
     constructor(private apiEndpoint: string, private intervalMs: number = 30000) {
-        this.db = new Database('timetracking.db');
+        const dbDir = path.join(app.getPath('userData'), 'db');
+        const dbPath = path.join(dbDir, 'timetracking.db');
+        this.db = new Database(dbPath);
     }
 
     private getAuthHeaders(): Headers {

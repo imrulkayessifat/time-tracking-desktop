@@ -119,8 +119,8 @@ app.on('ready', async () => {
   // apiEndpoint = configApiEndpoint;
 
   console.log("api endpoint :", apiEndpoint, intervalMs)
-  screenshotProcessor = new ScreenshotProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
-  activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, intervalMs);
+  screenshotProcessor = new ScreenshotProcessor(`${apiEndpoint}/screenshot/submit`, 30000);
+  activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, 30000);
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
   idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 15);
 
