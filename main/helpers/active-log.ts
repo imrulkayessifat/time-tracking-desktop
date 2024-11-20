@@ -113,7 +113,10 @@ const startTracking = async (project_id: number, task_id: number) => {
         `).run();
 
         const getActiveWindow = (await import('active-win')).default;
-        const result: Result = await getActiveWindow();
+        const result: Result = await getActiveWindow({
+            accessibilityPermission: true,
+            screenRecordingPermission: true
+        });
         const pidusage = await import('pidusage');
         const stats = await pidusage.default(result.owner.processId);
 
