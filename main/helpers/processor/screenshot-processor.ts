@@ -13,6 +13,7 @@ interface ImageProcessingResult {
 interface ParsedImageInfo {
     projectId: number;
     taskId: number;
+    display_name: string;
     timestamp: string;
 }
 
@@ -93,11 +94,10 @@ export class ScreenshotProcessor {
             return null;
         }
 
-        console.log("match 3", match[3])
-
         const result = {
             projectId: parseInt(match[1]),
             taskId: parseInt(match[2]),
+            display_name: `${fileName.split('_').pop().split('.')[0]}`,
             timestamp: match[3].replaceAll("_", ":"),
         };
         return result;
@@ -141,6 +141,8 @@ export class ScreenshotProcessor {
                 };
             }
 
+            console.log("screenshot payload : ", imageInfo)
+
             // Convert image to base64
             const base64Image = await this.imageToBase64(filePath);
 
@@ -149,6 +151,7 @@ export class ScreenshotProcessor {
                 data: [{
                     project_id: imageInfo.projectId,
                     time: imageInfo.timestamp,
+                    display_name: imageInfo.display_name,
                     image: base64Image,
                     task_id: 4
                     // ...(imageInfo.taskId !== -1 && { task_id: imageInfo.taskId })

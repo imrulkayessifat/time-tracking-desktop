@@ -4,6 +4,7 @@ import {
   app,
   BrowserWindow,
   ipcMain,
+  systemPreferences,
   globalShortcut,
   dialog
 } from 'electron'
@@ -76,7 +77,7 @@ app.on('ready', async () => {
     const port = process.argv[2]
     await mainWindow.loadURL(`http://localhost:${port}/home`)
   }
-
+  app.setAccessibilitySupportEnabled(true)
   mainWindow.on('close', async (e) => {
     if (forceQuit) {
       return; // Allow the close if forceQuit is true
@@ -121,6 +122,8 @@ app.on('ready', async () => {
   console.log("api endpoint :", apiEndpoint, intervalMs)
   screenshotProcessor = new ScreenshotProcessor(`${apiEndpoint}/screenshot/submit`, 30000);
   activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, 30000);
+  await activityProcessor.waitForInitialization();
+
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
   idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 15);
 

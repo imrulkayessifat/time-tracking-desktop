@@ -1,7 +1,12 @@
 import Database from '../db';
 import AuthTokenStore from '../auth-token-store';
 import path from 'path';
+import * as fs from 'fs';
 import { app } from 'electron';
+
+import { exec } from 'child_process';
+import { promisify } from 'util';
+const execAsync = promisify(exec);
 
 interface ActivityProcessingResult {
     success: boolean;
@@ -22,12 +27,65 @@ export class ActivityProcessor {
     private processingInterval: NodeJS.Timeout | null = null;
     private isProcessing: boolean = false;
     private db: Database;
+    private isInitialized: boolean = false;
 
     constructor(private apiEndpoint: string, private intervalMs: number = 30000) {
-        const dbDir = path.join(app.getPath('userData'), 'db');
-        const dbPath = path.join(dbDir, 'timetracking.db');
-        this.db = new Database(dbPath);
+        // const dbDir = path.join(app.getPath('userData'), 'db');
+
+        // const dbPath = path.join(dbDir, 'timetracking.db');
+        // this.db = new Database(dbPath);
+        this.initializeDatabase();
+
     }
+
+    async ensureDirectoryExists(dirPath: string): Promise<void> {
+        try {
+            // Normalize the path to handle Windows path separators correctly
+            const normalizedPath = path.normalize(dirPath);
+
+            // Check if directory exists
+            try {
+                await fs.promises.access(normalizedPath);
+            } catch {
+                // Directory doesn't exist, create it
+                await fs.promises.mkdir(normalizedPath, { recursive: true });
+
+                // For Windows: Remove hidden attribute and ensure proper permissions
+                if (process.platform === 'win32') {
+                    try {
+                        await execAsync(`attrib -h "${normalizedPath}"`);
+                    } catch (error) {
+                        console.warn('Failed to remove hidden attribute:', error);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error ensuring directory exists:', error);
+            throw error;
+        }
+    };
+
+    private async initializeDatabase(): Promise<void> {
+        try {
+            const dbDir = path.join(app.getPath('userData'), 'db');
+
+            // Ensure directory exists
+            await this.ensureDirectoryExists(dbDir);
+
+            const dbPath = path.join(dbDir, 'timetracking.db');
+            this.db = new Database(dbPath);
+            this.isInitialized = true;
+        } catch (error) {
+            console.error('Failed to initialize database:', error);
+            // Optionally, implement retry logic or error handling
+        }
+    }
+    public async waitForInitialization(): Promise<void> {
+        while (!this.isInitialized) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    }
+
 
     private getAuthHeaders(): Headers {
         const headers = new Headers({
@@ -95,7 +153,7 @@ export class ActivityProcessor {
             };
 
             console.log('Making API call for activity:', activity.id);
-            
+
             // Make API call
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
@@ -108,7 +166,7 @@ export class ActivityProcessor {
             }
 
             console.log('API call successful, deleting activity:', activity.id);
-            
+
             // Delete the activity after successful API call
             const deleteStmt = this.db.prepare('DELETE FROM activities WHERE id = ?');
             deleteStmt.run(activity.id);
@@ -148,7 +206,7 @@ export class ActivityProcessor {
                 ORDER BY timestamp ASC
                 LIMIT 100
             `);
-            
+
             const activities: Activity[] = selectStmt.all();
 
             if (activities.length === 0) {

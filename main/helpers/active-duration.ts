@@ -93,7 +93,10 @@ const getLocalTime = (): Date => {
 const startDurationTracking = async (project_id: number, task_id: number, apiEndpoint: string) => {
     try {
         const getActiveWindow = (await import('active-win')).default;
-        const result: Result = await getActiveWindow();
+        const result: Result = await getActiveWindow({
+            accessibilityPermission: true,
+            screenRecordingPermission: true
+        });
         const currentTime = getLocalTime();
 
         // Check if window has changed (either different app or different URL)
