@@ -6,7 +6,8 @@ import {
   ipcMain,
   systemPreferences,
   globalShortcut,
-  dialog
+  dialog,
+  shell
 } from 'electron'
 import serve from 'electron-serve'
 
@@ -51,6 +52,102 @@ if (isProd) {
 console.log = log.info;
 console.error = log.error;
 
+
+async function checkAndRequestAccessibility(mainWindow: BrowserWindow) {
+  let accessibilityStatus = systemPreferences.isTrustedAccessibilityClient(false);
+  while (!accessibilityStatus) {
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'warning',
+      title: 'Accessibility Permission Required',
+      message: 'This app requires accessibility permissions to function. Please grant permission in System Preferences.',
+      buttons: ['Open Settings', 'Quit'],
+      defaultId: 0
+    })
+
+    if (response === 1) {
+      app.quit()
+      return false;
+    }
+
+    // Show system permission dialog
+    systemPreferences.isTrustedAccessibilityClient(true)
+
+    // Wait for permission
+    const permissionGranted = await new Promise<boolean>((resolve) => {
+      let attempts = 0
+      const checkInterval = setInterval(() => {
+        attempts++
+        if (systemPreferences.isTrustedAccessibilityClient(false)) {
+          clearInterval(checkInterval)
+          resolve(true)
+        } else if (attempts >= 30) {
+          clearInterval(checkInterval)
+          resolve(false)
+        }
+      }, 1000)
+    })
+
+    if (permissionGranted) {
+      console.log('Accessibility permission granted successfully!')
+      return true;
+    }
+    // If permission not granted, loop will continue and ask again
+    accessibilityStatus = systemPreferences.isTrustedAccessibilityClient(false)
+  }
+  return true;
+}
+
+async function checkAndRequestScreenRecording(mainWindow: BrowserWindow) {
+  // Initial check of screen recording permission status
+  let screenCaptureStatus = systemPreferences.getMediaAccessStatus('screen');
+
+  while (screenCaptureStatus !== 'granted') {
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'warning',
+      title: 'Screen Recording Permission Required',
+      message: 'This app requires screen recording permission to function properly. Please enable Screen Recording permission for the app.',
+      buttons: ['Open Privacy Settings', 'Quit'],
+      defaultId: 0
+    });
+
+    if (response === 1) {
+      app.quit();
+      return false;
+    }
+
+    // Open directly to Screen Recording privacy settings
+    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
+
+    // Wait for user to potentially update permissions
+    const permissionGranted = await new Promise<boolean>((resolve) => {
+      let attempts = 0;
+      const checkInterval = setInterval(() => {
+        attempts++;
+        const currentStatus = systemPreferences.getMediaAccessStatus('screen');
+
+        if (currentStatus === 'granted') {
+          clearInterval(checkInterval);
+          resolve(true);
+        } else if (attempts >= 30) { // 30 seconds timeout
+          clearInterval(checkInterval);
+          resolve(false);
+        }
+      }, 1000);
+    });
+
+    if (permissionGranted) {
+      console.log('Screen recording permission granted successfully!');
+      return true;
+    }
+
+    // Recheck the status for the while loop condition
+    screenCaptureStatus = systemPreferences.getMediaAccessStatus('screen');
+  }
+
+  return true;
+}
+
+
 app.on('ready', async () => {
   mainWindow = createWindow('main', {
     height: 720,
@@ -77,7 +174,18 @@ app.on('ready', async () => {
     const port = process.argv[2]
     await mainWindow.loadURL(`http://localhost:${port}/home`)
   }
-  app.setAccessibilitySupportEnabled(true)
+
+  if (process.platform === 'darwin') {
+    const accessibilityPermission = await checkAndRequestAccessibility(mainWindow);
+    if (!accessibilityPermission) {
+      app.quit()
+    }
+    const screenRecordingPermission = await checkAndRequestScreenRecording(mainWindow);
+    if (!screenRecordingPermission) {
+      app.quit()
+    }
+  }
+
   mainWindow.on('close', async (e) => {
     if (forceQuit) {
       return; // Allow the close if forceQuit is true

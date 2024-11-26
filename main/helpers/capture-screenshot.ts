@@ -86,6 +86,8 @@ const captureAndSaveScreenshot = async (time: {
         // Ensure the directory exists before proceeding
         await ensureDirectoryExists(baseScreenshotPath);
 
+        console.log("displays : ", displays)
+
         for (let i = 0; i < displays.length; i++) {
             const display = displays[i];
             const { bounds } = display;
@@ -96,6 +98,8 @@ const captureAndSaveScreenshot = async (time: {
                     types: ['screen'],
                     thumbnailSize: { width: bounds.width, height: bounds.height }
                 });
+
+                console.log("sources : ", sources)
 
                 // Find the correct source for this display
                 const source = sources.find(

@@ -94,8 +94,8 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
     try {
         const getActiveWindow = (await import('active-win')).default;
         const result: Result = await getActiveWindow({
-            accessibilityPermission: true,
-            screenRecordingPermission: true
+            accessibilityPermission: false,
+            screenRecordingPermission: false
         });
         const currentTime = getLocalTime();
 
