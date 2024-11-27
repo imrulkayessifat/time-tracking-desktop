@@ -7,9 +7,7 @@ import {
   systemPreferences,
   globalShortcut,
   dialog,
-  shell,
-  desktopCapturer,
-  screen
+  shell
 } from 'electron'
 import serve from 'electron-serve'
 
@@ -140,30 +138,8 @@ app.on('ready', async () => {
   if (process.platform === 'darwin') {
     const accessibilityPermission = await checkAndRequestAccessibility(mainWindow);
 
-    const displays = screen.getAllDisplays();
+    const screenRecordingPermission = await checkAndRequestScreenRecording(mainWindow);
 
-    for (let i = 0; i < displays.length; i++) {
-      const display = displays[i];
-      const { bounds } = display;
-      const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: bounds.width, height: bounds.height } })
-
-      for (const s of sources) {
-        if (s.display_id === display.id.toString() ||
-          (s.id.startsWith('screen:') && sources.length === 1)) {
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-              audio: false,
-              video: true,
-            });
-            // You can open settings if needed
-            shell.openExternal("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture");
-          } catch (err) {
-            console.error(err);
-          }
-          return;
-        }
-      }
-    }
   }
 
   mainWindow.on('close', async (e) => {
