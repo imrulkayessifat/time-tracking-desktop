@@ -54,97 +54,93 @@ console.error = log.error;
 
 
 async function checkAndRequestAccessibility(mainWindow: BrowserWindow) {
-  let accessibilityStatus = systemPreferences.isTrustedAccessibilityClient(false);
-  while (!accessibilityStatus) {
-    const { response } = await dialog.showMessageBox(mainWindow, {
-      type: 'warning',
-      title: 'Accessibility Permission Required',
-      message: 'This app requires accessibility permissions to function. Please grant permission in System Preferences.',
-      buttons: ['Open Settings', 'Quit'],
-      defaultId: 0
-    })
-
-    if (response === 1) {
-      app.quit()
-      return false;
-    }
-
-    // Show system permission dialog
-    systemPreferences.isTrustedAccessibilityClient(true)
-
-    // Wait for permission
-    const permissionGranted = await new Promise<boolean>((resolve) => {
-      let attempts = 0
-      const checkInterval = setInterval(() => {
-        attempts++
-        if (systemPreferences.isTrustedAccessibilityClient(false)) {
-          clearInterval(checkInterval)
-          resolve(true)
-        } else if (attempts >= 30) {
-          clearInterval(checkInterval)
-          resolve(false)
-        }
-      }, 1000)
-    })
-
-    if (permissionGranted) {
-      console.log('Accessibility permission granted successfully!')
-      return true;
-    }
-    // If permission not granted, loop will continue and ask again
-    accessibilityStatus = systemPreferences.isTrustedAccessibilityClient(false)
+  if (systemPreferences.isTrustedAccessibilityClient(false)) {
+    return true;
   }
-  return true;
+
+  const { response } = await dialog.showMessageBox(mainWindow, {
+    type: 'warning',
+    title: 'Accessibility Permission Required',
+    message: 'This app requires accessibility permissions to function. Please grant permission in System Preferences.',
+    buttons: ['Open Settings', 'Quit'],
+    defaultId: 0
+  });
+
+  if (response === 1) {
+    return false;
+  }
+
+  // Directly open accessibility settings
+  systemPreferences.isTrustedAccessibilityClient(true);
+  shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
+
+  // Immediate check after opening settings
+  const isAccessibilityGranted = systemPreferences.isTrustedAccessibilityClient(false);
+
+  if (isAccessibilityGranted) {
+    console.log('Accessibility permission granted successfully!');
+    return true;
+  }
+
+  // If not granted, show a final dialog
+  const finalChoice = await dialog.showMessageBox(mainWindow, {
+    type: 'warning',
+    title: 'Permission Required',
+    message: 'Please grant accessibility permissions in System Preferences to continue.',
+    buttons: ['Retry', 'Quit'],
+    defaultId: 0
+  });
+
+  if (finalChoice.response === 1) {
+    return false;
+  }
+
+  return systemPreferences.isTrustedAccessibilityClient(false);
 }
 
 async function checkAndRequestScreenRecording(mainWindow: BrowserWindow) {
   // Initial check of screen recording permission status
-  let screenCaptureStatus = systemPreferences.getMediaAccessStatus('screen');
-
-  while (screenCaptureStatus !== 'granted') {
-    const { response } = await dialog.showMessageBox(mainWindow, {
-      type: 'warning',
-      title: 'Screen Recording Permission Required',
-      message: 'This app requires screen recording permission to function properly. Please enable Screen Recording permission for the app.',
-      buttons: ['Open Privacy Settings', 'Quit'],
-      defaultId: 0
-    });
-
-    if (response === 1) {
-      app.quit();
-      return false;
-    }
-
-    // Open directly to Screen Recording privacy settings
-    shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
-
-    // Wait for user to potentially update permissions
-    const permissionGranted = await new Promise<boolean>((resolve) => {
-      let attempts = 0;
-      const checkInterval = setInterval(() => {
-        attempts++;
-        const currentStatus = systemPreferences.getMediaAccessStatus('screen');
-
-        if (currentStatus === 'granted') {
-          clearInterval(checkInterval);
-          resolve(true);
-        } else if (attempts >= 30) { // 30 seconds timeout
-          clearInterval(checkInterval);
-          resolve(false);
-        }
-      }, 1000);
-    });
-
-    if (permissionGranted) {
-      console.log('Screen recording permission granted successfully!');
-      return true;
-    }
-
-    // Recheck the status for the while loop condition
-    screenCaptureStatus = systemPreferences.getMediaAccessStatus('screen');
+  if (systemPreferences.getMediaAccessStatus('screen') === 'granted') {
+    return true;
   }
 
-  return true;
+  const { response } = await dialog.showMessageBox(mainWindow, {
+    type: 'warning',
+    title: 'Screen Recording Permission Required',
+    message: 'This app requires screen recording permission to function properly. Please enable Screen Recording permission for the app.',
+    buttons: ['Open Privacy Settings', 'Quit'],
+    defaultId: 0
+  });
+
+  if (response === 1) {
+    return false;
+  }
+
+  // Open directly to Screen Recording privacy settings
+  shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
+
+  // Immediate check after opening settings
+  const isScreenRecordingGranted = systemPreferences.getMediaAccessStatus('screen') === 'granted';
+
+  if (isScreenRecordingGranted) {
+    console.log('Screen recording permission granted successfully!');
+    return true;
+  }
+
+  // If not granted, show a final dialog
+  const finalChoice = await dialog.showMessageBox(mainWindow, {
+    type: 'warning',
+    title: 'Permission Required',
+    message: 'Please grant screen recording permissions in System Preferences to continue.',
+    buttons: ['Retry', 'Quit'],
+    defaultId: 0
+  });
+
+  if (finalChoice.response === 1) {
+    return false;
+  }
+
+  return systemPreferences.getMediaAccessStatus('screen') === 'granted';
 }
 
 
