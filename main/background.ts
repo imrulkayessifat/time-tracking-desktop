@@ -7,7 +7,9 @@ import {
   systemPreferences,
   globalShortcut,
   dialog,
-  shell
+  shell,
+  desktopCapturer,
+  screen
 } from 'electron'
 import serve from 'electron-serve'
 
@@ -62,7 +64,7 @@ async function checkAndRequestAccessibility(mainWindow: BrowserWindow) {
     type: 'warning',
     title: 'Accessibility Permission Required',
     message: 'This app requires accessibility permissions to function. Please grant permission in System Preferences.',
-    buttons: ['Open Settings', 'Quit'],
+    buttons: ['Open Settings', 'Deny'],
     defaultId: 0
   });
 
@@ -82,19 +84,6 @@ async function checkAndRequestAccessibility(mainWindow: BrowserWindow) {
     return true;
   }
 
-  // If not granted, show a final dialog
-  const finalChoice = await dialog.showMessageBox(mainWindow, {
-    type: 'warning',
-    title: 'Permission Required',
-    message: 'Please grant accessibility permissions in System Preferences to continue.',
-    buttons: ['Retry', 'Quit'],
-    defaultId: 0
-  });
-
-  if (finalChoice.response === 1) {
-    return false;
-  }
-
   return systemPreferences.isTrustedAccessibilityClient(false);
 }
 
@@ -103,43 +92,20 @@ async function checkAndRequestScreenRecording(mainWindow: BrowserWindow) {
   if (systemPreferences.getMediaAccessStatus('screen') === 'granted') {
     return true;
   }
-
   const { response } = await dialog.showMessageBox(mainWindow, {
     type: 'warning',
     title: 'Screen Recording Permission Required',
     message: 'This app requires screen recording permission to function properly. Please enable Screen Recording permission for the app.',
-    buttons: ['Open Privacy Settings', 'Quit'],
+    buttons: ['Open Privacy Settings', 'Deny'],
     defaultId: 0
   });
-
   if (response === 1) {
     return false;
   }
-
   // Open directly to Screen Recording privacy settings
   shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
 
-  // Immediate check after opening settings
-  const isScreenRecordingGranted = systemPreferences.getMediaAccessStatus('screen') === 'granted';
-
-  if (isScreenRecordingGranted) {
-    console.log('Screen recording permission granted successfully!');
-    return true;
-  }
-
-  // If not granted, show a final dialog
-  const finalChoice = await dialog.showMessageBox(mainWindow, {
-    type: 'warning',
-    title: 'Permission Required',
-    message: 'Please grant screen recording permissions in System Preferences to continue.',
-    buttons: ['Retry', 'Quit'],
-    defaultId: 0
-  });
-
-  if (finalChoice.response === 1) {
-    return false;
-  }
-
+  // Return the current status without showing another dialog
   return systemPreferences.getMediaAccessStatus('screen') === 'granted';
 }
 
@@ -173,12 +139,30 @@ app.on('ready', async () => {
 
   if (process.platform === 'darwin') {
     const accessibilityPermission = await checkAndRequestAccessibility(mainWindow);
-    if (!accessibilityPermission) {
-      app.quit()
-    }
-    const screenRecordingPermission = await checkAndRequestScreenRecording(mainWindow);
-    if (!screenRecordingPermission) {
-      app.quit()
+
+    const displays = screen.getAllDisplays();
+
+    for (let i = 0; i < displays.length; i++) {
+      const display = displays[i];
+      const { bounds } = display;
+      const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: bounds.width, height: bounds.height } })
+
+      for (const s of sources) {
+        if (s.display_id === display.id.toString() ||
+          (s.id.startsWith('screen:') && sources.length === 1)) {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: false,
+              video: true,
+            });
+            // You can open settings if needed
+            shell.openExternal("x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture");
+          } catch (err) {
+            console.error(err);
+          }
+          return;
+        }
+      }
     }
   }
 
