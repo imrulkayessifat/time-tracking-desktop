@@ -95,7 +95,7 @@ const startTracking = async (project_id: number, task_id: number) => {
         // Ensure db directory exists and get the database path
         const dbDir = path.join(app.getPath('userData'), 'db');
         await ensureDirectoryExists(dbDir);
-        const dbPath = path.join(dbDir, 'timetracking.db');
+        const dbPath = path.join(dbDir, 'activitytracking.db');
 
         // Initialize database with the correct path
         const db = new Database(dbPath);

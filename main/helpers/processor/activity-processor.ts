@@ -72,7 +72,7 @@ export class ActivityProcessor {
             // Ensure directory exists
             await this.ensureDirectoryExists(dbDir);
 
-            const dbPath = path.join(dbDir, 'timetracking.db');
+            const dbPath = path.join(dbDir, 'activitytracking.db');
             this.db = new Database(dbPath);
             this.isInitialized = true;
         } catch (error) {
