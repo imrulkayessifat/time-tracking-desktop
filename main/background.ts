@@ -71,7 +71,7 @@ async function checkAndRequestAccessibility(mainWindow: BrowserWindow) {
   }
 
   // Directly open accessibility settings
-  systemPreferences.isTrustedAccessibilityClient(true);
+  // systemPreferences.isTrustedAccessibilityClient(true);
   shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility');
 
   // Immediate check after opening settings
@@ -237,6 +237,12 @@ ipcMain.on('toggle-expand', (_, isExpanded) => {
     mainWindow.setSize(newWidth, 720, true);
   }
 });
+
+ipcMain.on('permission-check', async () => {
+  const accessibilityPermission = await checkAndRequestAccessibility(mainWindow);
+
+  const screenRecordingPermission = await checkAndRequestScreenRecording(mainWindow);
+})
 
 ipcMain.on('message', async (event, arg) => {
   event.reply('message', `${arg} World!`)

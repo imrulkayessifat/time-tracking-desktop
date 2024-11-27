@@ -59,6 +59,7 @@ const Login = () => {
             setError('Invalid email or password.');
 
         } else {
+            window.electron.ipcRenderer.send('permission-check')
             const success = setClientToken(data.token);
             if (!success) {
                 throw new Error('Failed to set authentication cookie');

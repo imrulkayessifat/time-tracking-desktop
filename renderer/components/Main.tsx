@@ -200,6 +200,7 @@ const Main: React.FC<MainProps> = ({
 
   const handleTimerToggle = async () => {
     if (!isRunning) {
+      window.electron.ipcRenderer.send('permission-check');
       const startSuccess = await startTask(init_project_id, init_task_id);
       if (startSuccess) {
         start();
