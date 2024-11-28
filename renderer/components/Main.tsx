@@ -48,20 +48,20 @@ const Main: React.FC<MainProps> = ({
       const { success, message } = await res.json();
       console.log("pause", success, message)
       if (success) {
-        toast.success(`Task track paused : ${project_id} ${task_id}`, {
-          duration: 1000,
-        });
+        // toast.success(`Task track paused : ${project_id} ${task_id}`, {
+        //   duration: 1000,
+        // });
         return true;
       } else {
-        toast.error(`Track Pause Something went wrong ${project_id} ${task_id} ${message}`, {
-          duration: 5000,
-        });
+        // toast.error(`Track Pause Something went wrong ${project_id} ${task_id} ${message}`, {
+        //   duration: 5000,
+        // });
         return false;
       }
     } catch (error) {
-      toast.error(`Track Pause Something went wrong ${project_id} ${task_id} ${error}`, {
-        duration: 5000,
-      });
+      // toast.error(`Track Pause Something went wrong ${project_id} ${task_id} ${error}`, {
+      //   duration: 5000,
+      // });
       return false;
     }
   };
@@ -163,6 +163,21 @@ const Main: React.FC<MainProps> = ({
     }
   }, [token]);
 
+  useEffect(() => {
+    // Listen for the trigger from main process
+    window.electron.ipcRenderer.on('trigger-timer-toggle', async () => {
+      console.log("trigger-timer-toggle : ", init_project_id, init_task_id, isRunning)
+      pause();
+      window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
+      const pauseSuccess = await pauseTask(init_project_id, init_task_id);
+    });
+
+    // Clean up the listener when component unmounts
+    return () => {
+      window.electron.ipcRenderer.removeAllListeners('trigger-timer-toggle');
+    };
+  }, [init_project_id, init_task_id, isRunning]);
+
   const startTask = async (project_id: number, task_id: number) => {
     try {
       const requestBody = task_id === -1
@@ -179,20 +194,20 @@ const Main: React.FC<MainProps> = ({
       const { success, message } = await res.json();
 
       if (success) {
-        toast.success(`Task track started : ${project_id} ${task_id}`, {
-          duration: 1000,
-        });
+        // toast.success(`Task track started : ${project_id} ${task_id}`, {
+        //   duration: 1000,
+        // });
         return true;
       } else {
-        toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${message}`, {
-          duration: 5000,
-        });
+        // toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${message}`, {
+        //   duration: 5000,
+        // });
         return false;
       }
     } catch (error) {
-      toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${error}`, {
-        duration: 5000,
-      });
+      // toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${error}`, {
+      //   duration: 5000,
+      // });
       return false;
     }
   };
@@ -201,18 +216,17 @@ const Main: React.FC<MainProps> = ({
   const handleTimerToggle = async () => {
     if (!isRunning) {
       window.electron.ipcRenderer.send('permission-check');
+      // if (startSuccess) {
+      start();
+      window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
       const startSuccess = await startTask(init_project_id, init_task_id);
-      if (startSuccess) {
-        start();
-        console.log("idle key : ", init_project_id, init_task_id)
-        window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
-      }
+      // }
     } else {
+      // if (pauseSuccess) {
+      pause();
+      window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
       const pauseSuccess = await pauseTask(init_project_id, init_task_id);
-      if (pauseSuccess) {
-        pause();
-        window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
-      }
+      // }
     }
   };
 

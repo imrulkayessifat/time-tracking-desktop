@@ -33,7 +33,7 @@ const Login = () => {
         const formData = new FormData(event.currentTarget)
         const email = formData.get('email')
         const password = formData.get('password')
-        const rememberMe = formData.get('rememberMe') === 'on'
+        const rememberMe = true
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/login`, {
             method: 'POST',
@@ -98,10 +98,10 @@ const Login = () => {
                                         </div>
                                     </div>
                                     <div className='w-full'>
-                                        <div className='flex items-center mb-2'>
+                                        {/* <div className='flex items-center mb-2'>
                                             <input disabled={isLoading} type="checkbox" name="rememberMe" id="rememberMe" className='mr-2' />
                                             <label htmlFor="rememberMe">Remember me</label>
-                                        </div>
+                                        </div> */}
                                         <button disabled={isLoading} type="submit" className={cn('w-full text-base leading-5 font-normal bg-[#294DFF] text-white rounded-[30px] px-4 py-4', isLoading && 'bg-[#62BA47]')}>
                                             {
                                                 isLoading ? (

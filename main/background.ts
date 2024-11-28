@@ -19,12 +19,13 @@ import { setupAuthIPC } from './helpers/auth-ipc-handler';
 import captureAndSaveScreenshot from './helpers/capture-screenshot'
 import { loadProcessorConfig } from './helpers/processor/load-config';
 import { ScreenshotProcessor } from './helpers/processor/screenshot-processor';
+import { TimeProcessor } from './helpers/processor/time-processor';
 import { ActivityProcessor } from './helpers/processor/activity-processor';
 import { ConfigurationProcessor } from './helpers/processor/configuration-processor'
 
 const isProd = process.env.NODE_ENV === 'production'
 
-let mainWindow: BrowserWindow | null = null;
+export let mainWindow: BrowserWindow | null = null;
 let lastScreenshotTime = { minutes: -1, hours: -1 };
 let isAnyRunningTask: boolean | null = null;
 let forceQuit = false;
@@ -32,6 +33,7 @@ let forceQuit = false;
 let screenshotProcessor: ScreenshotProcessor;
 let activityProcessor: ActivityProcessor;
 let idleTracker: TaskIdleTracker;
+let timeProcessor: TimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
 let apiEndpoint: string = "http://134.122.116.126:9091/api/v1";
 let intervalMs: number = 120000;
@@ -188,6 +190,9 @@ app.on('ready', async () => {
   activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, 30000);
   await activityProcessor.waitForInitialization();
 
+  timeProcessor = new TimeProcessor('https://your-api-endpoint/time-entries', 60000);
+  await timeProcessor.waitForInitialization();
+
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
   idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 15);
 
@@ -239,9 +244,11 @@ ipcMain.on('toggle-expand', (_, isExpanded) => {
 });
 
 ipcMain.on('permission-check', async () => {
-  const accessibilityPermission = await checkAndRequestAccessibility(mainWindow);
+  if (process.platform === 'darwin') {
+    const accessibilityPermission = await checkAndRequestAccessibility(mainWindow);
 
-  const screenRecordingPermission = await checkAndRequestScreenRecording(mainWindow);
+    const screenRecordingPermission = await checkAndRequestScreenRecording(mainWindow);
+  }
 })
 
 ipcMain.on('message', async (event, arg) => {
@@ -271,6 +278,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
 ipcMain.on('idle-started', (_, { projectId, taskId }) => {
   try {
     isAnyRunningTask = true
+    const timeEntryId = timeProcessor.insertStartTime(projectId, taskId);
     idleTracker.startTracking(projectId, taskId);
     screenshotProcessor.startProcessing();
     activityProcessor.startProcessing();
@@ -287,6 +295,10 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     screenshotProcessor.stopProcessing();
     activityProcessor.stopProcessing()
     configurationProcessor.stopProcessing()
+    const latestTimeEntry = timeProcessor.getLatestUnfinishedTimeEntry(projectId, taskId);
+    if (latestTimeEntry) {
+      timeProcessor.updateEndTime(latestTimeEntry.id);
+    }
   } catch (error) {
     console.error('Error stoping idle tracking:', error);
   }

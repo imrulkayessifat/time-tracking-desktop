@@ -2,6 +2,7 @@
 import { Notification, powerMonitor } from 'electron';
 
 import AuthTokenStore from '../auth-token-store';
+import { mainWindow } from '../../background';
 
 interface IdlePeriod {
     project_id: number;
@@ -44,7 +45,7 @@ export class TaskIdleTracker {
         });
 
         notification.show();
-
+        mainWindow.webContents.send('trigger-timer-toggle');
         setTimeout(() => {
             if (notification) {
                 notification.close();
