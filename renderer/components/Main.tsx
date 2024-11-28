@@ -170,6 +170,13 @@ const Main: React.FC<MainProps> = ({
       pause();
       window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
       const pauseSuccess = await pauseTask(init_project_id, init_task_id);
+      toast.warning(`Idle time alert`, {
+        description: "Your task was paused due to inactivity.",
+        action: {
+          label: "Close",
+          onClick: () => console.log("Close"),
+        },
+      })
     });
 
     // Clean up the listener when component unmounts
