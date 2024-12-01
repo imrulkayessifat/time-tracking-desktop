@@ -1,6 +1,7 @@
 import path from 'path';
 import * as fs from 'fs';
-import { app } from 'electron';
+import { app, clipboard } from 'electron';
+var robot = require("@hurdlegroup/robotjs");
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -58,8 +59,44 @@ const getBrowserHistory = async (name: string) => {
     return null;
 };
 
+async function getBrowserUrl() {
+    try {
+        // Clear the clipboard
+        clipboard.writeText('');
+
+        // Simulate Ctrl+L to focus the address bar
+        robot.keyTap('l', 'control');
+
+        // Wait a bit to ensure the address bar is focused
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Simulate Ctrl+C to copy the URL
+        robot.keyTap('c', 'control');
+
+        // Wait for the clipboard to be populated
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Read the URL from the clipboard
+        const url = clipboard.readText().trim();
+        console.log("robot : ", url)
+        // Validate the URL
+        // const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+        // const isValidUrl = urlRegex.test(url);
+
+        // console.log(`URL retrieved: ${isValidUrl ? url : 'Invalid URL'}`);
+
+        return {
+            url
+        };
+    } catch (error) {
+        console.error('Error retrieving browser URL:', error);
+        return null;
+    }
+}
+
+
 const isBrowser = (appName: string): boolean => {
-    const browsers = ['chrome', 'firefox', 'safari', 'edge'];
+    const browsers = ['chrome', 'firefox', 'safari', 'edge', 'opera', 'internet explorer'];
     return browsers.some(browser => appName.toLowerCase().includes(browser));
 };
 
@@ -137,7 +174,8 @@ const startTracking = async (project_id: number, task_id: number) => {
         data.app_name = result.owner.name;
 
         if (isBrowser(result.owner.name)) {
-            const browserHistory = await getBrowserHistory(result.owner.name);
+            // const browserHistory = await getBrowserHistory(result.owner.name);
+            const browserHistory = await getBrowserUrl();
             data.url = browserHistory?.url ?? '';
         }
 
