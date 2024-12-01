@@ -61,6 +61,7 @@ const getBrowserHistory = async (name: string) => {
 
 async function getBrowserUrl() {
     try {
+        const initialClipboardContent = clipboard.readText();
         // Clear the clipboard
         clipboard.writeText('');
 
@@ -79,6 +80,10 @@ async function getBrowserUrl() {
         // Read the URL from the clipboard
         const url = clipboard.readText().trim();
         console.log("robot : ", url)
+        clipboard.writeText(initialClipboardContent);
+
+        // Press Escape key
+        robot.keyTap('escape');
         // Validate the URL
         // const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
         // const isValidUrl = urlRegex.test(url);

@@ -75,9 +75,11 @@ const getAuthHeaders = (): Headers => {
 // Global variable to store the last active window's data
 let lastActiveWindow: DataType | null = null;
 let inactivityTimeout: NodeJS.Timeout | null = null;
+let lastBrowserUrlCheckTime: number = 0;
 
-// Timeout duration to determine inactivity (e.g., 2 seconds)
+// Timeout durations
 const INACTIVITY_DURATION = 2000;
+const BROWSER_URL_COOLDOWN = 20000;
 
 
 const getLocalTime = (): Date => {
@@ -90,6 +92,8 @@ const getLocalTime = (): Date => {
 async function getBrowserUrl() {
     try {
         // Clear the clipboard
+        const initialClipboardContent = clipboard.readText();
+
         clipboard.writeText('');
 
         // Simulate Ctrl+L to focus the address bar
@@ -107,6 +111,11 @@ async function getBrowserUrl() {
         // Read the URL from the clipboard
         const url = clipboard.readText().trim();
         console.log("robot : ", url)
+        clipboard.writeText(initialClipboardContent);
+
+        // Press Escape key
+        robot.keyTap('escape');
+
         // Validate the URL
         // const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
         // const isValidUrl = urlRegex.test(url);
@@ -136,11 +145,23 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
             screenRecordingPermission: false
         });
         const currentTime = getLocalTime();
+        const currentTimeMs = currentTime.getTime();
 
         let currentUrl = '';
         if (isBrowser(result.owner.name)) {
-            const browserHistory = await getBrowserUrl();
-            currentUrl = browserHistory?.url ?? '';
+            const isSameBrowser = lastActiveWindow && lastActiveWindow.app_name === result.owner.name;
+            const isCooldownExpired = currentTimeMs - lastBrowserUrlCheckTime >= BROWSER_URL_COOLDOWN;
+
+            if (!lastActiveWindow || !isSameBrowser || isCooldownExpired) {
+                const browserHistory = await getBrowserUrl();
+                currentUrl = browserHistory?.url ?? '';
+                
+                // Update the last check time
+                lastBrowserUrlCheckTime = currentTimeMs;
+            } else {
+                // If within cooldown and same browser, use the last known URL
+                currentUrl = lastActiveWindow.url;
+            }
         }
 
         // Check if window has changed (either different app or different URL)
