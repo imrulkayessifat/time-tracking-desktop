@@ -237,23 +237,27 @@ export class TimeProcessor {
                 project_id: timeEntry.project_id,
                 start_time: timeEntry.start_time,
                 end_time: timeEntry.end_time,
-                ...(timeEntry.task_id !== null && { task_id: timeEntry.task_id })
+                ...(timeEntry.task_id !== -1 && { task_id: timeEntry.task_id })
             };
 
-            console.log('Making API call for time entry:', timeEntry.id);
+            console.log('Making API call for time entry:', payload);
 
             // Make API call
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
                 headers: this.getAuthHeaders(),
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    "data": [
+                        payload
+                    ]
+                })
             });
 
             if (!response.ok) {
-                throw new Error(`API call failed: ${response.statusText}`);
+                throw new Error(`API call failed for time entry : ${response.statusText}`);
             }
 
-            console.log('API call successful, deleting time entry:', timeEntry.id);
+            console.log('API call successful, deleting time entry:', await response.json());
 
             // Delete the time entry after successful API call
             const deleteStmt = this.db.prepare('DELETE FROM time_entries WHERE id = ?');

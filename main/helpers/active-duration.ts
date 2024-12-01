@@ -1,3 +1,5 @@
+import { clipboard } from 'electron';
+var robot = require("@hurdlegroup/robotjs");
 import { readFirefoxTabs } from './activetab/getFirefoxActiveTab';
 import { getChromeAllTabs } from './activetab/getChromeActiveTab';
 import { readSafariHistory } from './history/safari-history';
@@ -70,11 +72,6 @@ const getAuthHeaders = (): Headers => {
     return headers;
 }
 
-const isBrowser = (appName: string): boolean => {
-    const browsers = ['chrome', 'firefox', 'safari', 'edge'];
-    return browsers.some(browser => appName.toLowerCase().includes(browser));
-};
-
 // Global variable to store the last active window's data
 let lastActiveWindow: DataType | null = null;
 let inactivityTimeout: NodeJS.Timeout | null = null;
@@ -90,6 +87,47 @@ const getLocalTime = (): Date => {
     return new Date(currentUtcTime.getTime() - localTimeOffset);
 };
 
+async function getBrowserUrl() {
+    try {
+        // Clear the clipboard
+        clipboard.writeText('');
+
+        // Simulate Ctrl+L to focus the address bar
+        robot.keyTap('l', 'control');
+
+        // Wait a bit to ensure the address bar is focused
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Simulate Ctrl+C to copy the URL
+        robot.keyTap('c', 'control');
+
+        // Wait for the clipboard to be populated
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Read the URL from the clipboard
+        const url = clipboard.readText().trim();
+        console.log("robot : ", url)
+        // Validate the URL
+        // const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+        // const isValidUrl = urlRegex.test(url);
+
+        // console.log(`URL retrieved: ${isValidUrl ? url : 'Invalid URL'}`);
+
+        return {
+            url
+        };
+    } catch (error) {
+        console.error('Error retrieving browser URL:', error);
+        return null;
+    }
+}
+
+
+const isBrowser = (appName: string): boolean => {
+    const browsers = ['chrome', 'firefox', 'safari', 'edge', 'opera', 'internet explorer'];
+    return browsers.some(browser => appName.toLowerCase().includes(browser));
+};
+
 const startDurationTracking = async (project_id: number, task_id: number, apiEndpoint: string) => {
     try {
         const getActiveWindow = (await import('active-win')).default;
@@ -99,8 +137,14 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
         });
         const currentTime = getLocalTime();
 
+        let currentUrl = '';
+        if (isBrowser(result.owner.name)) {
+            const browserHistory = await getBrowserUrl();
+            currentUrl = browserHistory?.url ?? '';
+        }
+
         // Check if window has changed (either different app or different URL)
-        if (!lastActiveWindow || lastActiveWindow.app_name !== result.owner.name) {
+        if (!lastActiveWindow || lastActiveWindow.app_name !== result.owner.name || (currentUrl && lastActiveWindow.url !== currentUrl)) {
 
             if (lastActiveWindow) {
                 // Update the end_time of the previous window when a new window is detected
@@ -109,7 +153,7 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                 const payload = {
                     project_id: lastActiveWindow.project_id,
                     app_name: lastActiveWindow.app_name,
-                    url: '',
+                    url: lastActiveWindow.url,
                     start_time: lastActiveWindow.start_time,
                     end_time: lastActiveWindow.end_time,
                     ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
@@ -137,7 +181,7 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                 project_id,
                 task_id,
                 app_name: result.owner.name,
-                url: '',
+                url: currentUrl,
                 start_time: currentTime,
                 end_time: currentTime
             };
@@ -154,7 +198,7 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                 const payload = {
                     project_id: lastActiveWindow.project_id,
                     app_name: lastActiveWindow.app_name,
-                    url: '',
+                    url: lastActiveWindow.url,
                     start_time: lastActiveWindow.start_time,
                     end_time: lastActiveWindow.end_time,
                     ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })

@@ -190,7 +190,7 @@ app.on('ready', async () => {
   activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, 30000);
   await activityProcessor.waitForInitialization();
 
-  timeProcessor = new TimeProcessor('https://your-api-endpoint/time-entries', 60000);
+  timeProcessor = new TimeProcessor(`${apiEndpoint}/track/bulk`, 60000);
   await timeProcessor.waitForInitialization();
 
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
@@ -283,6 +283,7 @@ ipcMain.on('idle-started', (_, { projectId, taskId }) => {
     screenshotProcessor.startProcessing();
     activityProcessor.startProcessing();
     configurationProcessor.startProcessing();
+    timeProcessor.startProcessing()
   } catch (error) {
     console.error('Error starting idle tracking:', error);
   }
@@ -299,6 +300,7 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     if (latestTimeEntry) {
       timeProcessor.updateEndTime(latestTimeEntry.id);
     }
+    timeProcessor.stopProcessing()
   } catch (error) {
     console.error('Error stoping idle tracking:', error);
   }
