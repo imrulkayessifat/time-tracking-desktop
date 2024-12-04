@@ -99,6 +99,15 @@ const Main: React.FC<MainProps> = ({
           'Authorization': `${token}`,
         },
       });
+      console.log("init : ", res.status, typeof res.status)
+
+      if (res.status === 401) {
+        removeClientToken();
+        localStorage.removeItem('user');
+        localStorage.removeItem('taskTimers');
+        queryClient.clear()
+        router.push('/home')
+      }
 
       const { data } = await res.json();
       const permission = data.permission_routes.includes("task.store");
