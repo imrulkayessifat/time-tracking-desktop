@@ -79,7 +79,7 @@ let lastBrowserUrlCheckTime: number = 0;
 
 // Timeout durations
 const INACTIVITY_DURATION = 2000;
-const BROWSER_URL_COOLDOWN = 20000;
+const BROWSER_URL_COOLDOWN = 60000;
 
 
 const getLocalTime = (): Date => {

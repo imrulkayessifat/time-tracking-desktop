@@ -5,8 +5,8 @@ interface TaskTime {
     hours: number;
     minutes: number;
     seconds: number;
-    isRunning: boolean;
-    date: string;
+    isRunning?: boolean;
+    date?: string;
 }
 
 interface TaskTimerStore {
@@ -80,7 +80,9 @@ export const useTaskTimer = (
                 console.log("isRunning : ", projectId, taskId)
                 timer.isRunning = false;
                 updated = true;
-                await pauseTask(parseInt(projectId), parseInt(taskId))
+                window.electron.ipcRenderer.send('idle-stopped', { projectId: projectId, taskId: taskId });
+
+                // await pauseTask(parseInt(projectId), parseInt(taskId))
             }
         });
 
@@ -120,6 +122,7 @@ export const useTaskTimer = (
 
         const storedTime = getStoredTime();
         if (storedTime) {
+
             // If there's stored time, set it
             const date = new Date();
             date.setHours(date.getHours() + storedTime.hours);
@@ -131,6 +134,7 @@ export const useTaskTimer = (
             const date = new Date();
             reset(date, false);
         }
+        // window.electron.ipcRenderer.send('idle-stopped', { projectId: projectId, taskId: taskId });
     }, [taskId, projectId, reset]);
 
     // Save timer state when it changes
@@ -165,8 +169,66 @@ export const useTaskTimer = (
     }, [hours, minutes, seconds, isRunning, taskKey]);
 
     const start = useCallback(() => {
+        // console.log("project duration : ", projectDuration)
+        // console.log("task duration : ", taskDuration)
+        // const timers = getAllTimers();
+        // if (projectDuration) {
+        //     const [hours, minutes, seconds] = projectDuration.split(':').map(Number);
+        //     let parts = key.split('_');  // Split the string at underscores
+        //     parts[2] = '-1';            // Replace the last part with '-1'
+        //     let projectKey = parts.join('_');
+        //     console.log("project key : ", projectKey)
+        //     timers[projectKey] = {
+        //         hours,
+        //         minutes,
+        //         seconds,
+        //         isRunning: false,
+        //         date: getCurrentDate()
+        //     }
+
+        //     const projectOffsetDate = new Date();
+        //     projectOffsetDate.setHours(projectOffsetDate.getHours() + hours);
+        //     projectOffsetDate.setMinutes(projectOffsetDate.getMinutes() + minutes);
+        //     projectOffsetDate.setSeconds(projectOffsetDate.getSeconds() + seconds);
+
+        //     reset(projectOffsetDate, false);
+        //     // localStorage.setItem('taskTimers', JSON.stringify(timers));
+        // }
+
+        // // Handle task duration if available
+        // if (taskDuration) {
+        //     const [hours, minutes, seconds] = taskDuration.split(':').map(Number);
+
+        //     console.log("task key : ", key)
+
+        //     // Store task duration in localStorage
+        //     timers[key] = {
+        //         hours,
+        //         minutes,
+        //         seconds,
+        //         isRunning: false,
+        //         date: getCurrentDate()
+        //     }
+
+        //     // Set task timer offset date
+        //     const taskOffsetDate = new Date();
+        //     taskOffsetDate.setHours(taskOffsetDate.getHours() + hours);
+        //     taskOffsetDate.setMinutes(taskOffsetDate.getMinutes() + minutes);
+        //     taskOffsetDate.setSeconds(taskOffsetDate.getSeconds());
+
+        //     // Reset stopwatch for task duration
+        //     // localStorage.setItem('taskTimers', JSON.stringify(timers));
+        //     reset(taskOffsetDate, false);
+        // }
+
+        // localStorage.setItem('taskTimers', JSON.stringify(timers));
+
+
         stopRunningTimer(); // Stop any running timer before starting new one
+        // setTimeout(() => {
         startStopwatch();
+        // }, 1000);
+
     }, [startStopwatch]);
 
     const pause = useCallback(() => {

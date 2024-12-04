@@ -75,58 +75,6 @@ const Main: React.FC<MainProps> = ({
     pause,
   } = useTaskTimer(init_task_id, init_project_id, pauseTask);
 
-  // useEffect(() => {
-  //   // Listen for shutdown attempts
-  //   const handleShutdownAttempt = async () => {
-  //     if (isRunning) {
-  //       // Show warning toast with actions
-  //       toast.warning(
-  //         "Task is still running! Please stop the task before shutting down.",
-  //         {
-  //           duration: Infinity,
-  //           action: {
-  //             label: "Stop Task & Shutdown",
-  //             onClick: async () => {
-  //               try {
-  //                 // Attempt to pause the running task
-  //                 const pauseSuccess = await pauseTask(init_project_id, init_task_id);
-  //                 if (pauseSuccess) {
-  //                   pause();
-  //                   window.electron.ipcRenderer.send('idle-stopped', {
-  //                     projectId: init_project_id,
-  //                     taskId: init_task_id
-  //                   });
-  //                   // Allow shutdown
-  //                   window.electron.ipcRenderer.send('shutdown-response', true);
-  //                   // Force shutdown
-  //                   window.electron.ipcRenderer.send('force-shutdown');
-  //                 }
-  //               } catch (error) {
-  //                 console.error('Error stopping task during shutdown:', error);
-  //                 toast.error('Failed to stop task. Please try again.');
-  //                 window.electron.ipcRenderer.send('shutdown-response', false);
-  //               }
-  //             },
-  //           },
-  //         }
-  //       );
-  //     } else {
-  //       // If no task is running, allow shutdown
-  //       window.electron.ipcRenderer.send('shutdown-response', true);
-  //     }
-  //   };
-
-  //   // Add shutdown attempt listener and store the cleanup function
-  //   const cleanup = window.electron?.ipcRenderer.on('shutdown-attempted', handleShutdownAttempt);
-
-  //   // Use the cleanup function returned by the 'on' method
-  //   return () => {
-  //     if (cleanup) {
-  //       cleanup();
-  //     }
-  //   };
-  // }, [isRunning, init_project_id, init_task_id, pause, pauseTask]);
-
 
   useEffect(() => {
     if (isRunning && window.electron) {
@@ -144,7 +92,6 @@ const Main: React.FC<MainProps> = ({
 
   useEffect(() => {
     const fetchData = async () => {
-
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/init-system`, {
         method: 'GET',
@@ -167,9 +114,10 @@ const Main: React.FC<MainProps> = ({
     // Listen for the trigger from main process
     window.electron.ipcRenderer.on('trigger-timer-toggle', async () => {
       console.log("trigger-timer-toggle : ", init_project_id, init_task_id, isRunning)
-      pause();
-      window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
-      const pauseSuccess = await pauseTask(init_project_id, init_task_id);
+      // pause();
+      // window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
+      handleTimerToggle()
+      // const pauseSuccess = await pauseTask(init_project_id, init_task_id);
       toast.warning(`Idle time alert`, {
         description: "Your task was paused due to inactivity.",
         action: {
@@ -198,18 +146,26 @@ const Main: React.FC<MainProps> = ({
         },
         body: JSON.stringify(requestBody)
       });
-      const { success, message } = await res.json();
+      const { success, message, data } = await res.json();
 
       if (success) {
         // toast.success(`Task track started : ${project_id} ${task_id}`, {
         //   duration: 1000,
         // });
-        return true;
+        return {
+          success,
+          message,
+          data
+        };
       } else {
         // toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${message}`, {
         //   duration: 5000,
         // });
-        return false;
+        return {
+          success: false,
+          message,
+          data
+        };
       }
     } catch (error) {
       // toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${error}`, {
@@ -218,21 +174,36 @@ const Main: React.FC<MainProps> = ({
       return false;
     }
   };
-
+  console.log("task key : ", init_project_id, init_task_id)
 
   const handleTimerToggle = async () => {
     if (!isRunning) {
       window.electron.ipcRenderer.send('permission-check');
       // if (startSuccess) {
-      start();
+      // const result = await startTask(init_project_id, init_task_id);
+
+      // console.log("result : ", result)
+      // if (result && result.success && result.data) {
+      //   if (init_task_id === -1) {
+
+      //     start(result.data.project?.duration, undefined, `task_${init_project_id}_${init_task_id}`);
+      //   } else {
+
+      //     start(result.data.project?.duration, result.data.task?.duration, `task_${init_project_id}_${init_task_id}`);
+      //   }
+      // } else {
+      //   start()
+      // }
+      start()
+      console.log("check1")
       window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
-      const startSuccess = await startTask(init_project_id, init_task_id);
       // }
     } else {
       // if (pauseSuccess) {
+      // const pauseSuccess = await pauseTask(init_project_id, init_task_id);
       pause();
+      console.log("check2")
       window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
-      const pauseSuccess = await pauseTask(init_project_id, init_task_id);
       // }
     }
   };
