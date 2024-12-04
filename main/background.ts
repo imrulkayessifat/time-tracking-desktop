@@ -261,17 +261,17 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
   console.log("interval", interval)
   const elapsedMinutes = (info.hours * 60 + info.minutes) - (lastScreenshotTime.hours * 60 + lastScreenshotTime.minutes);
 
-  // if (elapsedMinutes >= interval) {
-  //   if (info.project_id !== -1) {
-  //     try {
-  //       startTracking(info.project_id, info.selectedTaskId);
-  //     } catch (error) {
-  //       console.error('Error starting timer tracking:', error);
-  //     }
-  //     captureAndSaveScreenshot(info);
-  //   }
-  //   lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
-  // }
+  if (elapsedMinutes >= interval) {
+    if (info.project_id !== -1) {
+      try {
+        startTracking(info.project_id, info.selectedTaskId);
+      } catch (error) {
+        console.error('Error starting timer tracking:', error);
+      }
+      captureAndSaveScreenshot(info);
+    }
+    lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
+  }
   startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
 });
 
