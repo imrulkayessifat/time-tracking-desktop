@@ -1,11 +1,18 @@
-import { clipboard } from 'electron';
+import { app, clipboard } from 'electron';
+import * as fs from 'fs';
 var robot = require("@hurdlegroup/robotjs");
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { readFirefoxTabs } from './activetab/getFirefoxActiveTab';
 import { getChromeAllTabs } from './activetab/getChromeActiveTab';
 import { readSafariHistory } from './history/safari-history';
 import { readEdgeTabs } from './activetab/getEdgeActiveTab';
 
 import AuthTokenStore from './auth-token-store';
+import Database from './db';
+import path from 'path';
+
+const execAsync = promisify(exec);
 
 // Define platform-specific result types
 interface BaseResult {
@@ -20,8 +27,8 @@ interface DataType {
     task_id: number;
     app_name: string;
     url: string;
-    start_time: Date;
-    end_time: Date;
+    start_time: string;
+    end_time: string;
 }
 
 interface MacResult extends BaseResult {
@@ -82,11 +89,12 @@ const INACTIVITY_DURATION = 2000;
 const BROWSER_URL_COOLDOWN = 60000;
 
 
-const getLocalTime = (): Date => {
+const getLocalTime = (): string => {
     // Create a new Date object for the current local time
-    const currentUtcTime = new Date();
-    const localTimeOffset = currentUtcTime.getTimezoneOffset() * 60000; // Convert offset to milliseconds
-    return new Date(currentUtcTime.getTime() - localTimeOffset);
+    // const currentUtcTime = new Date();
+    // const localTimeOffset = currentUtcTime.getTimezoneOffset() * 60000; // Convert offset to milliseconds
+    // return new Date(currentUtcTime.getTime() - localTimeOffset);
+    return new Date().toISOString();
 };
 
 async function getBrowserUrl() {
@@ -137,6 +145,33 @@ const isBrowser = (appName: string): boolean => {
     return browsers.some(browser => appName.toLowerCase().includes(browser));
 };
 
+const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
+    try {
+        // Normalize the path to handle Windows path separators correctly
+        const normalizedPath = path.normalize(dirPath);
+
+        // Check if directory exists
+        try {
+            await fs.promises.access(normalizedPath);
+        } catch {
+            // Directory doesn't exist, create it
+            await fs.promises.mkdir(normalizedPath, { recursive: true });
+
+            // For Windows: Remove hidden attribute and ensure proper permissions
+            if (process.platform === 'win32') {
+                try {
+                    await execAsync(`attrib -h "${normalizedPath}"`);
+                } catch (error) {
+                    console.warn('Failed to remove hidden attribute:', error);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error ensuring directory exists:', error);
+        throw error;
+    }
+};
+
 const startDurationTracking = async (project_id: number, task_id: number, apiEndpoint: string) => {
     try {
         const getActiveWindow = (await import('active-win')).default;
@@ -144,20 +179,43 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
             accessibilityPermission: false,
             screenRecordingPermission: false
         });
+        const dbDir = path.join(app.getPath('userData'), 'db');
+        await ensureDirectoryExists(dbDir);
+        const dbPath = path.join(dbDir, 'activeduration.db');
+
+        // Initialize database with the correct path
+        const db = new Database(dbPath);
+
+        // Create activities table if it doesn't exist
+        db.prepare(`
+            CREATE TABLE IF NOT EXISTS activeduration (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER,
+                task_id INTEGER,
+                app_name TEXT,
+                url TEXT,
+                start_time TEXT,
+                end_time TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `).run();
+        const stmt = db.prepare(`
+            INSERT INTO activeduration (project_id, task_id, app_name, url,start_time,end_time)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `);
         const currentTime = getLocalTime();
-        const currentTimeMs = currentTime.getTime();
 
         let currentUrl = '';
         if (isBrowser(result.owner.name)) {
             const isSameBrowser = lastActiveWindow && lastActiveWindow.app_name === result.owner.name;
-            const isCooldownExpired = currentTimeMs - lastBrowserUrlCheckTime >= BROWSER_URL_COOLDOWN;
+            const isCooldownExpired = Date.now() - lastBrowserUrlCheckTime >= BROWSER_URL_COOLDOWN;
 
             if (!lastActiveWindow || !isSameBrowser || isCooldownExpired) {
                 const browserHistory = await getBrowserUrl();
                 currentUrl = browserHistory?.url ?? '';
-                
+
                 // Update the last check time
-                lastBrowserUrlCheckTime = currentTimeMs;
+                lastBrowserUrlCheckTime = Date.now();
             } else {
                 // If within cooldown and same browser, use the last known URL
                 currentUrl = lastActiveWindow.url;
@@ -177,24 +235,24 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                     url: lastActiveWindow.url,
                     start_time: lastActiveWindow.start_time,
                     end_time: lastActiveWindow.end_time,
-                    ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
+                    task_id: lastActiveWindow.task_id,
                 };
-                console.log("last active window : ", payload)
-
+                console.log("active duration inserted : ", payload)
+                stmt.run(lastActiveWindow.project_id, lastActiveWindow.task_id, lastActiveWindow.app_name, lastActiveWindow.url, lastActiveWindow.start_time, lastActiveWindow.end_time);
                 // Uncomment when ready to send data
-                const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({
-                        data: [
+                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+                //     method: 'POST',
+                //     headers: getAuthHeaders(),
+                //     body: JSON.stringify({
+                //         data: [
 
-                            payload
+                //             payload
 
-                        ]
-                    })
-                });
-                const data = await response.json()
-                console.log("Previous active window log:", data);
+                //         ]
+                //     })
+                // });
+                // const data = await response.json()
+                // console.log("Previous active window log:", data);
             }
 
             // Initialize new active window data
@@ -222,31 +280,31 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                     url: lastActiveWindow.url,
                     start_time: lastActiveWindow.start_time,
                     end_time: lastActiveWindow.end_time,
-                    ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
+                    task_id: lastActiveWindow.task_id,
                 };
-
-                console.log("final active window :", payload);
+                console.log("active duration inserted : ", payload)
+                stmt.run(lastActiveWindow.project_id, lastActiveWindow.task_id, lastActiveWindow.app_name, lastActiveWindow.url, lastActiveWindow.start_time, lastActiveWindow.end_time);
 
                 // Uncomment when ready to send data
-                const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({
-                        data: [
+                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
+                //     method: 'POST',
+                //     headers: getAuthHeaders(),
+                //     body: JSON.stringify({
+                //         data: [
 
-                            payload
+                //             payload
 
-                        ]
-                    })
-                });
-                const data = await response.json()
-                console.log("Tracking stopped, final active window duration log:", data);
+                //         ]
+                //     })
+                // });
+                // const data = await response.json()
+                // console.log("Tracking stopped, final active window duration log:", data);
                 lastActiveWindow = null;
             }
         }, INACTIVITY_DURATION);
 
     } catch (error) {
-        console.error('Error tracking duration active window:');
+        console.error('Error tracking duration active duration:', error);
     }
 };
 

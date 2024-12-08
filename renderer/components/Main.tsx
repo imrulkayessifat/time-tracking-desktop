@@ -14,6 +14,7 @@ import CounterPanel from "./CounterPanel";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { removeClientToken } from "../lib/auth";
+import { cn } from "../lib/utils";
 
 interface MainProps {
   token: string
@@ -226,7 +227,8 @@ const Main: React.FC<MainProps> = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent side="bottom" align="end" className="w-56 bg-white">
             <DropdownMenuItem
-              className="cursor-pointer"
+              disabled={isRunning}
+              className={cn("cursor-pointer", isRunning && "cursor-not-allowed")}
               onClick={() => {
                 removeClientToken();
                 localStorage.removeItem('user');

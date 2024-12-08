@@ -21,6 +21,7 @@ import { loadProcessorConfig } from './helpers/processor/load-config';
 import { ScreenshotProcessor } from './helpers/processor/screenshot-processor';
 import { TimeProcessor } from './helpers/processor/time-processor';
 import { ActivityProcessor } from './helpers/processor/activity-processor';
+import { ActiveDurationProcessor } from './helpers/processor/activeduration-processor';
 import { ConfigurationProcessor } from './helpers/processor/configuration-processor'
 
 const isProd = process.env.NODE_ENV === 'production'
@@ -32,6 +33,7 @@ let forceQuit = false;
 
 let screenshotProcessor: ScreenshotProcessor;
 let activityProcessor: ActivityProcessor;
+let activeDuration: ActiveDurationProcessor;
 let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
@@ -187,9 +189,12 @@ app.on('ready', async () => {
 
   console.log("api endpoint :", apiEndpoint, intervalMs)
   screenshotProcessor = new ScreenshotProcessor(`${apiEndpoint}/screenshot/submit`, 30000);
-  activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, 30000);
-  await activityProcessor.waitForInitialization();
+  // activityProcessor = new ActivityProcessor(`${apiEndpoint}/screenshot/submit`, 30000);
+  // await activityProcessor.waitForInitialization();
 
+  activeDuration = new ActiveDurationProcessor(`${apiEndpoint}/activity/app-usages`, 30000)
+  await activeDuration.waitForInitialization();
+  
   timeProcessor = new TimeProcessor(`${apiEndpoint}/track/bulk`, 60000);
   await timeProcessor.waitForInitialization();
 
@@ -263,11 +268,11 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
 
   if (elapsedMinutes >= interval) {
     if (info.project_id !== -1) {
-      try {
-        startTracking(info.project_id, info.selectedTaskId);
-      } catch (error) {
-        console.error('Error starting timer tracking:', error);
-      }
+      // try {
+      //   startTracking(info.project_id, info.selectedTaskId);
+      // } catch (error) {
+      //   console.error('Error starting timer tracking:', error);
+      // }
       captureAndSaveScreenshot(info);
     }
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
@@ -281,7 +286,8 @@ ipcMain.on('idle-started', (_, { projectId, taskId }) => {
     const timeEntryId = timeProcessor.insertStartTime(projectId, taskId);
     idleTracker.startTracking(projectId, taskId);
     screenshotProcessor.startProcessing();
-    activityProcessor.startProcessing();
+    // activityProcessor.startProcessing();
+    activeDuration.startProcessing()
     configurationProcessor.startProcessing();
     timeProcessor.startProcessing()
   } catch (error) {
@@ -294,7 +300,8 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     isAnyRunningTask = false
     const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
     screenshotProcessor.stopProcessing();
-    activityProcessor.stopProcessing()
+    // activityProcessor.stopProcessing();
+    activeDuration.stopProcessing();
     configurationProcessor.stopProcessing()
     const latestTimeEntry = timeProcessor.getLatestUnfinishedTimeEntry(projectId, taskId);
     if (latestTimeEntry) {

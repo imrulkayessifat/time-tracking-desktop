@@ -253,11 +253,13 @@ export class TimeProcessor {
                 })
             });
 
-            if (!response.ok) {
-                throw new Error(`API call failed for time entry : ${response.statusText}`);
+            const { success, message, data } = await response.json()
+
+            if (!success) {
+                throw new Error(`API call failed for time entry : ${message}`);
             }
 
-            console.log('API call successful, deleting time entry:', await response.json());
+            console.log('API call successful, deleting time entry:', message, data);
 
             // Delete the time entry after successful API call
             const deleteStmt = this.db.prepare('DELETE FROM time_entries WHERE id = ?');

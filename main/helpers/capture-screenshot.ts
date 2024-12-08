@@ -99,8 +99,6 @@ const captureAndSaveScreenshot = async (time: {
                     thumbnailSize: { width: bounds.width, height: bounds.height }
                 });
 
-                console.log("sources : ", sources)
-
                 // Find the correct source for this display
                 const source = sources.find(
                     (s) =>

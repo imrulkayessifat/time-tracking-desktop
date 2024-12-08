@@ -153,8 +153,7 @@ export class ScreenshotProcessor {
                     time: imageInfo.timestamp,
                     display_name: imageInfo.display_name,
                     image: base64Image,
-                    task_id: 4
-                    // ...(imageInfo.taskId !== -1 && { task_id: imageInfo.taskId })
+                    ...(imageInfo.taskId !== -1 && { task_id: imageInfo.taskId })
                 }]
             };
             // Make API call
@@ -167,10 +166,10 @@ export class ScreenshotProcessor {
             const { success, message, data } = await response.json()
 
             if (!success) {
-                throw new Error(`API call failed: ${message}`);
+                throw new Error(`API call failed for screenshot: ${message}`);
             }
 
-            console.log('API call successful, deleting image:', fileName);
+            console.log('API call successful, deleting screenshot:', message, data);
             // Delete the image after successful API call
             await fs.promises.unlink(filePath);
 

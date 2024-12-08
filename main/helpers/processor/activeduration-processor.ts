@@ -20,10 +20,12 @@ interface Activity {
     task_id: number;
     app_name: string;
     url: string;
+    start_time: string;
+    end_time: string;
     timestamp: string;
 }
 
-export class ActivityProcessor {
+export class ActiveDurationProcessor {
     private processingInterval: NodeJS.Timeout | null = null;
     private isProcessing: boolean = false;
     private db: Database;
@@ -72,7 +74,7 @@ export class ActivityProcessor {
             // Ensure directory exists
             await this.ensureDirectoryExists(dbDir);
 
-            const dbPath = path.join(dbDir, 'activitytracking.db');
+            const dbPath = path.join(dbDir, 'activeduration.db');
             this.db = new Database(dbPath);
             this.isInitialized = true;
         } catch (error) {
@@ -105,7 +107,7 @@ export class ActivityProcessor {
 
     // Start the processing loop
     public startProcessing(): void {
-        console.log('Starting activity processing...');
+        console.log('Starting activeduration processing...');
 
         if (this.processingInterval) {
             clearInterval(this.processingInterval);
@@ -123,14 +125,14 @@ export class ActivityProcessor {
             this.processActivities()
                 .then(() => console.log('Processing cycle completed'))
                 .catch(err => console.error('Error in processing cycle:', err));
-        }, this.intervalMs);
+        }, 30000);
 
         console.log('Processing started successfully');
     }
 
     // Stop the processing loop
     public stopProcessing(): void {
-        console.log('Stopping activity processing...');
+        console.log('Stopping activeduration processing...');
         if (this.processingInterval) {
             clearInterval(this.processingInterval);
             this.processingInterval = null;
@@ -145,43 +147,47 @@ export class ActivityProcessor {
         try {
             // Prepare API payload
             const payload = {
-                data: [{
-                    project_id: activity.project_id,
-                    url: activity.url,
-                    time: activity.timestamp.split(" ").join("T"),
-                    ...(activity.url.length === 0 && { app_name: activity.app_name }),
-                    ...(activity.task_id !== -1 && { task_id: activity.task_id })
-                }]
+                project_id: activity.project_id,
+                url: activity.url,
+                start_time: activity.start_time,
+                end_time: activity.end_time,
+                ...(activity.url.length === 1 && { app_name: activity.app_name }),
+                ...(activity.task_id !== -1 && { task_id: activity.task_id })
             };
 
-            console.log('Making API call for activity:', payload);
+            console.log('Making API call for active duration :', activity.id);
 
             // Make API call
             const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
                 headers: this.getAuthHeaders(),
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    data: [
+                        payload
+                    ]
+                })
             });
 
             const { success, message, data } = await response.json()
 
             if (!success) {
-                throw new Error(`API call failed for activity: ${message}`);
+                throw new Error(`API call failed for active duration : ${message}`);
             }
-            console.log('API call successful, deleting activity:', message, data);
+            
+            console.log('API call successful, deleting active duration:', message, data);
 
             // Delete the activity after successful API call
-            const deleteStmt = this.db.prepare('DELETE FROM activities WHERE id = ?');
+            const deleteStmt = this.db.prepare('DELETE FROM activeduration WHERE id = ?');
             deleteStmt.run(activity.id);
 
             return {
                 success: true,
-                message: 'Successfully processed and deleted activity',
+                message: 'Successfully processed and deleted activeduration',
                 activityId: activity.id
             };
 
         } catch (error) {
-            console.error('Error processing activity:', activity.id, error);
+            console.error('Error processing activeduration:', activity.id, error);
             return {
                 success: false,
                 message: error instanceof Error ? error.message : 'Unknown error',
@@ -195,7 +201,7 @@ export class ActivityProcessor {
         console.log('Starting processing cycle');
 
         if (this.isProcessing) {
-            console.log('Already processing activities, skipping this cycle');
+            console.log('Already processing activeduration, skipping this cycle');
             return;
         }
 
@@ -205,7 +211,7 @@ export class ActivityProcessor {
         try {
             // Get all pending activities
             const selectStmt = this.db.prepare(`
-                SELECT * FROM activities 
+                SELECT * FROM activeduration 
                 ORDER BY timestamp ASC
                 LIMIT 100
             `);
@@ -213,7 +219,7 @@ export class ActivityProcessor {
             const activities: Activity[] = selectStmt.all();
 
             if (activities.length === 0) {
-                console.log('No activities to process');
+                console.log('No activeduration to process');
                 return;
             }
 
@@ -224,9 +230,9 @@ export class ActivityProcessor {
             // Log results
             results.forEach(result => {
                 if (result.success) {
-                    console.log(`Successfully processed activity ${result.activityId}`);
+                    console.log(`Successfully processed activeduration ${result.activityId}`);
                 } else {
-                    console.error(`Failed to process activity ${result.activityId}: ${result.message}`);
+                    console.error(`Failed to process activeduration ${result.activityId}: ${result.message}`);
                 }
             });
 
