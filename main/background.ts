@@ -37,7 +37,8 @@ let activeDuration: ActiveDurationProcessor;
 let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
-let apiEndpoint: string = "http://134.122.116.126:9091/api/v1";
+// let apiEndpoint: string = "http://134.122.116.126:9091/api/v1";
+let apiEndpoint: string = "http://46.202.164.105:8080/api/v1";
 let intervalMs: number = 120000;
 
 if (isProd) {
@@ -194,7 +195,7 @@ app.on('ready', async () => {
 
   activeDuration = new ActiveDurationProcessor(`${apiEndpoint}/activity/app-usages`, 30000)
   await activeDuration.waitForInitialization();
-  
+
   timeProcessor = new TimeProcessor(`${apiEndpoint}/track/bulk`, 60000);
   await timeProcessor.waitForInitialization();
 
