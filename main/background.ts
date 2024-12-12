@@ -37,7 +37,6 @@ let activeDuration: ActiveDurationProcessor;
 let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
-// let apiEndpoint: string = "http://134.122.116.126:9091/api/v1";
 let apiEndpoint: string = "https://api.stafftimetrack.com/api/v1/";
 let intervalMs: number = 120000;
 
