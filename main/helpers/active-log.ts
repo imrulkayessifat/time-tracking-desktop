@@ -180,7 +180,10 @@ const startTracking = async (project_id: number, task_id: number) => {
 
         if (isBrowser(result.owner.name)) {
             // const browserHistory = await getBrowserHistory(result.owner.name);
-            const browserHistory = await getBrowserUrl();
+            // const browserHistory = await getBrowserUrl();
+            const browserHistory = {
+                url: ''
+            }
             data.url = browserHistory?.url ?? '';
         }
 

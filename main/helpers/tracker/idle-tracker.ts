@@ -45,6 +45,21 @@ export class TaskIdleTracker {
         });
 
         notification.show();
+        setTimeout(() => {
+            if (notification) {
+                notification.close();
+            }
+        }, 3000);
+
+    }
+    private showIdleNotificationAndStopTimer(systemIdleTime) {
+        const notification = new Notification({
+            title: 'System Idle Alert',
+            body: `Your system has been idle for ${systemIdleTime} seconds.`,
+            silent: false, // Set to true if you don't want sound 
+        });
+
+        notification.show();
         mainWindow.webContents.send('trigger-timer-toggle');
         setTimeout(() => {
             if (notification) {
@@ -114,6 +129,9 @@ export class TaskIdleTracker {
         console.log(systemIdleTime, this.idleThreshold)
         if ((systemIdleTime % 300 === 0) && systemIdleTime !== 0) {
             this.showIdleNotification(systemIdleTime);
+        }
+        if ((systemIdleTime % 900 === 0) && systemIdleTime !== 0) {
+            this.showIdleNotificationAndStopTimer(systemIdleTime)
         }
 
 

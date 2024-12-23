@@ -124,14 +124,15 @@ app.on('ready', async () => {
       contextIsolation: true,
       nodeIntegration: false,
     },
-    resizable: true
+    resizable: true,
+    icon: path.join(app.getAppPath(), "resources/icon.png")
   })
   mainWindow.setMenu(null);
   globalShortcut.register('CommandOrControl+Shift+I', () => {
     mainWindow.webContents.toggleDevTools();
   });
 
-
+  console.log("icon path : ", path.join(app.getAppPath(), "resources/icon.png"))
   if (isProd) {
     await mainWindow.loadURL('app://./home')
   } else {
@@ -199,7 +200,7 @@ app.on('ready', async () => {
   await timeProcessor.waitForInitialization();
 
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
-  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 300);
+  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 900);
 
 });
 
@@ -308,6 +309,7 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
       timeProcessor.updateEndTime(latestTimeEntry.id);
     }
     timeProcessor.stopProcessing()
+    timeProcessor.processTimeEntries()
   } catch (error) {
     console.error('Error stoping idle tracking:', error);
   }

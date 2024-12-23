@@ -1,9 +1,9 @@
 {
   "private": true,
-  "name": "time-tracker",
-  "description": "User Activity Tracker",
+  "name": "staff-time-tracker",
+  "description": "Staff Time Tracker",
   "version": "1.0.0",
-  "author": "Yoshihide Shiono <shiono.yoshihide@gmail.com>",
+  "author": "Advanced Software Development",
   "main": "app/background.js",
   "scripts": {
     "dev": "nextron",

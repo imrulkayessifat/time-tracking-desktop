@@ -211,7 +211,10 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
             const isCooldownExpired = Date.now() - lastBrowserUrlCheckTime >= BROWSER_URL_COOLDOWN;
 
             if (!lastActiveWindow || !isSameBrowser || isCooldownExpired) {
-                const browserHistory = await getBrowserUrl();
+                // const browserHistory = await getBrowserUrl();
+                const browserHistory = {
+                    url: ''
+                }
                 currentUrl = browserHistory?.url ?? '';
 
                 // Update the last check time

@@ -1,5 +1,5 @@
-appId: com.asd.timetracker
-productName: TimeTracker
+appId: com.asd.staff-time-tracker
+productName: Staff Time Tracker
 copyright: Copyright © 2018 Yoshihide Shiono
 directories:
   output: dist

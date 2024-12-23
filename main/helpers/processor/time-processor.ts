@@ -282,7 +282,7 @@ export class TimeProcessor {
     }
 
     // Process all pending time entries in the database
-    private async processTimeEntries(): Promise<void> {
+    public async processTimeEntries(): Promise<void> {
         console.log('Starting processing cycle');
 
         if (this.isProcessing) {

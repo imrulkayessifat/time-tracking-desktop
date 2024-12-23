@@ -43,7 +43,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: nextron-app-macos
+          name: Staff Time Tracker - Mac
           path: |
             dist/*.dmg
           retention-days: 5
@@ -67,7 +67,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: nextron-app-windows
+          name: Staff Time Tracker - Windows
           path: |
             dist/*.exe
           retention-days: 5
@@ -94,7 +94,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: nextron-app-linux
+          name: Staff Time Tracker - Linux
           path: |
             dist/*.AppImage
           retention-days: 5
