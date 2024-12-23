@@ -7,7 +7,7 @@ export default function HomePage() {
   return (
     <React.Fragment>
       <Head>
-        <title>Time Tracking</title>
+        <title>Staff Time Tracker</title>
       </Head>
       <Login />
     </React.Fragment>
