@@ -32,7 +32,9 @@ async function querySafariDatabase(dbPath) {
         const latestVisit = db.prepare(sql).get();
         db.close();
         await fs.unlink(tempDbPath);
-        return latestVisit;
+        return {
+            url: latestVisit
+        };
     } catch (error) {
         try {
             await fs.unlink(tempDbPath);

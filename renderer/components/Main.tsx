@@ -105,7 +105,7 @@ const Main: React.FC<MainProps> = ({
       if (res.status === 401) {
         removeClientToken();
         localStorage.removeItem('user');
-        localStorage.removeItem('taskTimers');
+        // localStorage.removeItem('taskTimers');
         queryClient.clear()
         router.push('/home')
       }
@@ -232,7 +232,7 @@ const Main: React.FC<MainProps> = ({
               onClick={() => {
                 removeClientToken();
                 localStorage.removeItem('user');
-                localStorage.removeItem('taskTimers');
+                // localStorage.removeItem('taskTimers');
                 queryClient.clear()
                 router.push('/home')
               }}

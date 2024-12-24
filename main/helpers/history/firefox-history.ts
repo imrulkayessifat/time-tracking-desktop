@@ -28,7 +28,7 @@ async function findDefaultProfile() {
   const defaultProfile = profiles.find(profile =>
     profile.endsWith('.default') || profile.endsWith('.default-release')
   );
-  
+
   if (!defaultProfile) {
     throw new Error('No default Firefox profile found');
   }
@@ -39,10 +39,10 @@ async function copyDatabaseFiles(dbPath: string): Promise<string> {
   const timestamp = Date.now();
   const tempBasePath = path.join(app.getPath('temp'), `places-${timestamp}`);
   const tempMainDb = `${tempBasePath}.sqlite`;
-  
+
   // Copy main database file
   await copyFile(dbPath, tempMainDb);
-  
+
   // Check for and copy WAL file if it exists
   const walPath = `${dbPath}-wal`;
   try {
@@ -51,7 +51,7 @@ async function copyDatabaseFiles(dbPath: string): Promise<string> {
   } catch (error) {
     // WAL file doesn't exist, which is fine
   }
-  
+
   // Check for and copy SHM file if it exists
   const shmPath = `${dbPath}-shm`;
   try {
@@ -60,7 +60,7 @@ async function copyDatabaseFiles(dbPath: string): Promise<string> {
   } catch (error) {
     // SHM file doesn't exist, which is fine
   }
-  
+
   return tempMainDb;
 }
 
@@ -70,7 +70,7 @@ async function cleanupTempFiles(tempBasePath: string) {
     `${tempBasePath}-wal`,
     `${tempBasePath}-shm`
   ];
-  
+
   for (const file of filesToCleanup) {
     try {
       await fs.unlink(file);
@@ -83,7 +83,7 @@ async function cleanupTempFiles(tempBasePath: string) {
 async function queryFirefoxDatabase(dbPath: string): Promise<FirefoxHistoryEntry[]> {
   // Create temporary copies of all database files
   const tempDbPath = await copyDatabaseFiles(dbPath);
-  
+
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(tempDbPath, sqlite3.OPEN_READONLY, (err: Error | null) => {
       if (err) {
@@ -96,7 +96,7 @@ async function queryFirefoxDatabase(dbPath: string): Promise<FirefoxHistoryEntry
       // Configure database
       db.run('PRAGMA busy_timeout = 1000;');
       db.run('PRAGMA journal_mode = WAL;'); // Explicitly set WAL mode to ensure WAL file is read
-      
+
       const sql = `
         SELECT
           p.url,
@@ -134,19 +134,21 @@ export async function readFirefoxHistory() {
   try {
     const profilePath = await findDefaultProfile();
     const dbPath = path.join(profilePath, 'places.sqlite');
-    
+
     // Check if database exists
     try {
       await fs.access(dbPath);
     } catch (error) {
       throw new Error('Firefox places.sqlite database not found');
     }
-    
+
     const latestVisits = await queryFirefoxDatabase(dbPath);
-    
+
     if (latestVisits.length > 0) {
       // console.log("Latest visited URLs: ", latestVisits);
-      return latestVisits[0]; // Returning the most recent visit
+      return {
+        url: latestVisits[0]
+      }; // Returning the most recent visit
     } else {
       console.log('No recent history found.');
       return null;

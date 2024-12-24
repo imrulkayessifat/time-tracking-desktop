@@ -1,20 +1,17 @@
-import { app, clipboard } from 'electron';
+import { app } from 'electron';
 import * as fs from 'fs';
-var robot = require("@hurdlegroup/robotjs");
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { readFirefoxTabs } from './activetab/getFirefoxActiveTab';
-import { getChromeAllTabs } from './activetab/getChromeActiveTab';
+import { readChromeHistory } from './history/chrome-history';
+import { readFirefoxHistory } from './history/firefox-history';
+import { readEdgeHistory } from './history/edge-history';
 import { readSafariHistory } from './history/safari-history';
-import { readEdgeTabs } from './activetab/getEdgeActiveTab';
 
-import AuthTokenStore from './auth-token-store';
 import Database from './db';
 import path from 'path';
 
 const execAsync = promisify(exec);
 
-// Define platform-specific result types
 interface BaseResult {
     owner: {
         name: string;
@@ -53,92 +50,28 @@ function isMacResult(result: Result): result is MacResult {
 const getBrowserHistory = async (name: string) => {
     const browserName = name.toLowerCase();
     if (browserName.includes('chrome')) {
-        return await getChromeAllTabs();
+        return await readChromeHistory();
     } else if (browserName.includes('firefox')) {
-        return await readFirefoxTabs();
+        return await readFirefoxHistory();
     } else if (browserName.includes('safari')) {
         return await readSafariHistory();
     } else if (browserName.includes('edge')) {
-        return await readEdgeTabs();
+        return await readEdgeHistory();
     }
     return null;
 };
 
-const getAuthHeaders = (): Headers => {
-    const headers = new Headers({
-        'Content-Type': 'application/json'
-    });
-
-    const tokenStore = AuthTokenStore.getInstance();
-    const token = tokenStore.getToken();
-
-    if (token) {
-        headers.append('Authorization', `${token}`);
-    }
-
-    return headers;
-}
-
 // Global variable to store the last active window's data
 let lastActiveWindow: DataType | null = null;
 let inactivityTimeout: NodeJS.Timeout | null = null;
-let lastBrowserUrlCheckTime: number = 0;
+
 
 // Timeout durations
 const INACTIVITY_DURATION = 2000;
-const BROWSER_URL_COOLDOWN = 60000;
-
 
 const getLocalTime = (): string => {
-    // Create a new Date object for the current local time
-    // const currentUtcTime = new Date();
-    // const localTimeOffset = currentUtcTime.getTimezoneOffset() * 60000; // Convert offset to milliseconds
-    // return new Date(currentUtcTime.getTime() - localTimeOffset);
     return new Date().toISOString();
 };
-
-async function getBrowserUrl() {
-    try {
-        // Clear the clipboard
-        const initialClipboardContent = clipboard.readText();
-
-        clipboard.writeText('');
-
-        // Simulate Ctrl+L to focus the address bar
-        robot.keyTap('l', 'control');
-
-        // Wait a bit to ensure the address bar is focused
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Simulate Ctrl+C to copy the URL
-        robot.keyTap('c', 'control');
-
-        // Wait for the clipboard to be populated
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        // Read the URL from the clipboard
-        const url = clipboard.readText().trim();
-        console.log("robot : ", url)
-        clipboard.writeText(initialClipboardContent);
-
-        // Press Escape key
-        robot.keyTap('escape');
-
-        // Validate the URL
-        // const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
-        // const isValidUrl = urlRegex.test(url);
-
-        // console.log(`URL retrieved: ${isValidUrl ? url : 'Invalid URL'}`);
-
-        return {
-            url
-        };
-    } catch (error) {
-        console.error('Error retrieving browser URL:', error);
-        return null;
-    }
-}
-
 
 const isBrowser = (appName: string): boolean => {
     const browsers = ['chrome', 'firefox', 'safari', 'edge', 'opera', 'internet explorer'];
@@ -207,22 +140,8 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
 
         let currentUrl = '';
         if (isBrowser(result.owner.name)) {
-            const isSameBrowser = lastActiveWindow && lastActiveWindow.app_name === result.owner.name;
-            const isCooldownExpired = Date.now() - lastBrowserUrlCheckTime >= BROWSER_URL_COOLDOWN;
-
-            if (!lastActiveWindow || !isSameBrowser || isCooldownExpired) {
-                // const browserHistory = await getBrowserUrl();
-                const browserHistory = {
-                    url: ''
-                }
-                currentUrl = browserHistory?.url ?? '';
-
-                // Update the last check time
-                lastBrowserUrlCheckTime = Date.now();
-            } else {
-                // If within cooldown and same browser, use the last known URL
-                currentUrl = lastActiveWindow.url;
-            }
+            const browserHistory = await getBrowserHistory(result.owner.name);
+            currentUrl = browserHistory?.url ?? '';
         }
 
         // Check if window has changed (either different app or different URL)
@@ -242,20 +161,6 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                 };
                 console.log("active duration inserted : ", payload)
                 stmt.run(lastActiveWindow.project_id, lastActiveWindow.task_id, lastActiveWindow.app_name, lastActiveWindow.url, lastActiveWindow.start_time, lastActiveWindow.end_time);
-                // Uncomment when ready to send data
-                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                //     method: 'POST',
-                //     headers: getAuthHeaders(),
-                //     body: JSON.stringify({
-                //         data: [
-
-                //             payload
-
-                //         ]
-                //     })
-                // });
-                // const data = await response.json()
-                // console.log("Previous active window log:", data);
             }
 
             // Initialize new active window data
@@ -287,21 +192,6 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
                 };
                 console.log("active duration inserted : ", payload)
                 stmt.run(lastActiveWindow.project_id, lastActiveWindow.task_id, lastActiveWindow.app_name, lastActiveWindow.url, lastActiveWindow.start_time, lastActiveWindow.end_time);
-
-                // Uncomment when ready to send data
-                // const response = await fetch(`${apiEndpoint}/activity/app-usages`, {
-                //     method: 'POST',
-                //     headers: getAuthHeaders(),
-                //     body: JSON.stringify({
-                //         data: [
-
-                //             payload
-
-                //         ]
-                //     })
-                // });
-                // const data = await response.json()
-                // console.log("Tracking stopped, final active window duration log:", data);
                 lastActiveWindow = null;
             }
         }, INACTIVITY_DURATION);

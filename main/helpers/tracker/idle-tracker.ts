@@ -127,12 +127,12 @@ export class TaskIdleTracker {
         const isNowIdle = systemIdleTime >= this.idleThreshold;
 
         console.log(systemIdleTime, this.idleThreshold)
-        if ((systemIdleTime % 300 === 0) && systemIdleTime !== 0) {
+        if ((systemIdleTime % this.idleThreshold === 0) && systemIdleTime !== 0) {
             this.showIdleNotification(systemIdleTime);
         }
-        if ((systemIdleTime % 900 === 0) && systemIdleTime !== 0) {
-            this.showIdleNotificationAndStopTimer(systemIdleTime)
-        }
+        // if ((systemIdleTime % 900 === 0) && systemIdleTime !== 0) {
+        //     this.showIdleNotificationAndStopTimer(systemIdleTime)
+        // }
 
 
         if (!isNowIdle && !!activeTaskState.endTime) {

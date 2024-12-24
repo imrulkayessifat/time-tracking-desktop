@@ -47,6 +47,8 @@ const Login = () => {
             })
         })
 
+        console.log(response.ok)
+
         if (!response.ok) {
             return null
         }

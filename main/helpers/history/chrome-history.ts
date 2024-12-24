@@ -33,11 +33,13 @@ async function queryChromiumDatabase(dbPath, browser) {
             JOIN visits ON urls.id = visits.url
             ORDER BY visits.visit_time DESC
             LIMIT 1`;
-        
+
         const latestVisit = db.prepare(sql).get();
         db.close();
         await fs.unlink(tempDbPath);
-        return latestVisit;
+        return {
+            url: latestVisit
+        };
     } catch (error) {
         try {
             await fs.unlink(tempDbPath);

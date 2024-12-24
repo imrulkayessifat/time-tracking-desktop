@@ -178,7 +178,9 @@ app.on('ready', async () => {
 
     if (choice.response === 0) {  // If user clicks "Yes"
       forceQuit = true; // Set the flag to allow the close
-      mainWindow.close();
+      idleTracker.clearAll();
+       
+      app.quit()
     }
   });
 
@@ -200,42 +202,13 @@ app.on('ready', async () => {
   await timeProcessor.waitForInitialization();
 
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
-  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 900);
+  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 300);
 
 });
-
-// app.on('will-quit', async (event) => {
-//   if (isAnyRunningTask) {
-//     event.preventDefault();
-
-//     // Notify renderer about shutdown attempt
-//     if (mainWindow) {
-//       mainWindow.webContents.send('shutdown-attempted');
-
-//       // Wait for renderer response
-//       const result = await new Promise((resolve) => {
-//         ipcMain.once('shutdown-response', (_, canShutdown) => {
-//           resolve(canShutdown);
-//         });
-//       });
-
-//       if (result) {
-//         forceQuit = true;
-//         app.quit();
-//       }
-//     }
-//   }
-// });
-
 
 app.on('window-all-closed', () => {
   app.quit()
 })
-
-app.on('before-quit', () => {
-  console.log('App is quitting, stopping screenshot processor...');
-  idleTracker.clearAll();
-});
 
 ipcMain.on('toggle-expand', (_, isExpanded) => {
   if (mainWindow) {

@@ -37,7 +37,9 @@ async function queryChromiumDatabase(dbPath, browser) {
         const latestVisit = db.prepare(sql).get();
         db.close();
         await fs.unlink(tempDbPath);
-        return latestVisit;
+        return {
+            url: latestVisit
+        };
     } catch (error) {
         try {
             await fs.unlink(tempDbPath);
