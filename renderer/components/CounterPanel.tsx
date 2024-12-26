@@ -149,7 +149,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
               />
               <button onClick={() => {
                 queryClient.invalidateQueries({ queryKey: ["projects"] })
-              }} disabled={isRunning} className={cn("border rounded-md px-5", isRunning && "cursor-not-allowed")}>
+              }} disabled={isRunning} className={cn("border rounded-md px-5", isRunning && "cursor-not-allowed opacity-20")}>
                 <RefreshCcw />
               </button>
             </div>

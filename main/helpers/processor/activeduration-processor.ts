@@ -3,6 +3,7 @@ import AuthTokenStore from '../auth-token-store';
 import path from 'path';
 import * as fs from 'fs';
 import { app } from 'electron';
+import axios from 'axios';
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -89,17 +90,16 @@ export class ActiveDurationProcessor {
     }
 
 
-    private getAuthHeaders(): Headers {
-        const headers = new Headers({
+    private getAuthHeaders(): Record<string, string> {
+        const headers: Record<string, string> = {
             'Content-Type': 'application/json'
-        });
+        };
 
         const tokenStore = AuthTokenStore.getInstance();
         const token = tokenStore.getToken();
 
-
         if (token) {
-            headers.append('Authorization', `${token}`);
+            headers['Authorization'] = token;
         }
 
         return headers;
@@ -158,22 +158,16 @@ export class ActiveDurationProcessor {
             console.log('Making API call for active duration :', activity.id);
 
             // Make API call
-            const response = await fetch(this.apiEndpoint, {
-                method: 'POST',
+            const response = await axios.post(this.apiEndpoint,{ data: [payload] }, {
                 headers: this.getAuthHeaders(),
-                body: JSON.stringify({
-                    data: [
-                        payload
-                    ]
-                })
             });
 
-            const { success, message, data } = await response.json()
+            const { success, message, data } = response.data
 
             if (!success) {
                 throw new Error(`API call failed for active duration : ${message}`);
             }
-            
+
             console.log('API call successful, deleting active duration:', message, data);
 
             // Delete the activity after successful API call
@@ -197,7 +191,7 @@ export class ActiveDurationProcessor {
     }
 
     // Process all pending activities in the database
-    private async processActivities(): Promise<void> {
+    public async processActivities(): Promise<void> {
         console.log('Starting processing cycle');
 
         if (this.isProcessing) {

@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import path from 'path';
 import { app } from 'electron';
+import axios from 'axios';
 
 import AuthTokenStore from '../auth-token-store';
 
@@ -26,16 +27,16 @@ export class ScreenshotProcessor {
         this.screenshotPath = path.join(app.getPath('userData'), 'ASD_Screenshots');
     }
 
-    private getAuthHeaders(): Headers {
-        const headers = new Headers({
+    private getAuthHeaders(): Record<string, string> {
+        const headers: Record<string, string> = {
             'Content-Type': 'application/json'
-        });
+        };
 
         const tokenStore = AuthTokenStore.getInstance();
         const token = tokenStore.getToken();
 
         if (token) {
-            headers.append('Authorization', `${token}`);
+            headers['Authorization'] = token;
         }
 
         return headers;
@@ -157,13 +158,11 @@ export class ScreenshotProcessor {
                 }]
             };
             // Make API call
-            const response = await fetch(this.apiEndpoint, {
-                method: 'POST',
+            const response = await axios.post(this.apiEndpoint, payload, {
                 headers: this.getAuthHeaders(),
-                body: JSON.stringify(payload)
             });
 
-            const { success, message, data } = await response.json()
+            const { success, message, data } = response.data
 
             if (!success) {
                 throw new Error(`API call failed for screenshot: ${message}`);

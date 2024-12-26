@@ -1,5 +1,5 @@
 // idle-tracker.ts
-import { Notification, powerMonitor } from 'electron';
+import { Notification, powerMonitor, dialog } from 'electron';
 
 import AuthTokenStore from '../auth-token-store';
 import { mainWindow } from '../../background';
@@ -27,7 +27,8 @@ export class TaskIdleTracker {
     private activeTaskKey: string | null;
     private idlePeriods: IdlePeriod[];
     private notificationShown: boolean = false;
-
+    private dialogShown: boolean = false;
+    private currentDialog: Electron.MessageBoxReturnValue | null = null;
 
     constructor(private apiEndpoint: string, idleThresholdSeconds: number = 15) {
         this.taskIdleTimes = new Map();
@@ -51,6 +52,34 @@ export class TaskIdleTracker {
             }
         }, 3000);
 
+    }
+
+    private async showIdleDialog(systemIdleTime: number) {
+        if (this.dialogShown) return;
+
+        this.dialogShown = true;
+
+        // Show the dialog
+        const dialogPromise = dialog.showMessageBox(mainWindow, {
+            type: 'warning',
+            title: 'System Idle Alert',
+            message: `Your system has been idle for ${systemIdleTime} seconds.`,
+            buttons: [], // No buttons
+            noLink: true
+        });
+
+        // Set up auto-close timer
+        setTimeout(async () => {
+            if (this.currentDialog) {
+                // Close the dialog if it's still open
+                mainWindow.webContents.send('close-dialog');
+            }
+            this.dialogShown = false;
+            this.currentDialog = null;
+        }, 3000);
+
+        // Store the current dialog
+        this.currentDialog = await dialogPromise;
     }
     private showIdleNotificationAndStopTimer(systemIdleTime) {
         const notification = new Notification({
@@ -129,6 +158,7 @@ export class TaskIdleTracker {
         console.log(systemIdleTime, this.idleThreshold)
         if ((systemIdleTime % this.idleThreshold === 0) && systemIdleTime !== 0) {
             this.showIdleNotification(systemIdleTime);
+            // this.showIdleDialog(systemIdleTime);
         }
         // if ((systemIdleTime % 900 === 0) && systemIdleTime !== 0) {
         //     this.showIdleNotificationAndStopTimer(systemIdleTime)

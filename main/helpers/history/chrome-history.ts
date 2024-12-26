@@ -38,7 +38,7 @@ async function queryChromiumDatabase(dbPath, browser) {
         db.close();
         await fs.unlink(tempDbPath);
         return {
-            url: latestVisit
+            url: latestVisit.url
         };
     } catch (error) {
         try {

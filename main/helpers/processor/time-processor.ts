@@ -3,6 +3,7 @@ import AuthTokenStore from '../auth-token-store';
 import path from 'path';
 import * as fs from 'fs';
 import { app } from 'electron';
+import axios from 'axios';
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -95,16 +96,16 @@ export class TimeProcessor {
         }
     }
 
-    private getAuthHeaders(): Headers {
-        const headers = new Headers({
+    private getAuthHeaders(): Record<string, string> {
+        const headers: Record<string, string> = {
             'Content-Type': 'application/json'
-        });
+        };
 
         const tokenStore = AuthTokenStore.getInstance();
         const token = tokenStore.getToken();
 
         if (token) {
-            headers.append('Authorization', `${token}`);
+            headers['Authorization'] = token;
         }
 
         return headers;
@@ -129,6 +130,7 @@ export class TimeProcessor {
             `);
 
             const startTime = this.getLocalTime();
+            console.warn("start time:", startTime)
             const result = insertStmt.run(
                 project_id,
                 startTime,
@@ -148,6 +150,7 @@ export class TimeProcessor {
     ): void {
         try {
             const endTime = this.getLocalTime();
+            console.warn("end time:", endTime)
             const updateStmt = this.db.prepare(`
                 UPDATE time_entries 
                 SET end_time = ? 
@@ -243,17 +246,11 @@ export class TimeProcessor {
             console.log('Making API call for time entry:', payload);
 
             // Make API call
-            const response = await fetch(this.apiEndpoint, {
-                method: 'POST',
+            const response = await axios.post(this.apiEndpoint, { data: [payload] }, {
                 headers: this.getAuthHeaders(),
-                body: JSON.stringify({
-                    "data": [
-                        payload
-                    ]
-                })
             });
 
-            const { success, message, data } = await response.json()
+            const { success, message, data } = response.data
 
             if (!success) {
                 throw new Error(`API call failed for time entry : ${message}`);

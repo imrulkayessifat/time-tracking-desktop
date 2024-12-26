@@ -37,7 +37,7 @@ let activeDuration: ActiveDurationProcessor;
 let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
-let apiEndpoint: string = "https://api.stafftimetrack.com/api/v1/";
+let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1/";
 let intervalMs: number = 120000;
 
 if (isProd) {
@@ -276,6 +276,7 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     screenshotProcessor.stopProcessing();
     // activityProcessor.stopProcessing();
     activeDuration.stopProcessing();
+    
     configurationProcessor.stopProcessing()
     const latestTimeEntry = timeProcessor.getLatestUnfinishedTimeEntry(projectId, taskId);
     if (latestTimeEntry) {
@@ -283,6 +284,8 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     }
     timeProcessor.stopProcessing()
     timeProcessor.processTimeEntries()
+    activeDuration.processActivities()
+
   } catch (error) {
     console.error('Error stoping idle tracking:', error);
   }

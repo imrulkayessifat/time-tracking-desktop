@@ -6,6 +6,7 @@ import { readChromeHistory } from './history/chrome-history';
 import { readFirefoxHistory } from './history/firefox-history';
 import { readEdgeHistory } from './history/edge-history';
 import { readSafariHistory } from './history/safari-history';
+import { getLocalTime } from './lib/getLocalTime';
 
 import Database from './db';
 import path from 'path';
@@ -69,9 +70,7 @@ let inactivityTimeout: NodeJS.Timeout | null = null;
 // Timeout durations
 const INACTIVITY_DURATION = 2000;
 
-const getLocalTime = (): string => {
-    return new Date().toISOString();
-};
+
 
 const isBrowser = (appName: string): boolean => {
     const browsers = ['chrome', 'firefox', 'safari', 'edge', 'opera', 'internet explorer'];
@@ -112,6 +111,7 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
             accessibilityPermission: false,
             screenRecordingPermission: false
         });
+
         const dbDir = path.join(app.getPath('userData'), 'db');
         await ensureDirectoryExists(dbDir);
         const dbPath = path.join(dbDir, 'activeduration.db');

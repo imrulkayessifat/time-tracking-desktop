@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query";
+import { IoSync } from "react-icons/io5";
 
 import {
   DropdownMenu,
@@ -15,6 +16,8 @@ import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { removeClientToken } from "../lib/auth";
 import { cn } from "../lib/utils";
+import { useGetSyncTime } from "./hooks/timer/useGetSyncTime";
+import Loader from "./Loader";
 
 interface MainProps {
   token: string
@@ -32,6 +35,7 @@ const Main: React.FC<MainProps> = ({
     window.electron.ipcRenderer.send('toggle-expand', isExpanded);
   };
   const { init_project_id, init_task_id } = useSelectProjectTask()
+  const { data, isLoading } = useGetSyncTime({ token })
 
   const pauseTask = async (project_id: number, task_id: number) => {
     try {
@@ -217,13 +221,36 @@ const Main: React.FC<MainProps> = ({
       // }
     }
   };
+  const handleSync = () => {
+    queryClient.invalidateQueries({ queryKey: ["sync_time"] });
+    console.log("sync time : ", data)
+  };
+
+  if (isLoading) {
+    return (
+      <Loader />
+    )
+  }
+
+
 
   return (
     <div className="flex flex-col w-full h-screen">
-      <div className="flex justify-end mt-[10px]">
+      <div className="flex justify-between mt-[10px] px-5">
+        <div className="flex gap-2">
+          <span className="font-bold">Today : {data.duration}</span>
+          <button
+            onClick={handleSync}
+            disabled={isRunning}
+            className={cn("flex items-center h-4 text-blue-500 gap-2", isRunning && "cursor-not-allowed opacity-20")}
+          >
+            <IoSync />
+            <p>Sync</p>
+          </button>
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger className="mb-10 p-0 cursor-pointer" asChild>
-            <img src='/images/profile.svg' className="w-9 h-9 mx-5" />
+            <img src='/images/profile.svg' className="w-9" />
           </DropdownMenuTrigger>
           <DropdownMenuContent side="bottom" align="end" className="w-56 bg-white">
             <DropdownMenuItem
@@ -250,7 +277,7 @@ const Main: React.FC<MainProps> = ({
           )
         }
       </div>
-    </div>
+    </div >
   );
 };
 

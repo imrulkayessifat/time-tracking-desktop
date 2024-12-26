@@ -4,6 +4,8 @@ import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
+import { getLocalTime } from './lib/getLocalTime';
+
 const execAsync = promisify(exec);
 
 const sanitizeFilename = (filename: string): string => {
@@ -112,7 +114,7 @@ const captureAndSaveScreenshot = async (time: {
                 }
 
                 // Create filename with sanitized timestamp
-                const timestamp = new Date().toISOString();
+                const timestamp = getLocalTime();
                 const fileName = sanitizeFilename(
                     `${time.project_id}_${time.selectedTaskId}_${timestamp}_display${i + 1}.png`
                 );

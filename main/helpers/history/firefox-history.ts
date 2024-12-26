@@ -147,7 +147,7 @@ export async function readFirefoxHistory() {
     if (latestVisits.length > 0) {
       // console.log("Latest visited URLs: ", latestVisits);
       return {
-        url: latestVisits[0]
+        url: latestVisits[0].url
       }; // Returning the most recent visit
     } else {
       console.log('No recent history found.');

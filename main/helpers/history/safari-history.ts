@@ -33,7 +33,7 @@ async function querySafariDatabase(dbPath) {
         db.close();
         await fs.unlink(tempDbPath);
         return {
-            url: latestVisit
+            url: latestVisit.url
         };
     } catch (error) {
         try {
@@ -51,6 +51,7 @@ export async function readSafariHistory() {
             throw new Error('Safari history is only available on macOS');
         }
         const dbPath = getSafariHistoryPath();
+        
         return await querySafariDatabase(dbPath);
     } catch (error) {
         throw new Error(`Failed to read Safari history: ${error.message}`);
