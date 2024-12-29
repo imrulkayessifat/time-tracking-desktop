@@ -116,7 +116,7 @@ app.on('ready', async () => {
   mainWindow = createWindow('main', {
     height: 720,
     width: 500,
-    minHeight: 720,
+    minHeight: 500,
     minWidth: 360,
     maxWidth: 500,
     webPreferences: {
@@ -179,7 +179,7 @@ app.on('ready', async () => {
     if (choice.response === 0) {  // If user clicks "Yes"
       forceQuit = true; // Set the flag to allow the close
       idleTracker.clearAll();
-       
+
       app.quit()
     }
   });
@@ -215,7 +215,7 @@ ipcMain.on('toggle-expand', (_, isExpanded) => {
     console.log(isExpanded)
     const [width, height] = mainWindow.getSize();
     const newWidth = !isExpanded ? 1250 : 500
-    mainWindow.setMinimumSize(!isExpanded ? 1000 : 360, 720)
+    mainWindow.setMinimumSize(!isExpanded ? 1000 : 360, 500)
     mainWindow.setMaximumSize(!isExpanded ? 99999 : 500, 99999)
     // console.log(mainWindow.getMaximumSize())
     mainWindow.setSize(newWidth, 720, true);
@@ -276,7 +276,7 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     screenshotProcessor.stopProcessing();
     // activityProcessor.stopProcessing();
     activeDuration.stopProcessing();
-    
+
     configurationProcessor.stopProcessing()
     const latestTimeEntry = timeProcessor.getLatestUnfinishedTimeEntry(projectId, taskId);
     if (latestTimeEntry) {

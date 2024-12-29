@@ -188,18 +188,23 @@ const Main: React.FC<MainProps> = ({
 
 
   return (
-    <div className="flex flex-col w-full h-screen">
+    <div className="flex flex-col gap-2 w-full h-screen">
       <div className="flex justify-between mt-[10px] px-5">
-        <div className="flex gap-2">
-          <span className="font-bold">Today : {data.duration}</span>
-          <button
-            onClick={handleSync}
-            disabled={isRunning}
-            className={cn("flex items-center h-4 text-blue-500 gap-2", isRunning && "cursor-not-allowed opacity-20")}
-          >
-            <IoSync />
-            <p>Sync</p>
-          </button>
+        <div className="flex items-center gap-2 border border-blue-400 rounded-md p-2">
+          <div className="flex flex-col">
+            <div className="flex justify-between items-center gap-10">
+              <span className="font-bold text-emerald-500">Today</span>
+              <button
+                onClick={handleSync}
+                disabled={isRunning}
+                className={cn("flex items-center h-4 text-blue-500 gap-2", isRunning && "cursor-not-allowed opacity-20")}
+              >
+                <IoSync />
+                <p>Sync</p>
+              </button>
+            </div>
+            <span>{data.duration}</span>
+          </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger className="mb-10 p-0 cursor-pointer" asChild>

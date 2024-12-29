@@ -37,6 +37,7 @@ export const useTimerCleanup = () => {
 
             // If we found expired timers, clear all timers
             if (hasExpiredTimers) {
+                console.log("first call")
                 localStorage.removeItem('taskTimers');
                 console.log('Cleared all timers due to date change');
             }

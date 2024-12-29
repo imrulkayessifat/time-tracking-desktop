@@ -7,6 +7,7 @@ import { readFirefoxHistory } from './history/firefox-history';
 import { readEdgeHistory } from './history/edge-history';
 import { readSafariHistory } from './history/safari-history';
 import { getLocalTime } from './lib/getLocalTime';
+import { trackChromeTabs } from './tab/track-chrome-tabs';
 
 import Database from './db';
 import path from 'path';
@@ -52,6 +53,7 @@ const getBrowserHistory = async (name: string) => {
     const browserName = name.toLowerCase();
     if (browserName.includes('chrome')) {
         return await readChromeHistory();
+        // return await trackChromeTabs()
     } else if (browserName.includes('firefox')) {
         return await readFirefoxHistory();
     } else if (browserName.includes('safari')) {
@@ -139,10 +141,11 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
         const currentTime = getLocalTime();
 
         let currentUrl = '';
-        // if (isBrowser(result.owner.name)) {
-        //     const browserHistory = await getBrowserHistory(result.owner.name);
-        //     currentUrl = browserHistory?.url ?? '';
-        // }
+        if (isBrowser(result.owner.name)) {
+            const browserHistory = await getBrowserHistory(result.owner.name);
+            console.log("browser history : ", browserHistory)
+            // currentUrl = browserHistory?.url ?? '';
+        }
 
         // Check if window has changed (either different app or different URL)
         if (!lastActiveWindow || lastActiveWindow.app_name !== result.owner.name || (currentUrl && lastActiveWindow.url !== currentUrl)) {

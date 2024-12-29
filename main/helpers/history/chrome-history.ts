@@ -24,14 +24,9 @@ async function queryChromiumDatabase(dbPath, browser) {
     try {
         const db = new Database(tempDbPath, { readonly: true });
         const sql = `
-            SELECT
-                urls.url,
-                urls.title,
-                datetime(visits.visit_time/1000000-11644473600, 'unixepoch') as visit_date,
-                visits.transition
+            SELECT urls.url, urls.title, urls.last_visit_time
             FROM urls
-            JOIN visits ON urls.id = visits.url
-            ORDER BY visits.visit_time DESC
+            ORDER BY last_visit_time DESC
             LIMIT 1`;
 
         const latestVisit = db.prepare(sql).get();
