@@ -10,6 +10,7 @@ const execAsync = promisify(exec);
 import Database from '../db';
 import AuthTokenStore from '../auth-token-store';
 import { mainWindow } from '../../background';
+import { getLocalTime } from '../lib/getLocalTime';
 
 interface IdlePeriod {
     project_id: number;
@@ -242,7 +243,7 @@ export class TaskIdleTracker {
         }
 
         if (systemIdleTime === 0 || systemIdleTime === 1) {
-            activeTaskState.startTime = new Date().toISOString();
+            activeTaskState.startTime = getLocalTime();
         }
 
         if (isNowIdle) {
@@ -252,7 +253,7 @@ export class TaskIdleTracker {
             }
             // Add one second to total idle time
             activeTaskState.totalIdleTime += 1;
-            activeTaskState.endTime = new Date().toISOString();
+            activeTaskState.endTime = getLocalTime();
         } else if (wasIdle) {
             // Just became active
             activeTaskState.isIdle = false;

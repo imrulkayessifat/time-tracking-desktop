@@ -23,7 +23,9 @@ export const useTaskTimer = (
     const taskKey = `task_${projectId}_${taskId}`;
 
     const getCurrentDate = () => {
-        return new Date().toISOString().split('T')[0];
+        const currentUtcTime = new Date();
+        const localTimeOffset = currentUtcTime.getTimezoneOffset() * 60000; // Convert offset to milliseconds
+        return new Date(currentUtcTime.getTime() - localTimeOffset).toISOString().split('T')[0]
     };
 
     // Get stored time for this task

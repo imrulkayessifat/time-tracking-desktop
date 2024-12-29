@@ -134,10 +134,10 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
             <div className="absolute inset-y-0 start-0 flex items-center ps-3">
               <button
                 onClick={handleSearch}
-                disabled={searchValue.length === 0}
-                className={cn("", searchValue.length === 0 && "opacity-30 cursor-not-allowed")}
+                disabled={searchValue.length === 0 || isRunning}
+                className={cn("", (searchValue.length === 0 || isRunning) && "opacity-30 cursor-not-allowed")}
               >
-                <img src="/images/search.png" className="h-[26px] w-[26px] cursor-pointer" />
+                <img src="/images/search.png" className={cn("h-[26px] w-[26px] cursor-pointer", (searchValue.length === 0 || isRunning) && "opacity-30 cursor-not-allowed")} />
               </button>
             </div>
             <div className="flex gap-4">

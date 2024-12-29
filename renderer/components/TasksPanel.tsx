@@ -242,12 +242,12 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
               <div className="absolute inset-y-0 start-0 flex items-center ps-3">
                 <button
                   onClick={handleSearch}
-                  disabled={searchValue.length === 0}
-                  className={cn("", searchValue.length === 0 && "opacity-30 cursor-not-allowed")}
+                  disabled={searchValue.length === 0 || isRunning}
+                  className={cn("", (searchValue.length === 0 || isRunning) && "opacity-30 cursor-not-allowed")}
                 >
                   <img
                     src="/images/search.png"
-                    className={"h-[26px] w-[26px] cursor-pointer"}
+                    className={cn("h-[26px] w-[26px] cursor-pointer", (searchValue.length === 0 || isRunning) && "opacity-30 cursor-not-allowed")}
                   />
                 </button>
               </div>
@@ -270,7 +270,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
           </form>
           <form className="flex items-center w-1/3">
             <div className="relative w-full">
-              <Select value={status} onValueChange={handleStatusChange}>
+              <Select disabled={isRunning} value={status} onValueChange={handleStatusChange}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>

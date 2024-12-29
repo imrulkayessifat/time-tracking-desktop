@@ -14,7 +14,9 @@ interface TaskTimerStore {
 
 export const useTimerCleanup = () => {
     const getCurrentDate = () => {
-        return new Date().toISOString().split('T')[0];
+        const currentUtcTime = new Date();
+        const localTimeOffset = currentUtcTime.getTimezoneOffset() * 60000; // Convert offset to milliseconds
+        return new Date(currentUtcTime.getTime() - localTimeOffset).toISOString().split('T')[0];
     };
 
     // Function to check and clean timers
