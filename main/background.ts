@@ -208,7 +208,7 @@ app.on('ready', async () => {
   await idleProcessor.waitForInitialization()
 
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
-  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 15);
+  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 300);
 
 });
 
