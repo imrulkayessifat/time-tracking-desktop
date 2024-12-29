@@ -1,6 +1,13 @@
 // idle-tracker.ts
 import { Notification, powerMonitor, dialog } from 'electron';
+import { app } from 'electron';
+import path from 'path';
+import * as fs from 'fs';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+const execAsync = promisify(exec);
 
+import Database from '../db';
 import AuthTokenStore from '../auth-token-store';
 import { mainWindow } from '../../background';
 
@@ -29,6 +36,9 @@ export class TaskIdleTracker {
     private notificationShown: boolean = false;
     private dialogShown: boolean = false;
     private currentDialog: Electron.MessageBoxReturnValue | null = null;
+    private isInitialized: boolean = false;
+    private db: Database | null = null;
+    private stmt: any = null;
 
     constructor(private apiEndpoint: string, idleThresholdSeconds: number = 15) {
         this.taskIdleTimes = new Map();
@@ -36,6 +46,34 @@ export class TaskIdleTracker {
         this.idleCheckInterval = null;
         this.activeTaskKey = null;
         this.idlePeriods = []
+        this.initializeDatabase();
+    }
+
+    private async initializeDatabase() {
+        try {
+            const dbDir = path.join(app.getPath('userData'), 'db');
+            await this.ensureDirectoryExists(dbDir);
+            const dbPath = path.join(dbDir, 'idletracking.db');
+
+            this.db = new Database(dbPath);
+            this.db.prepare(`
+                CREATE TABLE IF NOT EXISTS idle_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id INTEGER,
+                    task_id INTEGER,
+                    start_time TEXT,
+                    end_time TEXT
+                )
+            `).run();
+
+            // Prepare the statement once and store it
+            this.stmt = this.db.prepare(`
+                INSERT INTO idle_entries (project_id, task_id, start_time, end_time)
+                VALUES (?, ?, ?, ?)
+            `);
+        } catch (error) {
+            console.error('Failed to initialize database:', error);
+        }
     }
 
     private showIdleNotification(systemIdleTime) {
@@ -119,7 +157,34 @@ export class TaskIdleTracker {
         return `${projectId}-${taskId}`;
     }
 
-    startTracking(projectId: number, taskId: number) {
+    async ensureDirectoryExists(dirPath: string): Promise<void> {
+        try {
+            // Normalize the path to handle Windows path separators correctly
+            const normalizedPath = path.normalize(dirPath);
+
+            // Check if directory exists
+            try {
+                await fs.promises.access(normalizedPath);
+            } catch {
+                // Directory doesn't exist, create it
+                await fs.promises.mkdir(normalizedPath, { recursive: true });
+
+                // For Windows: Remove hidden attribute and ensure proper permissions
+                if (process.platform === 'win32') {
+                    try {
+                        await execAsync(`attrib -h "${normalizedPath}"`);
+                    } catch (error) {
+                        console.warn('Failed to remove hidden attribute:', error);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error ensuring directory exists:', error);
+            throw error;
+        }
+    };
+
+    async startTracking(projectId: number, taskId: number) {
         const taskKey = this.getTaskKey(projectId, taskId);
 
         // If switching to a new task, update activeTaskKey
@@ -166,6 +231,7 @@ export class TaskIdleTracker {
 
 
         if (!isNowIdle && !!activeTaskState.endTime) {
+            this.stmt.run(activeTaskState.projectId, activeTaskState.taskId, activeTaskState.startTime, activeTaskState.endTime)
             this.idlePeriods.push({
                 project_id: activeTaskState.projectId,
                 task_id: activeTaskState.taskId,
@@ -198,7 +264,6 @@ export class TaskIdleTracker {
         console.log("task Key : ", taskKey)
         const taskState = this.taskIdleTimes.get(taskKey);
         console.log("taskState : ", taskState)
-        console.log("idle periods : ", this.idlePeriods)
         if (taskState) {
             const totalIdleTime = taskState.totalIdleTime;
             this.taskIdleTimes.delete(taskKey);
@@ -222,19 +287,19 @@ export class TaskIdleTracker {
                 }
                 return period;
             });
-
+            console.log("transformed : ", transformedIdlePeriods)
             if (this.idlePeriods.length > 0) {
-                const res = await fetch(this.apiEndpoint, {
-                    method: 'POST',
-                    headers: this.getAuthHeaders(),
-                    body: JSON.stringify({
-                        "idle_time": transformedIdlePeriods
+                // const res = await fetch(this.apiEndpoint, {
+                //     method: 'POST',
+                //     headers: this.getAuthHeaders(),
+                //     body: JSON.stringify({
+                //         "idle_time": transformedIdlePeriods
 
-                    })
-                });
+                //     })
+                // });
 
-                const { message, data } = await res.json()
-                console.log("idle time api : ", message, data)
+                // const { message, data } = await res.json()
+                // console.log("idle time api : ", message, data)
                 this.idlePeriods = []
             }
 

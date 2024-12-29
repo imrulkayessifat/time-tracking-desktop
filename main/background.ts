@@ -20,6 +20,7 @@ import captureAndSaveScreenshot from './helpers/capture-screenshot'
 import { loadProcessorConfig } from './helpers/processor/load-config';
 import { ScreenshotProcessor } from './helpers/processor/screenshot-processor';
 import { TimeProcessor } from './helpers/processor/time-processor';
+import { IdleTimeProcessor } from './helpers/processor/idletime-processor';
 import { ActivityProcessor } from './helpers/processor/activity-processor';
 import { ActiveDurationProcessor } from './helpers/processor/activeduration-processor';
 import { ConfigurationProcessor } from './helpers/processor/configuration-processor'
@@ -29,6 +30,7 @@ const isProd = process.env.NODE_ENV === 'production'
 export let mainWindow: BrowserWindow | null = null;
 let lastScreenshotTime = { minutes: -1, hours: -1 };
 let isAnyRunningTask: boolean | null = null;
+let timeUpdateInterval: NodeJS.Timeout | null = null;
 let forceQuit = false;
 
 let screenshotProcessor: ScreenshotProcessor;
@@ -36,6 +38,7 @@ let activityProcessor: ActivityProcessor;
 let activeDuration: ActiveDurationProcessor;
 let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
+let idleProcessor: IdleTimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
 let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1/";
 let intervalMs: number = 120000;
@@ -198,11 +201,14 @@ app.on('ready', async () => {
   activeDuration = new ActiveDurationProcessor(`${apiEndpoint}/activity/app-usages`, 30000)
   await activeDuration.waitForInitialization();
 
-  timeProcessor = new TimeProcessor(`${apiEndpoint}/track/bulk`, 60000);
+  timeProcessor = new TimeProcessor(`${apiEndpoint}/track/bulk`, 30000);
   await timeProcessor.waitForInitialization();
 
+  idleProcessor = new IdleTimeProcessor(`${apiEndpoint}/idle-time-entry`, 30000)
+  await idleProcessor.waitForInitialization()
+
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
-  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 300);
+  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 15);
 
 });
 
@@ -238,6 +244,22 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
   const interval = configurationProcessor?.getScreenShotInterval() ?? 2;
   // const interval = 2
   console.log("interval", interval)
+  // if (!info.isRunning && timeUpdateInterval) {
+  //   clearInterval(timeUpdateInterval);
+  //   timeUpdateInterval = null;
+  //   return;
+  // }
+
+  // // Start new interval if timer is running and interval isn't set
+  // if (info.isRunning && !timeUpdateInterval) {
+  //   timeUpdateInterval = setInterval(() => {
+  //     const latestTimeEntry = timeProcessor.getLatestUnfinishedTimeEntry(info.project_id, info.selectedTaskId);
+  //     if (latestTimeEntry) {
+  //       timeProcessor.updateEndTime(latestTimeEntry.id);
+  //       timeProcessor.insertStartTime(info.project_id, info.selectedTaskId);
+  //     }
+  //   }, 10000); // 30 seconds in milliseconds
+  // }
   const elapsedMinutes = (info.hours * 60 + info.minutes) - (lastScreenshotTime.hours * 60 + lastScreenshotTime.minutes);
 
   if (elapsedMinutes >= interval) {
@@ -252,6 +274,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
     lastScreenshotTime = { minutes: info.minutes, hours: info.hours };
   }
   startDurationTracking(info.project_id, info.selectedTaskId, apiEndpoint)
+
 });
 
 ipcMain.on('idle-started', (_, { projectId, taskId }) => {
@@ -264,6 +287,7 @@ ipcMain.on('idle-started', (_, { projectId, taskId }) => {
     activeDuration.startProcessing()
     configurationProcessor.startProcessing();
     timeProcessor.startProcessing()
+    idleProcessor.startProcessing()
   } catch (error) {
     console.error('Error starting idle tracking:', error);
   }
@@ -283,7 +307,9 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
       timeProcessor.updateEndTime(latestTimeEntry.id);
     }
     timeProcessor.stopProcessing()
+    idleProcessor.stopProcessing()
     timeProcessor.processTimeEntries()
+    idleProcessor.processIdleEntries()
     activeDuration.processActivities()
 
   } catch (error) {
