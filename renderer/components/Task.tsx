@@ -80,8 +80,8 @@ const Task: React.FC<TaskProps> = ({
                             <th scope="col" className="px-6 py-3">
                                 Created
                             </th>
-                            <th scope="col" className="px-6 py-3">
-                            </th>
+                            {/* <th scope="col" className="px-6 py-3">
+                            </th> */}
                         </tr>
                     </thead>
                     {
@@ -132,9 +132,9 @@ const Task: React.FC<TaskProps> = ({
                                                 <td className="px-6 py-4 text-sm">
                                                     {task.createdAt.split('T')[0]}
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                {/* <td className="px-6 py-4">
                                                     {formatTime(hours, minutes, seconds)}
-                                                </td>
+                                                </td> */}
                                             </tr>
                                         )
                                     })

@@ -226,6 +226,8 @@ export const useTaskTimer = (
 
         stopRunningTimer(); // Stop any running timer before starting new one
         // setTimeout(() => {
+        const date = new Date();
+        reset(date, false);
         startStopwatch();
         // }, 1000);
 

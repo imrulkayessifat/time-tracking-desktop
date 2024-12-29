@@ -81,8 +81,8 @@ const Project: React.FC<ProjectsProps> = ({
               <th scope="col" className="px-6 py-3">
                 Project
               </th>
-              <th scope="col" className="px-6 py-3">
-              </th>
+              {/* <th scope="col" className="px-6 py-3">
+              </th> */}
             </tr>
           </thead>
           {
@@ -128,9 +128,9 @@ const Project: React.FC<ProjectsProps> = ({
                           </button>
                           <span>{project.name}</span>
                         </th>
-                        <td className="px-6 py-4">
+                        {/* <td className="px-6 py-4">
                           {formatTime(hours, minutes, seconds)}
-                        </td>
+                        </td> */}
                       </tr>
                     )
                   })
