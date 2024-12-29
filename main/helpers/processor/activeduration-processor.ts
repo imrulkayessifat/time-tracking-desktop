@@ -125,7 +125,7 @@ export class ActiveDurationProcessor {
             this.processActivities()
                 .then(() => console.log('Processing cycle completed'))
                 .catch(err => console.error('Error in processing cycle:', err));
-        }, 30000);
+        }, this.intervalMs);
 
         console.log('Processing started successfully');
     }

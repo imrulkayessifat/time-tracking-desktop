@@ -50,23 +50,23 @@ const Main: React.FC<MainProps> = ({
         },
         body: JSON.stringify(requestBody)
       });
-      const { success, message } = await res.json();
-      console.log("pause", success, message)
+      const { success, message, data } = await res.json();
+      console.log("pause task : ", success, message, data)
+      console.log("task key : ", project_id, task_id)
       if (success) {
-        // toast.success(`Task track paused : ${project_id} ${task_id}`, {
-        //   duration: 1000,
-        // });
-        return true;
+        return {
+          success,
+          message,
+          data
+        }
       } else {
-        // toast.error(`Track Pause Something went wrong ${project_id} ${task_id} ${message}`, {
-        //   duration: 5000,
-        // });
-        return false;
+        return {
+          success,
+          message,
+          data
+        }
       }
     } catch (error) {
-      // toast.error(`Track Pause Something went wrong ${project_id} ${task_id} ${error}`, {
-      //   duration: 5000,
-      // });
       return false;
     }
   };
@@ -124,29 +124,6 @@ const Main: React.FC<MainProps> = ({
     }
   }, [token]);
 
-  useEffect(() => {
-    // Listen for the trigger from main process
-    window.electron.ipcRenderer.on('trigger-timer-toggle', async () => {
-      console.log("trigger-timer-toggle : ", init_project_id, init_task_id, isRunning)
-      // pause();
-      // window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
-      handleTimerToggle()
-      // const pauseSuccess = await pauseTask(init_project_id, init_task_id);
-      toast.warning(`Idle time alert`, {
-        description: "Your task was paused due to inactivity.",
-        action: {
-          label: "Close",
-          onClick: () => console.log("Close"),
-        },
-      })
-    });
-
-    // Clean up the listener when component unmounts
-    return () => {
-      window.electron.ipcRenderer.removeAllListeners('trigger-timer-toggle');
-    };
-  }, [init_project_id, init_task_id, isRunning]);
-
   const startTask = async (project_id: number, task_id: number) => {
     try {
       const requestBody = task_id === -1
@@ -161,20 +138,15 @@ const Main: React.FC<MainProps> = ({
         body: JSON.stringify(requestBody)
       });
       const { success, message, data } = await res.json();
-
+      console.log("start task : ", success, message, data)
+      console.log("task key : ", project_id, task_id)
       if (success) {
-        // toast.success(`Task track started : ${project_id} ${task_id}`, {
-        //   duration: 1000,
-        // });
         return {
           success,
           message,
           data
         };
       } else {
-        // toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${message}`, {
-        //   duration: 5000,
-        // });
         return {
           success: false,
           message,
@@ -182,45 +154,26 @@ const Main: React.FC<MainProps> = ({
         };
       }
     } catch (error) {
-      // toast.error(`Track Start : Something went wrong ${project_id} ${task_id} ${error}`, {
-      //   duration: 5000,
-      // });
       return false;
     }
   };
-  console.log("task key : ", init_project_id, init_task_id)
+
 
   const handleTimerToggle = async () => {
     if (!isRunning) {
       window.electron.ipcRenderer.send('permission-check');
-      // if (startSuccess) {
       // const result = await startTask(init_project_id, init_task_id);
 
-      // console.log("result : ", result)
-      // if (result && result.success && result.data) {
-      //   if (init_task_id === -1) {
 
-      //     start(result.data.project?.duration, undefined, `task_${init_project_id}_${init_task_id}`);
-      //   } else {
-
-      //     start(result.data.project?.duration, result.data.task?.duration, `task_${init_project_id}_${init_task_id}`);
-      //   }
-      // } else {
-      //   start()
-      // }
       start()
-      console.log("check1")
       window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
-      // }
     } else {
-      // if (pauseSuccess) {
       // const pauseSuccess = await pauseTask(init_project_id, init_task_id);
       pause();
-      console.log("check2")
       window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
-      // }
     }
   };
+
   const handleSync = () => {
     queryClient.invalidateQueries({ queryKey: ["sync_time"] });
     console.log("sync time : ", data)

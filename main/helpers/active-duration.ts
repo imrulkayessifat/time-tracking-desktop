@@ -139,10 +139,10 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
         const currentTime = getLocalTime();
 
         let currentUrl = '';
-        if (isBrowser(result.owner.name)) {
-            const browserHistory = await getBrowserHistory(result.owner.name);
-            currentUrl = browserHistory?.url ?? '';
-        }
+        // if (isBrowser(result.owner.name)) {
+        //     const browserHistory = await getBrowserHistory(result.owner.name);
+        //     currentUrl = browserHistory?.url ?? '';
+        // }
 
         // Check if window has changed (either different app or different URL)
         if (!lastActiveWindow || lastActiveWindow.app_name !== result.owner.name || (currentUrl && lastActiveWindow.url !== currentUrl)) {
