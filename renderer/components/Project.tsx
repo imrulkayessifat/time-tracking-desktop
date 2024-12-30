@@ -8,6 +8,7 @@ import { useSelectTask } from "./hooks/task/use-select-task";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useGetProjects } from "./hooks/project/use-get-projects"
 import { useTimerCleanup } from "./hooks/timer/useTimerCleanup";
+import useAttendanceTracker from "./hooks/attendance/use-attendance-tracker";
 import { useGetTimer } from "./hooks/timer/useGetTimer";
 
 interface ProjectMeta {
@@ -42,6 +43,7 @@ const Project: React.FC<ProjectsProps> = ({
   const { chosen_project_id, setTask } = useSelectTask()
   const { init_project_id, init_task_id, setProjectTask } = useSelectProjectTask()
   const { cleanupTimers } = useTimerCleanup();
+  // const { isOnline } = useAttendanceTracker({ token })
   const { getProjectTime } = useGetTimer();
 
   const { data, isLoading } = useGetProjects({ page, token })
@@ -53,9 +55,10 @@ const Project: React.FC<ProjectsProps> = ({
     )
   }
   cleanupTimers()
+
   const projects = searchProject?.rows.length > 0 ? searchProject.rows : data?.rows || []
   const meta = searchProject?.meta ? searchProject.meta : data?.meta
-
+  
   const handlePrevPage = () => {
     if (page > 1) {
       setPage(prev => prev - 1)
@@ -67,7 +70,7 @@ const Project: React.FC<ProjectsProps> = ({
       setPage(prev => prev + 1)
     }
   }
-
+  
   const formatTime = (hours: number, minutes: number, seconds: number): string => {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };

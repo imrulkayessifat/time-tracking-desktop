@@ -93,7 +93,7 @@ const Main: React.FC<MainProps> = ({
       });
     }
   }, [hours, minutes, seconds, isRunning, init_project_id, init_task_id]);
-
+  
 
   useEffect(() => {
     const fetchData = async () => {
@@ -163,10 +163,28 @@ const Main: React.FC<MainProps> = ({
     if (!isRunning) {
       window.electron.ipcRenderer.send('permission-check');
       // const result = await startTask(init_project_id, init_task_id);
-
-
       start()
       window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
+      const attendance = localStorage.getItem('time_data')
+      if (attendance) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/attendance`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `${token}`
+          },
+          body: JSON.stringify({
+            check_in: attendance
+          })
+        });
+
+        const result = await response.json();
+        console.log('attendance response : ', result)
+        if (result.success) {
+          localStorage.removeItem('time_data')
+        }
+      }
+
     } else {
       // const pauseSuccess = await pauseTask(init_project_id, init_task_id);
       pause();

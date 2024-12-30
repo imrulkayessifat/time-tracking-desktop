@@ -208,7 +208,7 @@ app.on('ready', async () => {
   await idleProcessor.waitForInitialization()
 
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
-  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 300);
+  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 120);
 
 });
 
@@ -250,7 +250,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
   //   return;
   // }
 
-  // // Start new interval if timer is running and interval isn't set
+  // Start new interval if timer is running and interval isn't set
   // if (info.isRunning && !timeUpdateInterval) {
   //   timeUpdateInterval = setInterval(() => {
   //     const latestTimeEntry = timeProcessor.getLatestUnfinishedTimeEntry(info.project_id, info.selectedTaskId);
