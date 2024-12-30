@@ -13,7 +13,7 @@ const Login = () => {
     const [error, setError] = useState<string | null>(' ');
     const { isLoading: authLoading, token } = useAuth({
         requireAuth: false,      // This page doesn't require authentication
-        redirectTo: '/profile'   // Redirect to profile if authenticated
+        redirectTo: '/profile'   /// Redirect to profile if authenticated
     });
 
     useEffect(() => {

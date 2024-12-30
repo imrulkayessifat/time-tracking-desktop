@@ -40,7 +40,8 @@ let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
 let idleProcessor: IdleTimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
-let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1/";
+// let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1/";
+let apiEndpoint: string = "https://api.stafftimetrack.com/api/v1"
 let intervalMs: number = 120000;
 
 if (isProd) {
@@ -243,7 +244,7 @@ ipcMain.on('message', async (event, arg) => {
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, isRunning: boolean, hours: number, minutes: number, seconds: number }) => {
   const interval = configurationProcessor?.getScreenShotInterval() ?? 2;
   // const interval = 2
-  console.log("interval", interval)
+  console.log("interval", interval, info.minutes, info.seconds)
   // if (!info.isRunning && timeUpdateInterval) {
   //   clearInterval(timeUpdateInterval);
   //   timeUpdateInterval = null;
@@ -260,9 +261,8 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
   //     }
   //   }, 10000); // 30 seconds in milliseconds
   // }
-  const elapsedMinutes = (info.hours * 60 + info.minutes) - (lastScreenshotTime.hours * 60 + lastScreenshotTime.minutes);
 
-  if (elapsedMinutes >= interval) {
+  if ((info.minutes % interval === 0) && info.seconds === 0) {
     if (info.project_id !== -1) {
       // try {
       //   startTracking(info.project_id, info.selectedTaskId);
