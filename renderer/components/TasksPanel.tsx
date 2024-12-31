@@ -4,7 +4,8 @@ import {
   ChangeEvent,
   MouseEvent,
   FormEvent,
-  useTransition
+  useTransition,
+  useRef
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner"
@@ -15,6 +16,7 @@ import Task from "./Task";
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
 import { cn } from "../lib/utils";
@@ -23,6 +25,7 @@ import { useSelectStatus } from "./hooks/task/use-status";
 import { useSelectTask } from "./hooks/task/use-select-task";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useSelectProject } from "./hooks/project/use-select-project";
+import { useTaskDescription } from "./hooks/task/use-task-description";
 import { useCreateTask } from "./hooks/task/use-create-task";
 import {
   Select,
@@ -73,7 +76,9 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   const { chosen_project_id, chosen_task_id, setTask } = useSelectTask()
   const mutation = useCreateTask({ token })
   const { init_project_id, init_task_id, setProjectTask } = useSelectProjectTask()
+  const { task_description } = useTaskDescription()
   const { project_id, setProject } = useSelectProject()
+  const dialogCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (chosen_task_id !== -1) {
@@ -124,7 +129,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
     if (!success) {
       return { error: 'Task create failed!' }
     }
-
+    dialogCloseRef.current?.click();
     return { success: 'Task create successfully' }
   }
 
@@ -159,7 +164,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   }
 
   const endTask = async (init_project_id: number, init_task_id: number) => {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/end`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/end-desktop`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -171,6 +176,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       })
     });
     const { success, message } = await res.json();
+    console.log("task end", success, message)
 
     if (success) {
       toast.success(`Task end successfull : ${init_project_id} ${init_task_id} ${message}`, {
@@ -193,7 +199,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
             hasTaskStorePermission && project_id !== -1 && (
               <Dialog>
                 <DialogTrigger asChild>
-                  <button className="flex justify-between items-center gap-4 text-[#294DFF]">
+                  <button disabled={isRunning} className={cn("flex justify-between items-center gap-4 text-[#294DFF]", isRunning && 'opacity-25 cursor-not-allowed')}>
                     <img src="/images/create.svg" />
                     <span>Create Tasks</span>
                   </button>
@@ -202,8 +208,11 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
                   <form onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-6">
                       <div className="flex justify-between">
-                        <p className="font-medium text-xl">New Task</p>
-                        <DialogPrimitive.Close disabled={isPending} className=" rounded-sm ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                        <DialogTitle>
+
+                          <p className="font-medium text-xl">New Task</p>
+                        </DialogTitle>
+                        <DialogPrimitive.Close ref={dialogCloseRef} disabled={isPending} className=" rounded-sm ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
                           <X className="h-4 w-4" />
                           {/* <span className="sr-only">Close</span> */}
                         </DialogPrimitive.Close>
@@ -295,18 +304,26 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
         </div>
       </div>
       <Task token={token} handleTimerToggle={handleTimerToggle} searchTask={searchTask} status={status} />
-      {(init_task_id !== -1 && isRunning) && (<div className="mt-5 border-t">
+      {(init_task_id !== -1) && (<div className="mt-5 border-t">
 
-        <div className="flex items-center justify-between mt-3">
-          <p>Task Id : {init_task_id}</p>
-          <button onClick={async () => {
-            await endTask(init_project_id, init_task_id)
-            pause()
-            window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
-            setTask(-1, -1)
-            setProjectTask(-1, -1)
-            setProject(-1, -1)
-          }} disabled={init_task_id === -1} className={cn("border rounded px-3 py-2", init_task_id === -1 && 'opacity-50')}>Completed</button>
+        <div className="flex flex-col gap-2 mt-3">
+          <div className="flex justify-between items-center">
+            <p>Task Id : {init_task_id}</p>
+            <button onClick={async () => {
+
+              // pause()
+              // window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
+              setTask(-1, -1)
+              setProjectTask(-1, -1)
+              setProject(-1, -1)
+              await endTask(init_project_id, init_task_id)
+            }} disabled={init_task_id === -1 || isRunning}
+              className={cn("border rounded px-3 py-2", (init_task_id === -1 || isRunning) && 'opacity-50 cursor-not-allowed')}
+            >
+              Completed
+            </button>
+          </div>
+          <p>Task Details : {task_description}</p>
         </div>
       </div>
       )}

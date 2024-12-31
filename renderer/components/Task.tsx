@@ -6,6 +6,7 @@ import { useGetTasks } from './hooks/task/use-get-tasks';
 import { useSelectTask } from './hooks/task/use-select-task';
 import { useSelectProject } from './hooks/project/use-select-project';
 import { useSelectProjectTask } from './hooks/use-select-projecttask';
+import { useTaskDescription } from './hooks/task/use-task-description';
 import { useGetTimer } from './hooks/timer/useGetTimer';
 
 interface TaskMeta {
@@ -36,6 +37,7 @@ const Task: React.FC<TaskProps> = ({
     const [taskPage, setTaskPage] = useState(1)
     const { project_id, setProject } = useSelectProject()
     const { init_project_id, init_task_id, setProjectTask } = useSelectProjectTask()
+    const { setTaskDescription } = useTaskDescription()
     const { getTaskTime } = useGetTimer();
     const { chosen_project_id, chosen_task_id, setTask } = useSelectTask()
 
@@ -106,10 +108,11 @@ const Task: React.FC<TaskProps> = ({
                                                 onClick={() => {
                                                     if (status === 'completed') {
                                                         return; // Do nothing if status is completed
-                                                    }                                            
+                                                    }
                                                     setTask(task.project_id, task.id)
                                                     setProjectTask(task.project_id, task.id)
                                                     setProject(-1, -1)
+                                                    setTaskDescription(task.description)
                                                 }}
                                                 key={index}
                                                 className={cn("bg-white cursor-pointer", index !== tasks.length - 1 && 'border-b', task.id === chosen_task_id && ' bg-[#294DFF] text-white')}
