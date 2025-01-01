@@ -189,7 +189,7 @@ export class ScreenshotProcessor {
     }
 
     // Process all images in the directory
-    private async processImages(): Promise<void> {
+    public async processImages(): Promise<void> {
         console.log('Starting processing cycle');
 
         if (this.isProcessing) {

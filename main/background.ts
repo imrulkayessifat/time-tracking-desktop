@@ -208,7 +208,7 @@ app.on('ready', async () => {
   idleProcessor = new IdleTimeProcessor(`${apiEndpoint}/idle-time-entry`, 30000)
   await idleProcessor.waitForInitialization()
 
-  configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 120000)
+  configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`, 30000)
   idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 120);
 
 });
@@ -244,7 +244,7 @@ ipcMain.on('message', async (event, arg) => {
 ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: number, isRunning: boolean, hours: number, minutes: number, seconds: number }) => {
   const interval = configurationProcessor?.getScreenShotInterval() ?? 2;
   // const interval = 2
-  console.log("interval", interval, info.minutes, info.seconds)
+  console.error("interval", interval, info.minutes, info.seconds)
   // if (!info.isRunning && timeUpdateInterval) {
   //   clearInterval(timeUpdateInterval);
   //   timeUpdateInterval = null;
@@ -262,7 +262,7 @@ ipcMain.on('timer-update', (_, info: { project_id: number, selectedTaskId: numbe
   //   }, 10000); // 30 seconds in milliseconds
   // }
 
-  if ((info.minutes % interval === 0) && info.seconds === 0) {
+  if (((info.minutes % interval === 0) && info.seconds === 0) || (info.minutes == 0 && info.seconds === 0)) {
     if (info.project_id !== -1) {
       // try {
       //   startTracking(info.project_id, info.selectedTaskId);
@@ -311,7 +311,7 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     timeProcessor.processTimeEntries()
     idleProcessor.processIdleEntries()
     activeDuration.processActivities()
-
+    screenshotProcessor.processImages()
   } catch (error) {
     console.error('Error stoping idle tracking:', error);
   }

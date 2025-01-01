@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 import AuthTokenStore from '../auth-token-store';
 
 interface ConfigurationResponse {
@@ -18,16 +20,16 @@ export class ConfigurationProcessor {
         private intervalMs: number = 30000
     ) { }
 
-    private getAuthHeaders(): Headers {
-        const headers = new Headers({
+    private getAuthHeaders(): Record<string, string> {
+        const headers: Record<string, string> = {
             'Content-Type': 'application/json'
-        });
+        };
 
         const tokenStore = AuthTokenStore.getInstance();
         const token = tokenStore.getToken();
 
         if (token) {
-            headers.append('Authorization', `${token}`);
+            headers['Authorization'] = token;
         }
 
         return headers;
@@ -82,16 +84,11 @@ export class ConfigurationProcessor {
         try {
             console.log('Making API call for configuration');
 
-            const response = await fetch(this.apiEndpoint, {
-                method: 'GET',
+            const response = await axios.get(this.apiEndpoint, {
                 headers: this.getAuthHeaders()
             });
 
-            if (!response.ok) {
-                throw new Error(`API call failed: ${response.statusText}`);
-            }
-
-            const configData: ConfigurationResponse = await response.json();
+            const configData: ConfigurationResponse = response.data;
             this.currentConfig = configData.data;
 
             console.log('Successfully updated configuration:', this.currentConfig.config);
