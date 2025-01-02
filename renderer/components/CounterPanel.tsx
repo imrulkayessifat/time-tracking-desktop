@@ -166,7 +166,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
         </form>
       </div>
 
-      <Project isExpanded={isExpanded} handleTimerToggle={handleTimerToggle} toggleExpand={toggleExpand} token={token} searchProject={searchProject} />
+      <Project isRunning={isRunning} isExpanded={isExpanded} handleTimerToggle={handleTimerToggle} toggleExpand={toggleExpand} token={token} searchProject={searchProject} />
     </div>
   );
 };

@@ -24,6 +24,7 @@ interface TaskData {
 interface TaskProps {
     token: string;
     status: string;
+    isRunning: boolean;
     handleTimerToggle: () => Promise<void>
     searchTask: TaskData;
 }
@@ -31,6 +32,7 @@ interface TaskProps {
 const Task: React.FC<TaskProps> = ({
     token,
     status,
+    isRunning,
     handleTimerToggle,
     searchTask
 }) => {
@@ -79,9 +81,9 @@ const Task: React.FC<TaskProps> = ({
                             <th scope="col" className="px-6 py-3">
                                 Task
                             </th>
-                            <th scope="col" className="px-6 py-3">
+                            {/* <th scope="col" className="px-6 py-3">
                                 Created
-                            </th>
+                            </th> */}
                             {/* <th scope="col" className="px-6 py-3">
                             </th> */}
                         </tr>
@@ -99,12 +101,13 @@ const Task: React.FC<TaskProps> = ({
                                 </tr>
                             </tbody>
                         ) : (
-                            <tbody>
+                            <tbody className='flex flex-col'>
                                 {
                                     tasks.map((task, index) => {
-                                        const { hours, minutes, seconds, isRunning } = getTaskTime(task.project_id, task.id);
+                                        // const { hours, minutes, seconds, isRunning } = getTaskTime(task.project_id, task.id);
                                         return (
-                                            <tr
+                                            <button
+                                                disabled={isRunning && task.id !== chosen_task_id}
                                                 onClick={() => {
                                                     if (status === 'completed') {
                                                         return; // Do nothing if status is completed
@@ -126,19 +129,19 @@ const Task: React.FC<TaskProps> = ({
                                                             !isRunning ? (
                                                                 <img src={`${init_project_id === task.project_id && init_task_id === task.id ? '/images/individualstart.svg' : '/images/disable.png'}`} className={cn("w-[20px] h-[20px] cursor-pointer", init_project_id === -1 && 'cursor-not-allowed')} />
                                                             ) : (
-                                                                <img src="/images/pause.png" className={cn("w-[20px] h-[20px] cursor-pointer")} />
+                                                                <img src={`${init_project_id === task.project_id && init_task_id === task.id ? "/images/pause.png" : '/images/disable.png'}`} className={cn("w-[20px] h-[20px] cursor-pointer")} />
                                                             )
                                                         }
                                                     </button>
                                                     <span>{task.name}</span>
                                                 </th>
-                                                <td className="px-6 py-4 text-sm">
+                                                {/* <td className="px-6 py-4 text-sm">
                                                     {task.createdAt.split('T')[0]}
-                                                </td>
+                                                </td> */}
                                                 {/* <td className="px-6 py-4">
                                                     {formatTime(hours, minutes, seconds)}
                                                 </td> */}
-                                            </tr>
+                                            </button>
                                         )
                                     })
                                 }

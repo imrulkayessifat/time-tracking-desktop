@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query";
 import { IoSync } from "react-icons/io5";
 
@@ -13,7 +12,6 @@ import {
 import TasksPanel from "./TasksPanel";
 import CounterPanel from "./CounterPanel";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
-import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { removeClientToken } from "../lib/auth";
 import { cn } from "../lib/utils";
 import { useGetSyncTime } from "./hooks/timer/useGetSyncTime";
@@ -28,6 +26,10 @@ const Main: React.FC<MainProps> = ({
 }) => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [time, setTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [isRunning, setIsRunning] = useState(false);
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasTaskStorePermission, setHasTaskStorePermission] = useState(false);
   const toggleExpand = () => {
@@ -71,15 +73,36 @@ const Main: React.FC<MainProps> = ({
     }
   };
 
-  const {
-    seconds,
-    minutes,
-    hours,
-    isRunning,
-    start,
-    pause,
-  } = useTaskTimer(init_task_id, init_project_id, pauseTask);
+  const start = () => {
+    // Clear any existing time and interval when starting
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+    setTime({ hours: 0, minutes: 0, seconds: 0 });
+    setIsRunning(true);
 
+    const id = setInterval(() => {
+      setTime(prevTime => {
+        const newSeconds = prevTime.seconds + 1;
+        const newMinutes = prevTime.minutes + Math.floor(newSeconds / 60);
+        const newHours = prevTime.hours + Math.floor(newMinutes / 60);
+
+        return {
+          hours: newHours,
+          minutes: newMinutes % 60,
+          seconds: newSeconds % 60
+        };
+      });
+    }, 1000);
+    setIntervalId(id);
+  };
+
+  const pause = () => {
+    if (isRunning && intervalId) {
+      clearInterval(intervalId);
+      setIsRunning(false);
+    }
+  };
 
   useEffect(() => {
     if (isRunning && window.electron) {
@@ -87,13 +110,13 @@ const Main: React.FC<MainProps> = ({
         project_id: init_project_id,
         selectedTaskId: init_task_id,
         isRunning,
-        hours,
-        minutes,
-        seconds
+        hours:time.hours,
+        minutes:time.minutes,
+        seconds:time.seconds
       });
     }
-  }, [hours, minutes, seconds, isRunning, init_project_id, init_task_id]);
-  
+  }, [time.hours, time.minutes, time.seconds, isRunning, init_project_id, init_task_id]);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -158,12 +181,20 @@ const Main: React.FC<MainProps> = ({
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [intervalId]);
 
   const handleTimerToggle = async () => {
     if (!isRunning) {
       window.electron.ipcRenderer.send('permission-check');
       // const result = await startTask(init_project_id, init_task_id);
       start()
+
       window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
       const attendance = localStorage.getItem('time_data')
       if (attendance) {
@@ -188,6 +219,7 @@ const Main: React.FC<MainProps> = ({
     } else {
       // const pauseSuccess = await pauseTask(init_project_id, init_task_id);
       pause();
+      // reset()
       window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
     }
   };
@@ -246,7 +278,7 @@ const Main: React.FC<MainProps> = ({
         </DropdownMenu>
       </div>
       <div className="flex w-full">
-        <CounterPanel hours={hours} minutes={minutes} seconds={seconds} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} />
+        <CounterPanel hours={time.hours} minutes={time.minutes} seconds={time.seconds} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} />
         {
           isExpanded && (
             <TasksPanel hasTaskStorePermission={hasTaskStorePermission} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} token={token} pause={pause} />

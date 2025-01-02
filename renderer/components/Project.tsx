@@ -26,6 +26,7 @@ interface ProjectData {
 interface ProjectsProps {
   token: string;
   isExpanded: boolean;
+  isRunning:boolean;
   toggleExpand: () => void;
   handleTimerToggle: () => Promise<void>;
   searchProject: ProjectData
@@ -34,6 +35,7 @@ interface ProjectsProps {
 const Project: React.FC<ProjectsProps> = ({
   token,
   isExpanded,
+  isRunning,
   toggleExpand,
   handleTimerToggle,
   searchProject
@@ -58,7 +60,7 @@ const Project: React.FC<ProjectsProps> = ({
 
   const projects = searchProject?.rows.length > 0 ? searchProject.rows : data?.rows || []
   const meta = searchProject?.meta ? searchProject.meta : data?.meta
-  
+
   const handlePrevPage = () => {
     if (page > 1) {
       setPage(prev => prev - 1)
@@ -70,7 +72,7 @@ const Project: React.FC<ProjectsProps> = ({
       setPage(prev => prev + 1)
     }
   }
-  
+
   const formatTime = (hours: number, minutes: number, seconds: number): string => {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
@@ -101,12 +103,13 @@ const Project: React.FC<ProjectsProps> = ({
                 </tr>
               </tbody>
             ) : (
-              <tbody>
+              <tbody className="flex flex-col">
                 {
                   projects.map((project, index) => {
-                    const { hours, minutes, seconds, isRunning } = getProjectTime(project.id);
+                    // const { hours, minutes, seconds, isRunning } = getProjectTime(project.id);
                     return (
-                      <tr
+                      <button
+                        disabled={ isRunning && (project.id !== project_id || project.id !== chosen_project_id)}
                         onClick={() => {
                           setProject(project.id, -1)
                           queryClient.invalidateQueries({ queryKey: ["tasks"] })
@@ -125,7 +128,7 @@ const Project: React.FC<ProjectsProps> = ({
                               !isRunning ? (
                                 <img src={`${init_project_id === project.id && init_task_id === -1 ? '/images/individualstart.svg' : '/images/disable.png'}`} className={cn("w-[20px] h-[20px] cursor-pointer", init_project_id === -1 && 'cursor-not-allowed')} />
                               ) : (
-                                <img src="/images/pause.png" className={cn("w-[20px] h-[20px] cursor-pointer")} />
+                                <img src={`${init_project_id === project.id && init_task_id === -1 ? "/images/pause.png" : '/images/disable.png'}`} className={cn("w-[20px] h-[20px] cursor-pointer")} />
                               )
                             }
                           </button>
@@ -134,7 +137,7 @@ const Project: React.FC<ProjectsProps> = ({
                         {/* <td className="px-6 py-4">
                           {formatTime(hours, minutes, seconds)}
                         </td> */}
-                      </tr>
+                      </button>
                     )
                   })
                 }

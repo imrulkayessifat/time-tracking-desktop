@@ -303,7 +303,7 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
           </form>
         </div>
       </div>
-      <Task token={token} handleTimerToggle={handleTimerToggle} searchTask={searchTask} status={status} />
+      <Task isRunning={isRunning} token={token} handleTimerToggle={handleTimerToggle} searchTask={searchTask} status={status} />
       {(init_task_id !== -1) && (<div className="mt-5 border-t">
 
         <div className="flex flex-col gap-2 mt-3">
@@ -314,8 +314,8 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
               // pause()
               // window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
               setTask(-1, -1)
-              setProjectTask(-1, -1)
-              setProject(-1, -1)
+              setProjectTask(init_project_id, -1)
+              setProject(init_project_id, -1)
               await endTask(init_project_id, init_task_id)
             }} disabled={init_task_id === -1 || isRunning}
               className={cn("border rounded px-3 py-2", (init_task_id === -1 || isRunning) && 'opacity-50 cursor-not-allowed')}
