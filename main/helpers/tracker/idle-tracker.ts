@@ -1,5 +1,5 @@
 // idle-tracker.ts
-import { Notification, powerMonitor, dialog } from 'electron';
+import { Notification, powerMonitor } from 'electron';
 import { app } from 'electron';
 import path from 'path';
 import * as fs from 'fs';
@@ -8,8 +8,6 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 
 import Database from '../db';
-import AuthTokenStore from '../auth-token-store';
-import { mainWindow } from '../../background';
 import { getLocalTime } from '../lib/getLocalTime';
 
 interface IdlePeriod {
@@ -34,10 +32,6 @@ export class TaskIdleTracker {
     private idleCheckInterval: NodeJS.Timeout | null;
     private activeTaskKey: string | null;
     private idlePeriods: IdlePeriod[];
-    private notificationShown: boolean = false;
-    private dialogShown: boolean = false;
-    private currentDialog: Electron.MessageBoxReturnValue | null = null;
-    private isInitialized: boolean = false;
     private db: Database | null = null;
     private stmt: any = null;
 
@@ -91,67 +85,6 @@ export class TaskIdleTracker {
             }
         }, 3000);
 
-    }
-
-    private async showIdleDialog(systemIdleTime: number) {
-        if (this.dialogShown) return;
-
-        this.dialogShown = true;
-
-        // Show the dialog
-        const dialogPromise = dialog.showMessageBox(mainWindow, {
-            type: 'warning',
-            title: 'System Idle Alert',
-            message: `Your system has been idle for ${systemIdleTime} seconds.`,
-            buttons: [], // No buttons
-            noLink: true
-        });
-
-        // Set up auto-close timer
-        setTimeout(async () => {
-            if (this.currentDialog) {
-                // Close the dialog if it's still open
-                mainWindow.webContents.send('close-dialog');
-            }
-            this.dialogShown = false;
-            this.currentDialog = null;
-        }, 3000);
-
-        // Store the current dialog
-        this.currentDialog = await dialogPromise;
-    }
-    private showIdleNotificationAndStopTimer(systemIdleTime) {
-        const notification = new Notification({
-            title: 'System Idle Alert',
-            body: `Your system has been idle for ${systemIdleTime} seconds.`,
-            silent: false, // Set to true if you don't want sound 
-        });
-
-        notification.show();
-        mainWindow.webContents.send('trigger-timer-toggle');
-        setTimeout(() => {
-            if (notification) {
-                notification.close();
-            }
-        }, 3000);
-
-    }
-
-
-    private getAuthHeaders(): Headers {
-        const headers = new Headers({
-            'Content-Type': 'application/json'
-        });
-
-        const tokenStore = AuthTokenStore.getInstance();
-        const token = tokenStore.getToken();
-
-
-        if (token) {
-            headers.append('Authorization', `${token}`);
-        }
-
-        return headers;
     }
 
     private getTaskKey(projectId: number, taskId: number): string {
@@ -224,12 +157,7 @@ export class TaskIdleTracker {
         console.log(systemIdleTime, this.idleThreshold)
         if ((systemIdleTime % 300 === 0) && systemIdleTime !== 0) {
             this.showIdleNotification(systemIdleTime);
-            // this.showIdleDialog(systemIdleTime);
         }
-        // if ((systemIdleTime % 900 === 0) && systemIdleTime !== 0) {
-        //     this.showIdleNotificationAndStopTimer(systemIdleTime)
-        // }
-
 
         if (!isNowIdle && !!activeTaskState.endTime) {
             this.stmt.run(activeTaskState.projectId, activeTaskState.taskId, activeTaskState.startTime, activeTaskState.endTime)
@@ -290,17 +218,6 @@ export class TaskIdleTracker {
             });
             console.log("transformed : ", transformedIdlePeriods)
             if (this.idlePeriods.length > 0) {
-                // const res = await fetch(this.apiEndpoint, {
-                //     method: 'POST',
-                //     headers: this.getAuthHeaders(),
-                //     body: JSON.stringify({
-                //         "idle_time": transformedIdlePeriods
-
-                //     })
-                // });
-
-                // const { message, data } = await res.json()
-                // console.log("idle time api : ", message, data)
                 this.idlePeriods = []
             }
 

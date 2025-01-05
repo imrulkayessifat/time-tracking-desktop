@@ -148,14 +148,13 @@ export class ActiveDurationProcessor {
             // Prepare API payload
             const payload = {
                 project_id: activity.project_id,
-                url: activity.url,
+                app_name: activity.app_name,
                 start_time: activity.start_time,
                 end_time: activity.end_time,
-                ...(activity.url.length === 1 && { app_name: activity.app_name }),
                 ...(activity.task_id !== -1 && { task_id: activity.task_id })
             };
 
-            console.log('Making API call for active duration :', activity.id);
+            console.log('Making API call for active duration :', payload);
 
             // Make API call
             const response = await axios.post(this.apiEndpoint,{ data: [payload] }, {

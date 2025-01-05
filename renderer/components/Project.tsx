@@ -7,9 +7,6 @@ import { useSelectProject } from "./hooks/project/use-select-project";
 import { useSelectTask } from "./hooks/task/use-select-task";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useGetProjects } from "./hooks/project/use-get-projects"
-import { useTimerCleanup } from "./hooks/timer/useTimerCleanup";
-import useAttendanceTracker from "./hooks/attendance/use-attendance-tracker";
-import { useGetTimer } from "./hooks/timer/useGetTimer";
 
 interface ProjectMeta {
   total_records: number;
@@ -44,9 +41,6 @@ const Project: React.FC<ProjectsProps> = ({
   const queryClient = useQueryClient();
   const { chosen_project_id, setTask } = useSelectTask()
   const { init_project_id, init_task_id, setProjectTask } = useSelectProjectTask()
-  const { cleanupTimers } = useTimerCleanup();
-  // const { isOnline } = useAttendanceTracker({ token })
-  const { getProjectTime } = useGetTimer();
 
   const { data, isLoading } = useGetProjects({ page, token })
   const { project_id, setProject } = useSelectProject()
@@ -56,7 +50,6 @@ const Project: React.FC<ProjectsProps> = ({
       <Loader />
     )
   }
-  cleanupTimers()
 
   const projects = searchProject?.rows.length > 0 ? searchProject.rows : data?.rows || []
   const meta = searchProject?.meta ? searchProject.meta : data?.meta
@@ -106,7 +99,6 @@ const Project: React.FC<ProjectsProps> = ({
               <tbody className="flex flex-col">
                 {
                   projects.map((project, index) => {
-                    // const { hours, minutes, seconds, isRunning } = getProjectTime(project.id);
                     return (
                       <button
                         disabled={ isRunning && (project.id !== project_id || project.id !== chosen_project_id)}

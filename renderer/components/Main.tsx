@@ -39,40 +39,6 @@ const Main: React.FC<MainProps> = ({
   const { init_project_id, init_task_id } = useSelectProjectTask()
   const { data, isLoading } = useGetSyncTime({ token })
 
-  const pauseTask = async (project_id: number, task_id: number) => {
-    try {
-      const requestBody = task_id === -1
-        ? { project_id }
-        : { project_id, task_id };
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/pause`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `${token}`
-        },
-        body: JSON.stringify(requestBody)
-      });
-      const { success, message, data } = await res.json();
-      console.log("pause task : ", success, message, data)
-      console.log("task key : ", project_id, task_id)
-      if (success) {
-        return {
-          success,
-          message,
-          data
-        }
-      } else {
-        return {
-          success,
-          message,
-          data
-        }
-      }
-    } catch (error) {
-      return false;
-    }
-  };
-
   const start = () => {
     // Clear any existing time and interval when starting
     if (intervalId) {
@@ -147,40 +113,6 @@ const Main: React.FC<MainProps> = ({
     }
   }, [token]);
 
-  const startTask = async (project_id: number, task_id: number) => {
-    try {
-      const requestBody = task_id === -1
-        ? { project_id }
-        : { project_id, task_id };
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `${token}`
-        },
-        body: JSON.stringify(requestBody)
-      });
-      const { success, message, data } = await res.json();
-      console.log("start task : ", success, message, data)
-      console.log("task key : ", project_id, task_id)
-      if (success) {
-        return {
-          success,
-          message,
-          data
-        };
-      } else {
-        return {
-          success: false,
-          message,
-          data
-        };
-      }
-    } catch (error) {
-      return false;
-    }
-  };
-
   useEffect(() => {
     return () => {
       if (intervalId) {
@@ -192,7 +124,6 @@ const Main: React.FC<MainProps> = ({
   const handleTimerToggle = async () => {
     if (!isRunning) {
       window.electron.ipcRenderer.send('permission-check');
-      // const result = await startTask(init_project_id, init_task_id);
       start()
 
       window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
@@ -217,9 +148,7 @@ const Main: React.FC<MainProps> = ({
       }
 
     } else {
-      // const pauseSuccess = await pauseTask(init_project_id, init_task_id);
       pause();
-      // reset()
       window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
     }
   };

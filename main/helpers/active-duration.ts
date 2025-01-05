@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import * as fs from 'fs';
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { promisify } from 'util';
 import { readChromeHistory } from './history/chrome-history';
 import { readFirefoxHistory } from './history/firefox-history';
@@ -106,7 +106,7 @@ const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
     }
 };
 
-const startDurationTracking = async (project_id: number, task_id: number, apiEndpoint: string) => {
+const startDurationTracking = async (project_id: number, task_id: number) => {
     try {
         const getActiveWindow = (await import('active-win')).default;
         const result: Result = await getActiveWindow({
@@ -142,8 +142,17 @@ const startDurationTracking = async (project_id: number, task_id: number, apiEnd
 
         let currentUrl = '';
         if (isBrowser(result.owner.name)) {
-            const browserHistory = await getBrowserHistory(result.owner.name);
-            console.log("browser history : ", browserHistory)
+            // const windowId = execSync('xdotool getactivewindow').toString().trim();
+
+            // // Get window title
+            // const title = execSync(`xdotool getwindowname ${windowId}`).toString().trim();
+            // const pid = execSync(`xdotool getwindowpid ${windowId}`).toString().trim();
+            // const wmctrlOutput = execSync('wmctrl -lp').toString();
+            // const activeWindowId = execSync('xdotool getactivewindow').toString().trim();
+            // const xpropOutput = execSync(`xprop -id ${activeWindowId} _NET_WM_NAME`).toString();
+            // Find Firefox windows
+
+            console.log("browser history : ", result)
             /// currentUrl = browserHistory?.url ?? '';
         }
 

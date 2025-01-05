@@ -11,7 +11,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import Project from "./Project";
 import { useSelectStatus } from "./hooks/task/use-status";
 import { cn } from '../lib/utils';
-import { useTaskTimer } from "./hooks/timer/useTaskTimer";
 import { useSelectProject } from "./hooks/project/use-select-project";
 import { X } from "lucide-react";
 import { useSelectTask } from "./hooks/task/use-select-task";

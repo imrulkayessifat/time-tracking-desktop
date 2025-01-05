@@ -7,7 +7,6 @@ import { useSelectTask } from './hooks/task/use-select-task';
 import { useSelectProject } from './hooks/project/use-select-project';
 import { useSelectProjectTask } from './hooks/use-select-projecttask';
 import { useTaskDescription } from './hooks/task/use-task-description';
-import { useGetTimer } from './hooks/timer/useGetTimer';
 
 interface TaskMeta {
     total_records: number;
@@ -40,7 +39,6 @@ const Task: React.FC<TaskProps> = ({
     const { project_id, setProject } = useSelectProject()
     const { init_project_id, init_task_id, setProjectTask } = useSelectProjectTask()
     const { setTaskDescription } = useTaskDescription()
-    const { getTaskTime } = useGetTimer();
     const { chosen_project_id, chosen_task_id, setTask } = useSelectTask()
 
     const projectIdToUse = project_id === -1 ? chosen_project_id : project_id
@@ -104,7 +102,6 @@ const Task: React.FC<TaskProps> = ({
                             <tbody className='flex flex-col'>
                                 {
                                     tasks.map((task, index) => {
-                                        // const { hours, minutes, seconds, isRunning } = getTaskTime(task.project_id, task.id);
                                         return (
                                             <button
                                                 disabled={isRunning && task.id !== chosen_task_id}
