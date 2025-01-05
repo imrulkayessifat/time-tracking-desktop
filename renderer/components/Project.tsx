@@ -99,9 +99,10 @@ const Project: React.FC<ProjectsProps> = ({
               <tbody className="flex flex-col">
                 {
                   projects.map((project, index) => {
+                    
                     return (
                       <button
-                        disabled={ isRunning && (project.id !== project_id || project.id !== chosen_project_id)}
+                        disabled={ isRunning && (project.id !== project_id)}
                         onClick={() => {
                           setProject(project.id, -1)
                           queryClient.invalidateQueries({ queryKey: ["tasks"] })
@@ -145,16 +146,16 @@ const Project: React.FC<ProjectsProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrevPage}
-                disabled={1 === Number(meta.current_page)}
-                className={cn("flex gap-1 items-center w-[60px] h-8 border border-gray-950 rounded-md px-[10px] py-[6px]", 1 === Number(meta.current_page) && "opacity-20 cursor-not-allowed")}>
+                disabled={1 === Number(meta.current_page)  || isRunning}
+                className={cn("flex gap-1 items-center w-[60px] h-8 border border-gray-950 rounded-md px-[10px] py-[6px]", (1 === Number(meta.current_page) || isRunning) && "opacity-20 cursor-not-allowed")}>
                 <img src="/images/arrowleft.png" className="" />
                 <span className="text-gray-950 leading-5 font-light">Back</span>
               </button>
               {/* <button className="w-8 h-8 bg-[#294DFF] text-white rounded-md text-lg p-[3px]">{page}</button> */}
               <button
                 onClick={handleNextPage}
-                disabled={meta.total_pages === Number(meta.current_page)}
-                className={cn(page === Number(meta.total_pages) && "opacity-20 cursor-not-allowed")}
+                disabled={meta.total_pages === Number(meta.current_page) || isRunning}
+                className={cn((page === Number(meta.total_pages) || isRunning) && "opacity-20 cursor-not-allowed")}
               >
                 <img src="/images/next.png" />
               </button>

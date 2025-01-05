@@ -7,7 +7,6 @@ import { readFirefoxHistory } from './history/firefox-history';
 import { readEdgeHistory } from './history/edge-history';
 import { readSafariHistory } from './history/safari-history';
 import { getLocalTime } from './lib/getLocalTime';
-import { trackChromeTabs } from './tab/track-chrome-tabs';
 
 import Database from './db';
 import path from 'path';

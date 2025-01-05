@@ -251,6 +251,7 @@ ipcMain.on('idle-started', (_, { projectId, taskId }) => {
     idleTracker.startTracking(projectId, taskId);
     screenshotProcessor.startProcessing();
     activeDuration.startProcessing()
+    configurationProcessor.startProcessing();
     timeProcessor.startProcessing()
     idleProcessor.startProcessing()
   } catch (error) {
@@ -271,6 +272,7 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     }
     timeProcessor.stopProcessing()
     idleProcessor.stopProcessing()
+    configurationProcessor.stopProcessing()
     timeProcessor.processTimeEntries()
     idleProcessor.processIdleEntries()
     activeDuration.processActivities()

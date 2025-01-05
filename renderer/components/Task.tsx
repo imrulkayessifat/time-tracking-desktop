@@ -69,7 +69,7 @@ const Task: React.FC<TaskProps> = ({
     const formatTime = (hours: number, minutes: number, seconds: number): string => {
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     };
-
+console.log("task d",chosen_task_id)
     return (
         <>
             <div className='relative overflow-x-auto'>
@@ -153,16 +153,16 @@ const Task: React.FC<TaskProps> = ({
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={handlePrevPage}
-                                disabled={1 === Number(meta.current_page)}
-                                className={cn("flex gap-1 items-center w-[60px] h-8 border border-gray-950 rounded-md px-[10px] py-[6px]", 1 === Number(meta.current_page) && "opacity-20 cursor-not-allowed")}>
+                                disabled={1 === Number(meta.current_page) || isRunning}
+                                className={cn("flex gap-1 items-center w-[60px] h-8 border border-gray-950 rounded-md px-[10px] py-[6px]", (1 === Number(meta.current_page) || isRunning) && "opacity-20 cursor-not-allowed")}>
                                 <img src="/images/arrowleft.png" className="" />
                                 <span className="text-gray-950 leading-5 font-light">Back</span>
                             </button>
                             {/* <button className="w-8 h-8 bg-[#294DFF] text-white rounded-md text-lg p-[3px]">{taskPage}</button> */}
                             <button
                                 onClick={handleNextPage}
-                                disabled={meta.total_pages === Number(meta.current_page)}
-                                className={cn(taskPage === Number(meta.total_pages) && "opacity-20 cursor-not-allowed")}
+                                disabled={meta.total_pages === Number(meta.current_page) || isRunning}
+                                className={cn((taskPage === Number(meta.total_pages) || isRunning) && "opacity-20 cursor-not-allowed")}
                             >
                                 <img src="/images/next.png" />
                             </button>
