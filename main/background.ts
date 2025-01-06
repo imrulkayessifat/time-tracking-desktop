@@ -1,5 +1,6 @@
 import path from 'path'
 import log from 'electron-log';
+import fs from 'fs';
 import {
   app,
   BrowserWindow,
@@ -34,8 +35,8 @@ let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
 let idleProcessor: IdleTimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
-// let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1/";
-let apiEndpoint: string = "https://api.stafftimetrack.com/api/v1"
+let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1";
+// let apiEndpoint: string = "https://api.stafftimetrack.com/api/v1"
 let intervalMs: number = 120000;
 
 if (isProd) {
@@ -48,7 +49,6 @@ if (isProd) {
   log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'main.log');
 } else {
   log.transports.console.level = 'debug';
-  // log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'main.log');
 }
 
 console.log = log.info;
@@ -108,6 +108,18 @@ async function checkAndRequestScreenRecording(mainWindow: BrowserWindow) {
   // Return the current status without showing another dialog
   return systemPreferences.getMediaAccessStatus('screen') === 'granted';
 }
+
+const deleteLogFile = () => {
+  try {
+    const logPath = path.join(app.getPath('userData'), 'logs', 'main.log');
+    if (fs.existsSync(logPath)) {
+      fs.unlinkSync(logPath);
+      console.log('Successfully deleted log file');
+    }
+  } catch (error) {
+    console.error('Error deleting log file:', error);
+  }
+};
 
 
 app.on('ready', async () => {
@@ -178,7 +190,7 @@ app.on('ready', async () => {
     if (choice.response === 0) {  // If user clicks "Yes"
       forceQuit = true; // Set the flag to allow the close
       idleTracker.clearAll();
-
+      deleteLogFile();
       app.quit()
     }
   });
