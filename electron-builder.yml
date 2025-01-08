@@ -9,6 +9,13 @@ files:
     filter:
       - package.json
       - app
+
+publish:
+  provider: github
+  token: ${GH_TOKEN}
+  private: true
+  releaseType: draft
+
 mac:
   identity: "Jamil Hossain (2RN3564SKV)"
   notarize:
