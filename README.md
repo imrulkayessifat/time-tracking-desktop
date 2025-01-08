@@ -15,7 +15,7 @@ $ yarn create nextron-app my-app --example with-tailwindcss
 $ pnpm dlx create-nextron-app my-app --example with-tailwindcss
 ```
 
-#### Install Dependencies
+#### Install Dependencies -
 
 ```
 $ cd my-app
