@@ -18,3 +18,42 @@ mac:
   entitlements: entitlements.plist
   entitlementsInherit: entitlements.plist
   category: public.app-category.developer-tools
+
+# Windows Configuration
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+    - target: portable
+  icon: resources/icon.ico
+  publisherName: "Staff Time Tracker"
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "Staff Time Tracker"
+  uninstallDisplayName: "Staff Time Tracker"
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+
+# Linux Configuration
+linux:
+  target:
+    - AppImage
+    - deb
+    - rpm
+  icon: resources/icons
+  category: Development
+  maintainer: "Jamil Hossain"
+  vendor: "Staff Time Tracker"
+  synopsis: "Time tracking application for staff"
+  description: "A comprehensive time tracking solution for managing staff work hours"
+  desktop:
+    Name: Staff Time Tracker
+    Comment: Time tracking application for staff
+    Categories: Development;Office;ProjectManagement
+    MimeType: x-scheme-handler/timetracker
