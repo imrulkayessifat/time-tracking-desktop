@@ -12,7 +12,7 @@ files:
 
 publish:
   provider: github
-  token: ${GH_TOKEN}
+  token: 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
   private: true
   releaseType: draft
 
