@@ -45,14 +45,13 @@ if (isProd) {
   app.setPath('userData', `${app.getPath('userData')} (development)`)
 }
 
-if (isProd) {
-  log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'main.log');
-} else {
+if (!isProd) {
+  // log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'main.log');
   log.transports.console.level = 'debug';
+  console.log = log.info;
+  console.error = log.error;
 }
 
-console.log = log.info;
-console.error = log.error;
 
 
 async function checkAndRequestAccessibility(mainWindow: BrowserWindow) {
@@ -212,7 +211,7 @@ app.on('ready', async () => {
   await idleProcessor.waitForInitialization()
 
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`)
-  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 120);
+  idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 10);
 
 });
 
