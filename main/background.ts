@@ -35,8 +35,8 @@ let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
 let idleProcessor: IdleTimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
-// let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1";
-let apiEndpoint: string = "https://api.stafftimetrack.com/api/v1"
+let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1";
+// let apiEndpoint: string = "https://api.stafftimetrack.com/api/v1"
 let intervalMs: number = 120000;
 
 if (isProd) {
