@@ -1,5 +1,5 @@
 import { clipboard, app } from 'electron';
-var robot = require("@hurdlegroup/robotjs");
+var robot = require("robotjs");
 import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
