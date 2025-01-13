@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "nextron",
     "build": "nextron build --publish never",
-    "rebuild": "npm rebuild --runtime=electron --target=31.0.1 --disturl=https://atom.io/download/atom-shell --abi=48",
+    "rebuild": "npm rebuild --runtime=electron --target=32.1.2 --disturl=https://atom.io/download/atom-shell --abi=128",
     "build:mac": "nextron build --mac --config electron-builder.yml",
     "build:mac:x64": "nextron build --mac --x64 --publish never",
     "build:mac:universal": "nextron build --mac --universal --publish never",
