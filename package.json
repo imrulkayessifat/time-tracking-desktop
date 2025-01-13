@@ -8,7 +8,6 @@
   "scripts": {
     "dev": "nextron",
     "build": "nextron build --publish never",
-    "rebuild": "npm rebuild --runtime=electron --target=31.0.1 --disturl=https://atom.io/download/atom-shell --abi=48",
     "build:mac": "nextron build --mac --config electron-builder.yml",
     "build:mac:x64": "nextron build --mac --x64 --publish never",
     "build:mac:universal": "nextron build --mac --universal --publish never",
@@ -19,6 +18,7 @@
   },
   "dependencies": {
     "@electron/universal": "^2.0.1",
+    "@hurdlegroup/robotjs": "^0.12.2",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-dropdown-menu": "^2.1.2",
     "@radix-ui/react-select": "^2.1.2",
@@ -43,7 +43,6 @@
     "react-icons": "^5.3.0",
     "react-timer-hook": "^3.0.8",
     "react-use": "^17.6.0",
-    "robotjs": "^0.6.0",
     "sonner": "^1.5.0",
     "sqlite3": "^5.1.6",
     "tailwind-merge": "^2.5.4",
@@ -58,7 +57,6 @@
     "autoprefixer": "^10.4.19",
     "electron": "^31.0.1",
     "electron-builder": "^24.12.0",
-    "electron-rebuild": "^3.2.9",
     "next": "^14.2.4",
     "nextron": "^9.4.0",
     "postcss": "^8.4.38",
