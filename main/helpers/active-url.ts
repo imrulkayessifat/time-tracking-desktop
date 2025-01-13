@@ -1,14 +1,16 @@
-import { app } from 'electron';
+import { clipboard, app } from 'electron';
+var robot = require("@hurdlegroup/robotjs");
 import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { getLocalTime } from './lib/getLocalTime';
 
 import Database from './db';
+import { getLocalTime } from './lib/getLocalTime';
 import path from 'path';
 
 const execAsync = promisify(exec);
 
+// Define platform-specific result types
 interface BaseResult {
     owner: {
         name: string;
@@ -20,6 +22,7 @@ interface DataType {
     project_id: number;
     task_id: number;
     app_name: string;
+    url: string;
     start_time: string;
     end_time: string;
 }
@@ -41,11 +44,60 @@ type Result = MacResult | WindowsResult | LinuxResult;
 // Global variable to store the last active window's data
 let lastActiveWindow: DataType | null = null;
 let inactivityTimeout: NodeJS.Timeout | null = null;
-
+let lastBrowserUrlCheckTime: number = 0;
 
 // Timeout durations
 const INACTIVITY_DURATION = 2000;
+const BROWSER_URL_COOLDOWN = 60000;
 
+
+async function getBrowserUrl() {
+    try {
+        // Clear the clipboard
+        const initialClipboardContent = clipboard.readText();
+
+        clipboard.writeText('');
+
+        // Simulate Ctrl+L to focus the address bar
+        robot.keyTap('l', 'control');
+
+        // Wait a bit to ensure the address bar is focused
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Simulate Ctrl+C to copy the URL
+        robot.keyTap('c', 'control');
+
+        // Wait for the clipboard to be populated
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Read the URL from the clipboard
+        const url = clipboard.readText().trim();
+        console.log("robot : ", url)
+        clipboard.writeText(initialClipboardContent);
+
+        // Press Escape key
+        robot.keyTap('escape');
+
+        // Validate the URL
+        // const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+        // const isValidUrl = urlRegex.test(url);
+
+        // console.log(`URL retrieved: ${isValidUrl ? url : 'Invalid URL'}`);
+
+        return {
+            url
+        };
+    } catch (error) {
+        console.error('Error retrieving browser URL:', error);
+        return null;
+    }
+}
+
+
+const isBrowser = (appName: string): boolean => {
+    const browsers = ['chrome', 'firefox', 'safari', 'edge', 'opera', 'internet explorer'];
+    return browsers.some(browser => appName.toLowerCase().includes(browser));
+};
 
 const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
     try {
@@ -74,7 +126,13 @@ const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
     }
 };
 
-const startDurationTracking = async (project_id: number, task_id: number) => {
+const getLocalTimeT = (): Date => {
+    const currentUtcTime = new Date();
+    const localTimeOffset = currentUtcTime.getTimezoneOffset() * 60000; // Convert offset to milliseconds
+    return new Date(currentUtcTime.getTime() - localTimeOffset)
+};
+
+const startUrlTracking = async (project_id: number, task_id: number) => {
     try {
         const getActiveWindow = (await import('active-win')).default;
         const result: Result = await getActiveWindow({
@@ -84,31 +142,51 @@ const startDurationTracking = async (project_id: number, task_id: number) => {
 
         const dbDir = path.join(app.getPath('userData'), 'db');
         await ensureDirectoryExists(dbDir);
-        const dbPath = path.join(dbDir, 'activeduration.db');
+        const dbPath = path.join(dbDir, 'activeurl.db');
 
         // Initialize database with the correct path
         const db = new Database(dbPath);
 
         // Create activities table if it doesn't exist
         db.prepare(`
-            CREATE TABLE IF NOT EXISTS activeduration (
+            CREATE TABLE IF NOT EXISTS activeurl (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 project_id INTEGER,
                 task_id INTEGER,
-                app_name TEXT,
+                url TEXT,
                 start_time TEXT,
                 end_time TEXT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         `).run();
         const stmt = db.prepare(`
-            INSERT INTO activeduration (project_id, task_id, app_name,start_time,end_time)
+            INSERT INTO activeurl (project_id, task_id, url,start_time,end_time)
             VALUES (?, ?, ?, ?, ?)
         `);
+
         const currentTime = getLocalTime();
+        const currentTimeT = getLocalTimeT()
+        const currentTimeMs = currentTimeT.getTime();
+
+        let currentUrl = '';
+        if (isBrowser(result.owner.name)) {
+            const isSameBrowser = lastActiveWindow && lastActiveWindow.app_name === result.owner.name;
+            const isCooldownExpired = Date.now() - lastBrowserUrlCheckTime >= BROWSER_URL_COOLDOWN;
+
+            if (!lastActiveWindow || !isSameBrowser || isCooldownExpired) {
+                const browserHistory = await getBrowserUrl();
+                currentUrl = browserHistory?.url ?? '';
+
+                // Update the last check time
+                lastBrowserUrlCheckTime = Date.now();
+            } else {
+                // If within cooldown and same browser, use the last known URL
+                currentUrl = lastActiveWindow.url;
+            }
+        }
 
         // Check if window has changed (either different app or different URL)
-        if (!lastActiveWindow || lastActiveWindow.app_name !== result.owner.name) {
+        if (!lastActiveWindow || lastActiveWindow.app_name !== result.owner.name || (currentUrl && lastActiveWindow.url !== currentUrl)) {
 
             if (lastActiveWindow) {
                 // Update the end_time of the previous window when a new window is detected
@@ -117,12 +195,15 @@ const startDurationTracking = async (project_id: number, task_id: number) => {
                 const payload = {
                     project_id: lastActiveWindow.project_id,
                     app_name: lastActiveWindow.app_name,
+                    url: lastActiveWindow.url,
                     start_time: lastActiveWindow.start_time,
                     end_time: lastActiveWindow.end_time,
-                    task_id: lastActiveWindow.task_id,
+                    ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
                 };
-                console.log("active duration inserted : ", payload)
-                stmt.run(lastActiveWindow.project_id, lastActiveWindow.task_id, lastActiveWindow.app_name, lastActiveWindow.start_time, lastActiveWindow.end_time);
+                console.log("last active url : ", payload)
+                if (lastActiveWindow.url.length > 0) {
+                    stmt.run(lastActiveWindow.project_id, lastActiveWindow.task_id, lastActiveWindow.url, lastActiveWindow.start_time, lastActiveWindow.end_time);
+                }
             }
 
             // Initialize new active window data
@@ -130,6 +211,7 @@ const startDurationTracking = async (project_id: number, task_id: number) => {
                 project_id,
                 task_id,
                 app_name: result.owner.name,
+                url: currentUrl,
                 start_time: currentTime,
                 end_time: currentTime
             };
@@ -146,19 +228,23 @@ const startDurationTracking = async (project_id: number, task_id: number) => {
                 const payload = {
                     project_id: lastActiveWindow.project_id,
                     app_name: lastActiveWindow.app_name,
+                    url: lastActiveWindow.url,
                     start_time: lastActiveWindow.start_time,
                     end_time: lastActiveWindow.end_time,
-                    task_id: lastActiveWindow.task_id,
+                    ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
                 };
-                console.log("active duration inserted : ", payload)
-                stmt.run(lastActiveWindow.project_id, lastActiveWindow.task_id, lastActiveWindow.app_name, lastActiveWindow.start_time, lastActiveWindow.end_time);
+
+                console.log("final active url :", payload);
+                if (lastActiveWindow.url.length > 0) {
+                    stmt.run(lastActiveWindow.project_id, lastActiveWindow.task_id, lastActiveWindow.url, lastActiveWindow.start_time, lastActiveWindow.end_time);
+                }
                 lastActiveWindow = null;
             }
         }, INACTIVITY_DURATION);
 
     } catch (error) {
-        console.error('Error tracking duration active duration:', error);
+        console.error('Error tracking duration active url:',error);
     }
 };
 
-export default startDurationTracking;
+export default startUrlTracking;

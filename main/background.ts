@@ -14,6 +14,7 @@ import serve from 'electron-serve'
 
 import { createWindow } from './helpers'
 import startDurationTracking from './helpers/active-duration'
+import startUrlTracking from './helpers/active-url';
 import { TaskIdleTracker } from './helpers/tracker/idle-tracker'
 import { setupAuthIPC } from './helpers/auth-ipc-handler';
 import captureAndSaveScreenshot from './helpers/capture-screenshot'
@@ -21,6 +22,7 @@ import { ScreenshotProcessor } from './helpers/processor/screenshot-processor';
 import { TimeProcessor } from './helpers/processor/time-processor';
 import { IdleTimeProcessor } from './helpers/processor/idletime-processor';
 import { ActiveDurationProcessor } from './helpers/processor/activeduration-processor';
+import { UrlProcessor } from './helpers/processor/url-processor';
 import { ConfigurationProcessor } from './helpers/processor/configuration-processor'
 
 const isProd = process.env.NODE_ENV === 'production'
@@ -31,6 +33,7 @@ let forceQuit = false;
 
 let screenshotProcessor: ScreenshotProcessor;
 let activeDuration: ActiveDurationProcessor;
+let urlProcessor: UrlProcessor;
 let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
 let idleProcessor: IdleTimeProcessor;
@@ -204,6 +207,9 @@ app.on('ready', async () => {
   activeDuration = new ActiveDurationProcessor(`${apiEndpoint}/activity/app-usages`, 30000)
   await activeDuration.waitForInitialization();
 
+  urlProcessor = new UrlProcessor(`${apiEndpoint}/activity/app-usages`, 30000)
+  await urlProcessor.waitForInitialization()
+
   timeProcessor = new TimeProcessor(`${apiEndpoint}/track/bulk`, 30000);
   await timeProcessor.waitForInitialization();
 
@@ -244,15 +250,19 @@ ipcMain.on('message', async (event, arg) => {
 
 ipcMain.on('timer-update', async (_, info: { project_id: number, selectedTaskId: number, isRunning: boolean, hours: number, minutes: number, seconds: number }) => {
   const interval = await configurationProcessor?.getScreenShotInterval() ?? 2;
-  console.error("interval", interval, info.minutes, info.seconds)
+  const isUrlTracking = await configurationProcessor?.isUrlTracking() ?? false;
+  console.error("interval", interval, info.minutes, info.seconds, isUrlTracking)
 
   if (((info.minutes % interval === 0) && info.seconds === 0) || (info.minutes == 0 && info.seconds === 0)) {
     if (info.project_id !== -1) {
       captureAndSaveScreenshot(info);
     }
   }
-  startDurationTracking(info.project_id, info.selectedTaskId)
 
+  startDurationTracking(info.project_id, info.selectedTaskId)
+  if (isUrlTracking) {
+    startUrlTracking(info.project_id, info.selectedTaskId)
+  }
 });
 
 ipcMain.on('idle-started', (_, { projectId, taskId }) => {
@@ -262,6 +272,7 @@ ipcMain.on('idle-started', (_, { projectId, taskId }) => {
     idleTracker.startTracking(projectId, taskId);
     screenshotProcessor.startProcessing();
     activeDuration.startProcessing()
+    urlProcessor.startProcessing()
     configurationProcessor.startProcessing();
     timeProcessor.startProcessing()
     idleProcessor.startProcessing()
@@ -276,6 +287,7 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     const totalIdleTime = idleTracker.stopTracking(projectId, taskId);
     screenshotProcessor.stopProcessing();
     activeDuration.stopProcessing();
+    urlProcessor.stopProcessing();
 
     const latestTimeEntry = timeProcessor.getLatestUnfinishedTimeEntry(projectId, taskId);
     if (latestTimeEntry) {
@@ -287,6 +299,7 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     timeProcessor.processTimeEntries()
     idleProcessor.processIdleEntries()
     activeDuration.processActivities()
+    urlProcessor.processActivities()
     screenshotProcessor.processImages()
   } catch (error) {
     console.error('Error stoping idle tracking:', error);

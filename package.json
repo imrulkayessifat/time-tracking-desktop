@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@electron/universal": "^2.0.1",
+    "@hurdlegroup/robotjs": "^0.12.2",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-dropdown-menu": "^2.1.2",
     "@radix-ui/react-select": "^2.1.2",

@@ -19,14 +19,13 @@ interface Activity {
     id: number;
     project_id: number;
     task_id: number;
-    app_name: string;
     url: string;
     start_time: string;
     end_time: string;
     timestamp: string;
 }
 
-export class ActiveDurationProcessor {
+export class UrlProcessor {
     private processingInterval: NodeJS.Timeout | null = null;
     private isProcessing: boolean = false;
     private db: Database;
@@ -34,7 +33,6 @@ export class ActiveDurationProcessor {
 
     constructor(private apiEndpoint: string, private intervalMs: number = 30000) {
         this.initializeDatabase();
-
     }
 
     async ensureDirectoryExists(dirPath: string): Promise<void> {
@@ -71,7 +69,7 @@ export class ActiveDurationProcessor {
             // Ensure directory exists
             await this.ensureDirectoryExists(dbDir);
 
-            const dbPath = path.join(dbDir, 'activeduration.db');
+            const dbPath = path.join(dbDir, 'activeurl.db');
             this.db = new Database(dbPath);
             this.isInitialized = true;
         } catch (error) {
@@ -103,7 +101,7 @@ export class ActiveDurationProcessor {
 
     // Start the processing loop
     public startProcessing(): void {
-        console.log('Starting activeduration processing...');
+        console.log('Starting url processing...');
 
         if (this.processingInterval) {
             clearInterval(this.processingInterval);
@@ -128,7 +126,7 @@ export class ActiveDurationProcessor {
 
     // Stop the processing loop
     public stopProcessing(): void {
-        console.log('Stopping activeduration processing...');
+        console.log('Stopping url processing...');
         if (this.processingInterval) {
             clearInterval(this.processingInterval);
             this.processingInterval = null;
@@ -144,39 +142,39 @@ export class ActiveDurationProcessor {
             // Prepare API payload
             const payload = {
                 project_id: activity.project_id,
-                app_name: activity.app_name,
+                url: activity.url,
                 start_time: activity.start_time,
                 end_time: activity.end_time,
                 ...(activity.task_id !== -1 && { task_id: activity.task_id })
             };
 
-            console.log('Making API call for active duration :', payload);
+            console.log('Making API call for url :', payload);
 
             // Make API call
-            const response = await axios.post(this.apiEndpoint,{ data: [payload] }, {
+            const response = await axios.post(this.apiEndpoint, { data: [payload] }, {
                 headers: this.getAuthHeaders(),
             });
 
             const { success, message, data } = response.data
 
             if (!success) {
-                throw new Error(`API call failed for active duration : ${message}`);
+                throw new Error(`API call failed for url : ${message}`);
             }
 
-            console.log('API call successful, deleting active duration:', message, data);
+            console.log('API call successful, deleting url:', message, data);
 
             // Delete the activity after successful API call
-            const deleteStmt = this.db.prepare('DELETE FROM activeduration WHERE id = ?');
+            const deleteStmt = this.db.prepare('DELETE FROM activeurl WHERE id = ?');
             deleteStmt.run(activity.id);
 
             return {
                 success: true,
-                message: 'Successfully processed and deleted activeduration',
+                message: 'Successfully processed and deleted url',
                 activityId: activity.id
             };
 
         } catch (error) {
-            console.error('Error processing activeduration:', activity.id, error);
+            console.error('Error processing url:', activity.id, error);
             return {
                 success: false,
                 message: error instanceof Error ? error.message : 'Unknown error',
@@ -190,7 +188,7 @@ export class ActiveDurationProcessor {
         console.log('Starting processing cycle');
 
         if (this.isProcessing) {
-            console.log('Already processing activeduration, skipping this cycle');
+            console.log('Already processing url, skipping this cycle');
             return;
         }
 
@@ -200,7 +198,7 @@ export class ActiveDurationProcessor {
         try {
             // Get all pending activities
             const selectStmt = this.db.prepare(`
-                SELECT * FROM activeduration 
+                SELECT * FROM activeurl 
                 ORDER BY timestamp ASC
                 LIMIT 100
             `);
@@ -208,7 +206,7 @@ export class ActiveDurationProcessor {
             const activities: Activity[] = selectStmt.all();
 
             if (activities.length === 0) {
-                console.log('No activeduration to process');
+                console.log('No url to process');
                 return;
             }
 
@@ -219,9 +217,9 @@ export class ActiveDurationProcessor {
             // Log results
             results.forEach(result => {
                 if (result.success) {
-                    console.log(`Successfully processed activeduration ${result.activityId}`);
+                    console.log(`Successfully processed url ${result.activityId}`);
                 } else {
-                    console.error(`Failed to process activeduration ${result.activityId}: ${result.message}`);
+                    console.error(`Failed to process url ${result.activityId}: ${result.message}`);
                 }
             });
 

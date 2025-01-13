@@ -6,6 +6,9 @@ interface ConfigurationResponse {
     data: {
         config: {
             screen_shot_interval: number;
+        },
+        user: {
+            url_tracking: boolean
         }
     }
 }
@@ -38,6 +41,10 @@ export class ConfigurationProcessor {
     // Get the current screenshot interval
     public getScreenShotInterval(): number | null {
         return this.currentConfig?.config?.screen_shot_interval ?? 1;
+    }
+
+    public isUrlTracking(): boolean | null {
+        return this.currentConfig.user.url_tracking ?? false
     }
 
     // Start the processing loop
