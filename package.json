@@ -12,8 +12,8 @@
     "build:mac:x64": "nextron build --mac --x64 --publish never",
     "build:mac:universal": "nextron build --mac --universal --publish never",
     "build:linux": "nextron build --linux --config electron-builder.yml",
-    "build:win": "nextron build --win --config electron-builder.yml",
-    "build:win64": "nextron build --win --x64 --publish never",
+    "build:win": "nextron build --win --x64 --publish never",
+    "build:win64": "nextron build --win --config electron-builder.yml",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
