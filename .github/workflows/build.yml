@@ -61,7 +61,7 @@ jobs:
           node-version: 18.x
           cache: "npm"
       - name: Install dependencies
-        run: npm ci && npm install --global --production windows-build-tools
+        run: npm ci && npm install windows-build-tools
       - name: Build Nextron App
         run: npm run build:win64
       - name: Upload artifacts
