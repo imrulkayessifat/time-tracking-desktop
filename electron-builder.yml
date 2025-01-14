@@ -26,27 +26,6 @@ mac:
   entitlementsInherit: entitlements.plist
   category: public.app-category.developer-tools
 
-# Windows Configuration
-win:
-  target:
-    - target: nsis
-      arch:
-        - x64
-        - ia32
-    - target: portable
-  icon: resources/icon.ico
-  publisherName: "Staff Time Tracker"
-
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
-  shortcutName: "Staff Time Tracker"
-  uninstallDisplayName: "Staff Time Tracker"
-  installerIcon: resources/icon.ico
-  uninstallerIcon: resources/icon.ico
-
 # Linux Configuration
 linux:
   target:
