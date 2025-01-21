@@ -141,9 +141,9 @@ app.on('ready', async () => {
     icon: path.join(app.getAppPath(), "resources/icon.png")
   })
   mainWindow.setMenu(null);
-  globalShortcut.register('CommandOrControl+Shift+I', () => {
-    mainWindow.webContents.toggleDevTools();
-  });
+  // globalShortcut.register('CommandOrControl+Shift+I', () => {
+  //   mainWindow.webContents.toggleDevTools();
+  // });
 
   console.log("icon path : ", path.join(app.getAppPath(), "resources/icon.png"))
   if (isProd) {
