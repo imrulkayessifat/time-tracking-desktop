@@ -13,7 +13,7 @@ def get_firefox_url():
         pass
     return None        
 
-if _name_ == "__main__":
+if __name__ == "__main__":
     url = get_firefox_url()
     if url:
-        print(f"Current URL: {url}")
+        print(f"{url}")

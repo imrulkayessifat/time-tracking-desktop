@@ -30,7 +30,7 @@ def get_current_url():
         print(f"Error: {e}")
         return None
 
-if _name_ == "__main__":
+if __name__ == "__main__":
     url = get_current_url()
     if url:
-        print(f"Current URL: {url}")
+        print(f"{url}")
