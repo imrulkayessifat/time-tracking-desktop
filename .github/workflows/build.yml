@@ -41,7 +41,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Staff Time Tracker - Mac
           path: |
@@ -65,7 +65,7 @@ jobs:
       - name: Build Nextron App
         run: npm run build:win
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Staff Time Tracker - Windows
           path: |
@@ -92,7 +92,7 @@ jobs:
       - name: Build Nextron App
         run: npm run build:linux
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Staff Time Tracker - Linux
           path: |
