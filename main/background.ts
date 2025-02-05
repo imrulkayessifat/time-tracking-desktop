@@ -48,7 +48,7 @@ if (isProd) {
   app.setPath('userData', `${app.getPath('userData')} (development)`)
 }
 
-if (!isProd) {
+if (isProd) {
   log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'main.log');
   log.transports.console.level = 'debug';
   console.log = log.info;
