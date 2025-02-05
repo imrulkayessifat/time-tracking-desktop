@@ -2,6 +2,7 @@ import { app } from 'electron';
 import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+const { spawn } = require("child_process");
 
 import { readFirefoxHistory } from './history/firefox-history';
 import { readChromeHistory } from './history/chrome-history';
@@ -38,10 +39,12 @@ interface MacResult extends BaseResult {
 
 interface WindowsResult extends BaseResult {
     // Add Windows-specific properties if needed
+    url?: string;
 }
 
 interface LinuxResult extends BaseResult {
     // Add Linux-specific properties if needed
+    url?: string;
 }
 
 type Result = MacResult | WindowsResult | LinuxResult;
@@ -54,20 +57,61 @@ let inactivityTimeout: NodeJS.Timeout | null = null;
 const INACTIVITY_DURATION = 2000;
 
 const isBrowser = (appName: string): boolean => {
-    const browsers = ['chrome', 'firefox', 'safari', 'edge', 'opera', 'internet explorer'];
+    const browsers = ['google chrome', 'firefox', 'safari', 'edge', 'opera', 'internet explorer'];
     return browsers.some(browser => appName.toLowerCase().includes(browser));
 };
 
 const getBrowserHistory = async (name: string) => {
     const browserName = name.toLowerCase();
-    if (browserName.includes('chrome')) {
-        return await readChromeHistory();
+
+    if (browserName.includes('google chrome')) {
+        return new Promise<string>((resolve, reject) => {
+            const chromeProcess = spawn("python3", ["chrome.py"]);
+
+            let dataOutput = '';
+
+            chromeProcess.stdout.on("data", (data) => {
+                dataOutput = data.toString().trim(); // Collect the data
+            });
+
+            chromeProcess.stderr.on("data", (data) => {
+                console.error("stderr: ", data.toString());
+            });
+
+            chromeProcess.on("close", (code) => {
+                if (code !== 0) {
+                    console.error(`python process exited with code ${code}`);
+                    reject(`Error with chrome process (code ${code})`);
+                } else {
+                    console.log('python process completed successfully');
+                    resolve(dataOutput); // Resolve with the accumulated output
+                }
+            });
+        });
     } else if (browserName.includes('firefox')) {
-        return await readFirefoxHistory();
-    } else if (browserName.includes('safari')) {
-        return await readSafariHistory();
-    } else if (browserName.includes('edge')) {
-        return await readEdgeHistory();
+        return new Promise<string>((resolve, reject) => {
+            const firefoxProcess = spawn("python3", ["firefox.py"]);
+
+            let dataOutput = '';
+
+            firefoxProcess.stdout.on("data", (data) => {
+                dataOutput = data.toString().trim(); // Collect the data
+            });
+
+            firefoxProcess.stderr.on("data", (data) => {
+                console.error("stderr: ", data.toString());
+            });
+
+            firefoxProcess.on("close", (code) => {
+                if (code !== 0) {
+                    console.error(`python process exited with code ${code}`);
+                    reject(`Error with firefox process (code ${code})`);
+                } else {
+                    console.log('python process completed successfully');
+                    resolve(dataOutput); // Resolve with the accumulated output
+                }
+            });
+        });
     }
     return null;
 };
@@ -135,7 +179,13 @@ const startUrlTracking = async (project_id: number, task_id: number) => {
 
         let currentUrl = '';
         if (isBrowser(result.owner.name)) {
-            const browserHistory = await getBrowserHistory(result.owner.name);
+            if (process.platform === 'darwin') {
+                currentUrl = result.url
+            } else if (process.platform === 'win32') {
+                const browserHistory = await getBrowserHistory(result.owner.name);
+                console.log("url : ", browserHistory)
+                currentUrl = browserHistory
+            }
         }
 
         // Check if window has changed (either different app or different URL)
@@ -153,7 +203,7 @@ const startUrlTracking = async (project_id: number, task_id: number) => {
                     end_time: lastActiveWindow.end_time,
                     ...(lastActiveWindow.task_id !== -1 && { task_id: lastActiveWindow.task_id })
                 };
-                console.log("last active url : ", payload)
+
                 if (lastActiveWindow.url.length > 0) {
                     stmt.run(lastActiveWindow.project_id, lastActiveWindow.task_id, lastActiveWindow.url, lastActiveWindow.start_time, lastActiveWindow.end_time);
                 }

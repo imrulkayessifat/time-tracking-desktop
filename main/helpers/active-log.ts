@@ -6,9 +6,9 @@ import { promisify } from 'util';
 
 import Database from './db';
 import { readFirefoxHistory } from './history/firefox-history';
-import { readChromeHistory } from './history/chrome-history';
 import { readSafariHistory } from './history/safari-history';
 import { readEdgeHistory } from './history/edge-history';
+import { readChromeHistory } from './history/chrome-history';
 
 const execAsync = promisify(exec);
 

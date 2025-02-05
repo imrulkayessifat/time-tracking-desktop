@@ -1,55 +1,61 @@
-import { app } from 'electron';
-import path from 'path';
-import { homedir } from 'os';
-import { promises as fs } from 'fs';
-import { copyFileSync } from 'fs';
-
-import Database from '../db';
-
-function getChromeProfilePath() {
-    switch (process.platform) {
-        case 'win32':
-            return path.join(process.env.LOCALAPPDATA, 'Google/Chrome/User Data/Default');
-        case 'darwin':
-            return path.join(homedir(), 'Library/Application Support/Google/Chrome/Default');
-        default: // Linux
-            return path.join(homedir(), '.config/google-chrome/Default');
-    }
-}
-
-async function queryChromiumDatabase(dbPath, browser) {
-    const tempDbPath = path.join(app.getPath('temp'), `${browser}-history-temp.sqlite`);
-    copyFileSync(dbPath, tempDbPath);
-
-    try {
-        const db = new Database(tempDbPath, { readonly: true });
-        const sql = `
-            SELECT urls.url, urls.title, urls.last_visit_time
-            FROM urls
-            ORDER BY last_visit_time DESC
-            LIMIT 1`;
-
-        const latestVisit = db.prepare(sql).get();
-        db.close();
-        await fs.unlink(tempDbPath);
-        return {
-            url: latestVisit.url
-        };
-    } catch (error) {
-        try {
-            await fs.unlink(tempDbPath);
-        } catch {
-            // Ignore cleanup errors
-        }
-        throw error;
-    }
-}
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
 
 export async function readChromeHistory() {
     try {
-        const dbPath = path.join(getChromeProfilePath(), 'History');
-        return await queryChromiumDatabase(dbPath, 'chrome');
+        let command;
+
+        if (process.platform === 'win32') {
+            // Windows approach using PowerShell
+            command = `
+                Add-Type -AssemblyName UIAutomationClient
+                $automation = [Windows.Automation.AutomationElement]::RootElement
+                $chrome = $automation.FindFirst(
+                    [System.Windows.Automation.TreeScope]::Children,
+                    (New-Object System.Windows.Automation.PropertyCondition([Windows.Automation.AutomationElement]::NameProperty, "Google Chrome"))
+                )
+                if ($chrome) {
+                    $addressBar = $chrome.FindFirst(
+                        [System.Windows.Automation.TreeScope]::Descendants,
+                        (New-Object System.Windows.Automation.PropertyCondition([Windows.Automation.AutomationElement]::AutomationIdProperty, "address and search bar"))
+                    )
+                    if ($addressBar) {
+                        $pattern = $addressBar.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+                        $pattern.Current.Value
+                    }
+                }
+            `;
+            const { stdout } = await execPromise(`powershell -command "${command}"`);
+            return stdout.trim();
+        }
+        else if (process.platform === 'darwin') {
+            // macOS approach using AppleScript
+            command = `
+                osascript -e '
+                tell application "Google Chrome"
+                    get URL of active tab of first window
+                end tell'
+            `;
+            const { stdout } = await execPromise(command);
+            return stdout.trim();
+        }
+        else if (process.platform === 'linux') {
+            // Linux approach using xdotool and wmctrl
+            // Note: Requires xdotool and wmctrl to be installed
+            // Install with: sudo apt-get install xdotool wmctrl
+            command = `
+                active_window_id=$(xdotool getactivewindow)
+                window_title=$(xdotool getwindowname $active_window_id)
+                echo "$window_title" | grep -oP '(?<=- Google Chrome\\s).*$'
+            `;
+            const { stdout } = await execPromise(command);
+            return stdout.trim();
+        }
+
+        throw new Error('Unsupported operating system');
     } catch (error) {
-        throw new Error(`Failed to read Chrome history: ${error.message}`);
+        console.error('Error getting Chrome active tab:', error);
+        return null;
     }
 }
