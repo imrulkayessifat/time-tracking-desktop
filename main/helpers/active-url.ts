@@ -66,7 +66,9 @@ const getBrowserHistory = async (name: string) => {
 
     if (browserName.includes('google chrome')) {
         return new Promise<string>((resolve, reject) => {
-            const chromeProcess = execFile("python3", ["chrome.exe"]);
+            const parentDir = path.dirname(path.dirname(path.dirname(__dirname)))
+            const scriptPath = path.join(parentDir, 'chrome.exe');
+            const chromeProcess = execFile("python3", [scriptPath]);
 
             let dataOutput = '';
 
@@ -90,7 +92,9 @@ const getBrowserHistory = async (name: string) => {
         });
     } else if (browserName.includes('firefox')) {
         return new Promise<string>((resolve, reject) => {
-            const firefoxProcess = execFile("python3", ["firefox.exe"]);
+            const parentDir = path.dirname(path.dirname(path.dirname(__dirname)))
+            const scriptPath = path.join(parentDir, 'firefox.exe');
+            const firefoxProcess = execFile("python3", [scriptPath]);
 
             let dataOutput = '';
 
