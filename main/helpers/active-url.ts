@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import * as fs from 'fs';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 const { spawn } = require("child_process");
 
@@ -66,7 +66,7 @@ const getBrowserHistory = async (name: string) => {
 
     if (browserName.includes('google chrome')) {
         return new Promise<string>((resolve, reject) => {
-            const chromeProcess = spawn("python3", ["chrome.py"]);
+            const chromeProcess = execFile("python3", ["chrome.exe"]);
 
             let dataOutput = '';
 
@@ -90,7 +90,7 @@ const getBrowserHistory = async (name: string) => {
         });
     } else if (browserName.includes('firefox')) {
         return new Promise<string>((resolve, reject) => {
-            const firefoxProcess = spawn("python3", ["firefox.py"]);
+            const firefoxProcess = execFile("python3", ["firefox.exe"]);
 
             let dataOutput = '';
 

@@ -12,4 +12,6 @@ next-env.d.ts
 /app
 dist
 
+build
+
 timetracking.db
