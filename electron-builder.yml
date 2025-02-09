@@ -9,11 +9,8 @@ files:
     filter:
       - package.json
       - app
-  - "*.py"
-extraResources:
-  - from: "."
-    filter:
-      - "*.py"
+extraFiles:
+  - scripts
 publish:
   provider: github
   token: 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

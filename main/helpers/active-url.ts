@@ -60,17 +60,21 @@ const isBrowser = (appName: string): boolean => {
     const browsers = ['google chrome', 'firefox', 'safari', 'edge', 'opera', 'internet explorer'];
     return browsers.some(browser => appName.toLowerCase().includes(browser));
 };
+const isProd = process.env.NODE_ENV === 'production'
 
 const getBrowserHistory = async (name: string) => {
     const browserName = name.toLowerCase();
 
     if (browserName.includes('google chrome')) {
         return new Promise<string>((resolve, reject) => {
-            const executablePath = path.join(
-                process.env.NODE_ENV === 'development' ? '.' : process.resourcesPath,
-                'chrome.exe'
-              );
-            const chromeProcess = execFile(executablePath);
+            let scriptPath
+            if (isProd) {
+                const parentDir = path.dirname(path.dirname(path.dirname(__dirname)))
+                scriptPath = path.join(parentDir, 'scripts/chrome.exe')
+            } else {
+                scriptPath = path.join(__dirname, '../scripts/chrome.exe')
+            }
+            const chromeProcess = execFile(scriptPath);
 
             let dataOutput = '';
 
@@ -94,11 +98,14 @@ const getBrowserHistory = async (name: string) => {
         });
     } else if (browserName.includes('firefox')) {
         return new Promise<string>((resolve, reject) => {
-            const executablePath = path.join(
-                process.env.NODE_ENV === 'development' ? '.' : process.resourcesPath,
-                'firefox.exe'
-              );
-            const firefoxProcess = execFile(executablePath);
+            let scriptPath
+            if (isProd) {
+                const parentDir = path.dirname(path.dirname(path.dirname(__dirname)))
+                scriptPath = path.join(parentDir, 'scripts/firefox.exe')
+            } else {
+                scriptPath = path.join(__dirname, '../scripts/firefox.exe')
+            }
+            const firefoxProcess = execFile(scriptPath);
 
             let dataOutput = '';
 
