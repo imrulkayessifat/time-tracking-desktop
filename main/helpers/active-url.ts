@@ -205,12 +205,13 @@ const startUrlTracking = async (project_id: number, task_id: number) => {
         if (isBrowser(result.owner.name)) {
             if (process.platform === 'darwin') {
                 currentUrl = result.url
-            } 
+            }
             // else if (process.platform === 'win32') {
             //     const browserHistory = await getBrowserHistory(result.owner.name);
             //     console.log("url : ", browserHistory)
             //     currentUrl = browserHistory
             // }
+            console.log("current url : ", currentUrl)
         }
 
         // Check if window has changed (either different app or different URL)
