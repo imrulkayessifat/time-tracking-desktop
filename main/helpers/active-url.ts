@@ -158,6 +158,15 @@ const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
     }
 };
 
+function isValidURL(str) {
+    try {
+        return Boolean(new URL(str));
+    }
+    catch (e) {
+        return false;
+    }
+}
+
 const startUrlTracking = async (project_id: number, task_id: number) => {
     try {
         const getActiveWindow = (await import('active-win')).default;
@@ -196,11 +205,12 @@ const startUrlTracking = async (project_id: number, task_id: number) => {
         if (isBrowser(result.owner.name)) {
             if (process.platform === 'darwin') {
                 currentUrl = result.url
-            } else if (process.platform === 'win32') {
-                const browserHistory = await getBrowserHistory(result.owner.name);
-                console.log("url : ", browserHistory)
-                currentUrl = browserHistory
-            }
+            } 
+            // else if (process.platform === 'win32') {
+            //     const browserHistory = await getBrowserHistory(result.owner.name);
+            //     console.log("url : ", browserHistory)
+            //     currentUrl = browserHistory
+            // }
         }
 
         // Check if window has changed (either different app or different URL)

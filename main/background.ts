@@ -48,7 +48,7 @@ if (isProd) {
   app.setPath('userData', `${app.getPath('userData')} (development)`)
 }
 
-if (!isProd) {
+if (isProd) {
   log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'main.log');
   log.transports.console.level = 'debug';
   console.log = log.info;
@@ -258,8 +258,8 @@ ipcMain.on('timer-update', async (_, info: { project_id: number, selectedTaskId:
   }
 
   startDurationTracking(info.project_id, info.selectedTaskId)
+  startUrlTracking(info.project_id, info.selectedTaskId)
   if (isUrlTracking) {
-    startUrlTracking(info.project_id, info.selectedTaskId)
   }
 });
 
