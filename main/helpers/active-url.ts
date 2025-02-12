@@ -211,7 +211,7 @@ const startUrlTracking = async (project_id: number, task_id: number) => {
             //     console.log("url : ", browserHistory)
             //     currentUrl = browserHistory
             // }
-            console.log("current url : ", currentUrl)
+            console.log("current url : ", result, currentUrl)
         }
 
         // Check if window has changed (either different app or different URL)
