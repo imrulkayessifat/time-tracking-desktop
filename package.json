@@ -45,6 +45,7 @@
     "sonner": "^1.5.0",
     "sqlite3": "^5.1.6",
     "tailwind-merge": "^2.5.4",
+    "tree-kill": "^1.2.2",
     "ws": "^8.18.0",
     "zustand": "^5.0.0"
   },
