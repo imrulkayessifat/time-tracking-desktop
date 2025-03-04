@@ -1,19 +1,23 @@
-import psutil
-from pywinauto import Application, findwindows
+import uiautomation as auto
 
 def get_firefox_url():
-    try:
-        windows = findwindows.find_elements(title_re=".*Mozilla Firefox.*")
-        if windows:
-            process_id = windows[0].process_id
-            if "firefox" in psutil.Process(process_id).name().lower():
-                app = Application(backend='uia').connect(process=process_id)
-                return app.window(title_re=".*Mozilla Firefox.*").child_window(auto_id="urlbar-input", control_type="Edit").get_value()
-    except Exception:
-        pass
-    return None        
+    # Find the Firefox window
+    firefox = auto.WindowControl(searchDepth=1, ClassName='MozillaWindowClass')
+    
+    if not firefox.Exists(0, 0):
+        print("Firefox is not running")
+        return None
+    
+    # Find the address bar
+    address_bar = firefox.EditControl(AutomationId='urlbar-input')
+    
+    if not address_bar.Exists(0, 0):
+        print("Address bar not found")
+        return None
+    
+    return address_bar.GetValuePattern().Value
 
-if __name__ == "__main__":
-    url = get_firefox_url()
-    if url:
-        print(f"{url}")
+# Get and print the URL
+url = get_firefox_url()
+if url:
+    print(url)

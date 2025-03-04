@@ -2,13 +2,8 @@ import { app } from 'electron';
 import * as fs from 'fs';
 import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
+const kill = require("tree-kill");
 const { spawn } = require("child_process");
-
-import { readFirefoxHistory } from './history/firefox-history';
-import { readChromeHistory } from './history/chrome-history';
-import { readSafariHistory } from './history/safari-history';
-import { readEdgeHistory } from './history/edge-history';
-
 
 import Database from './db';
 import { getLocalTime } from './lib/getLocalTime';
@@ -62,71 +57,85 @@ const isBrowser = (appName: string): boolean => {
 };
 const isProd = process.env.NODE_ENV === 'production'
 
+
 const getBrowserHistory = async (name: string) => {
     const browserName = name.toLowerCase();
 
     if (browserName.includes('google chrome')) {
-        return new Promise<string>((resolve, reject) => {
-            let scriptPath
-            if (isProd) {
-                const parentDir = path.dirname(path.dirname(path.dirname(__dirname)))
-                scriptPath = path.join(parentDir, 'scripts/chrome.exe')
-            } else {
-                scriptPath = path.join(__dirname, '../scripts/chrome.exe')
-            }
-            const chromeProcess = execFile(scriptPath);
-
-            let dataOutput = '';
-
-            chromeProcess.stdout.on("data", (data) => {
-                dataOutput = data.toString().trim(); // Collect the data
-            });
-
-            chromeProcess.stderr.on("data", (data) => {
-                console.error("stderr: ", data.toString());
-            });
-
-            chromeProcess.on("close", (code) => {
-                if (code !== 0) {
-                    console.error(`python process exited with code ${code}`);
-                    reject(`Error with chrome process (code ${code})`);
+        try {
+            return new Promise<string>((resolve, reject) => {
+                let scriptPath
+                if (isProd) {
+                    const parentDir = path.dirname(path.dirname(path.dirname(__dirname)))
+                    scriptPath = path.join(parentDir, 'scripts/chrome.exe')
                 } else {
-                    console.log('python process completed successfully');
-                    resolve(dataOutput); // Resolve with the accumulated output
+                    scriptPath = path.join(__dirname, '../scripts/chrome.exe')
                 }
+                const chromeProcess = execFile(scriptPath);
+                let dataOutput = '';
+    
+                chromeProcess.stdout.on("data", (data) => {
+                    dataOutput = data.toString().trim(); // Collect the data
+                });
+                chromeProcess.stderr.on("data", (data) => {
+                    console.error("stderr: ", data.toString());
+                    kill(chromeProcess.pid);
+                });
+    
+                chromeProcess.on("close", (code) => {
+                    
+                    if (code !== 0) {
+                        console.error(`Chrome process exited with code ${code}`);
+                        kill(chromeProcess.pid);
+                        reject(`Error with chrome process (code ${code})`);
+                    } else {
+                        kill(chromeProcess.pid);
+                        resolve(dataOutput);
+                    }
+                });
             });
-        });
+        } catch (error) {
+            console.log(error)
+        }
+        
     } else if (browserName.includes('firefox')) {
-        return new Promise<string>((resolve, reject) => {
-            let scriptPath
-            if (isProd) {
-                const parentDir = path.dirname(path.dirname(path.dirname(__dirname)))
-                scriptPath = path.join(parentDir, 'scripts/firefox.exe')
-            } else {
-                scriptPath = path.join(__dirname, '../scripts/firefox.exe')
-            }
-            const firefoxProcess = execFile(scriptPath);
-
-            let dataOutput = '';
-
-            firefoxProcess.stdout.on("data", (data) => {
-                dataOutput = data.toString().trim(); // Collect the data
-            });
-
-            firefoxProcess.stderr.on("data", (data) => {
-                console.error("stderr: ", data.toString());
-            });
-
-            firefoxProcess.on("close", (code) => {
-                if (code !== 0) {
-                    console.error(`python process exited with code ${code}`);
-                    reject(`Error with firefox process (code ${code})`);
+        try {
+            return new Promise<string>((resolve, reject) => {
+                let scriptPath
+                if (isProd) {
+                    const parentDir = path.dirname(path.dirname(path.dirname(__dirname)))
+                    scriptPath = path.join(parentDir, 'scripts/firefox.exe')
                 } else {
-                    console.log('python process completed successfully');
-                    resolve(dataOutput); // Resolve with the accumulated output
+                    scriptPath = path.join(__dirname, '../scripts/firefox.exe')
                 }
+                const firefoxProcess = execFile(scriptPath);
+    
+                let dataOutput = '';
+    
+                firefoxProcess.stdout.on("data", (data) => {
+                    dataOutput = data.toString().trim(); // Collect the data
+                });
+    
+                firefoxProcess.stderr.on("data", (data) => {
+                    console.error("stderr: ", data.toString());
+                    kill(firefoxProcess.pid);
+                });
+    
+                firefoxProcess.on("close", (code) => {
+                    if (code !== 0) {
+                        console.error(`python process exited with code ${code}`);
+                        reject(`Error with firefox process (code ${code})`);
+                        kill(firefoxProcess.pid);
+                    } else {
+                        console.log('python process completed successfully');
+                        kill(firefoxProcess.pid);
+                        resolve(dataOutput); // Resolve with the accumulated output
+                    }
+                });
             });
-        });
+        } catch (error) {
+            console.log(error)
+        }
     }
     return null;
 };
@@ -157,15 +166,6 @@ const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
         throw error;
     }
 };
-
-function isValidURL(str) {
-    try {
-        return Boolean(new URL(str));
-    }
-    catch (e) {
-        return false;
-    }
-}
 
 const startUrlTracking = async (project_id: number, task_id: number) => {
     try {
@@ -205,13 +205,12 @@ const startUrlTracking = async (project_id: number, task_id: number) => {
         if (isBrowser(result.owner.name)) {
             if (process.platform === 'darwin') {
                 currentUrl = result.url
+            } else if (process.platform === 'win32') {
+                const browserHistory = await getBrowserHistory(result.owner.name);
+                
+                currentUrl = browserHistory
             }
-            // else if (process.platform === 'win32') {
-            //     const browserHistory = await getBrowserHistory(result.owner.name);
-            //     console.log("url : ", browserHistory)
-            //     currentUrl = browserHistory
-            // }
-            console.log("current url : ", result, currentUrl)
+            console.log("current url : ", currentUrl)
         }
 
         // Check if window has changed (either different app or different URL)
@@ -272,7 +271,7 @@ const startUrlTracking = async (project_id: number, task_id: number) => {
         }, INACTIVITY_DURATION);
 
     } catch (error) {
-        console.error('Error tracking duration active url:', error);
+        // console.error('Error tracking duration active url:', error);
     }
 };
 

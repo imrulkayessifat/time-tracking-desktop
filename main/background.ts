@@ -258,8 +258,8 @@ ipcMain.on('timer-update', async (_, info: { project_id: number, selectedTaskId:
   }
 
   startDurationTracking(info.project_id, info.selectedTaskId)
-  startUrlTracking(info.project_id, info.selectedTaskId)
-  if (isUrlTracking) {
+  if (isUrlTracking && (info.seconds % 5 === 0)) {
+    startUrlTracking(info.project_id, info.selectedTaskId)
   }
 });
 
