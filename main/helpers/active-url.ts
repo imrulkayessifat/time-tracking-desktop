@@ -2,7 +2,7 @@ import { app } from 'electron';
 import * as fs from 'fs';
 import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
-const kill = require("tree-kill");
+
 const { spawn } = require("child_process");
 
 import Database from './db';
@@ -60,6 +60,7 @@ const isProd = process.env.NODE_ENV === 'production'
 
 const getBrowserHistory = async (name: string) => {
     const browserName = name.toLowerCase();
+    const kill = require("tree-kill");
 
     if (browserName.includes('google chrome')) {
         try {
@@ -171,7 +172,7 @@ const startUrlTracking = async (project_id: number, task_id: number) => {
     try {
         const getActiveWindow = (await import('active-win')).default;
         const result: Result = await getActiveWindow({
-            accessibilityPermission: false,
+            accessibilityPermission: true,
             screenRecordingPermission: false
         });
 
