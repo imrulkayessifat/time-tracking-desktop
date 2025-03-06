@@ -258,9 +258,9 @@ ipcMain.on('timer-update', async (_, info: { project_id: number, selectedTaskId:
   }
 
   startDurationTracking(info.project_id, info.selectedTaskId)
-  if (isUrlTracking && (info.seconds % 5 === 0)) {
-    startUrlTracking(info.project_id, info.selectedTaskId)
-  }
+  // if (isUrlTracking && (info.seconds % 5 === 0)) {
+  // }
+  startUrlTracking(info.project_id, info.selectedTaskId)
 });
 
 ipcMain.on('idle-started', (_, { projectId, taskId }) => {
