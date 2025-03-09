@@ -11,6 +11,8 @@ import {
   shell
 } from 'electron'
 import serve from 'electron-serve'
+import { exec, execFile } from 'child_process';
+import { promisify } from 'util';
 
 import { createWindow } from './helpers'
 import startDurationTracking from './helpers/active-duration'
@@ -26,6 +28,7 @@ import { UrlProcessor } from './helpers/processor/url-processor';
 import { ConfigurationProcessor } from './helpers/processor/configuration-processor'
 
 const isProd = process.env.NODE_ENV === 'production'
+const execAsync = promisify(exec);
 
 export let mainWindow: BrowserWindow | null = null;
 let isAnyRunningTask: boolean | null = null;
@@ -118,6 +121,31 @@ const deleteLogFile = () => {
     }
   } catch (error) {
     console.error('Error deleting log file:', error);
+  }
+};
+
+const getSafariActiveUrl = async (): Promise<string> => {
+  try {
+    const { stdout } = await execAsync(
+      "osascript -e 'tell application \"Safari\" to get URL of front document'"
+    );
+    return stdout.trim();
+  } catch (error) {
+    console.error("Error getting Safari URL:", error);
+    return "";
+  }
+};
+
+const getChromeBasedBrowserUrl = async () => {
+  const chromeScript = `tell application "Google Chrome"
+          get URL of active tab of front window
+      end tell`;
+
+  try {
+    const { stdout } = await execAsync(`osascript -e '${chromeScript}'`);
+    console.log("chrome permission : ", stdout.trim());
+  } catch (error) {
+    console.error(`Error getting URL:`, error);
   }
 };
 
@@ -217,6 +245,11 @@ app.on('ready', async () => {
   configurationProcessor = new ConfigurationProcessor(`${apiEndpoint}/init-system`)
   idleTracker = new TaskIdleTracker(`${apiEndpoint}/idle-time-entry`, 10);
 
+  if (process.platform === 'darwin') {
+    await getSafariActiveUrl()
+    await getChromeBasedBrowserUrl()
+  }
+
 });
 
 app.on('window-all-closed', () => {
@@ -258,9 +291,9 @@ ipcMain.on('timer-update', async (_, info: { project_id: number, selectedTaskId:
   }
 
   startDurationTracking(info.project_id, info.selectedTaskId)
-  // if (isUrlTracking && (info.seconds % 5 === 0)) {
-  // }
-  startUrlTracking(info.project_id, info.selectedTaskId)
+  if (isUrlTracking && (info.seconds % 5 === 0)) {
+    startUrlTracking(info.project_id, info.selectedTaskId)
+  }
 });
 
 ipcMain.on('idle-started', (_, { projectId, taskId }) => {
