@@ -112,6 +112,81 @@ async function checkAndRequestScreenRecording(mainWindow: BrowserWindow) {
   return systemPreferences.getMediaAccessStatus('screen') === 'granted';
 }
 
+function extractISOTime(shutdownStr) {
+  const match = shutdownStr.match(/\b(\w{3}) (\w{3}) (\d{1,2}) (\d{2}:\d{2})\b/);
+  if (!match) return null;
+
+  const [, , monthStr, day, time] = match;
+  const year = new Date().getFullYear(); // Use current year
+
+  const months = {
+    "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04", "May": "05", "Jun": "06",
+    "Jul": "07", "Aug": "08", "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12"
+  };
+
+  const month = months[monthStr];
+  if (!month) return null;
+
+  const isoDate = `${year}-${month}-${day.padStart(2, '0')}T${time}:00Z`;
+  return isoDate;
+}
+
+function getLastShutdownTime(callback) {
+
+  let command = "";
+
+  if (process.platform === "linux") {
+    command = `last -x | grep shutdown | head -n 1`;
+  } else if (process.platform === "win32") {
+    command = `wevtutil qe System "/q:*[System[(EventID=1074)]]" /rd:true /c:1 /f:text`;
+  } else if (process.platform === "darwin") {
+    command = `sysctl kern.boottime`;
+  } else {
+    return callback("Unsupported OS");
+  }
+
+  exec(command, (error, stdout, stderr) => {
+    if (error || stderr) {
+      callback("Error retrieving shutdown time");
+      return;
+    }
+    if (process.platform === "win32") {
+      // Extract just the Date property from Windows event log
+      const dateMatch = stdout.match(/Date:\s*([^\r\n]+)/);
+      if (dateMatch && dateMatch[1]) {
+        callback(dateMatch[1].trim());
+      } else {
+        callback("Date not found in event log");
+      }
+    } else if (process.platform === "linux") {
+      // Linux format is typically: "shutdown system down 5.4-generic Mon Mar 16 15:30:01 2025"
+      // Extract just the date/time portion
+      const linuxMatch = extractISOTime(stdout);
+      if (linuxMatch) {
+        callback(linuxMatch.trim());
+      } else {
+        callback("Date not found in Linux shutdown log");
+      }
+    } else if (process.platform === "darwin") {
+      // macOS format varies, but we'll extract the timestamp
+      // Example: "2025-03-16 14:23:45.123 Previous shutdown cause: 5"
+
+      const dateMatch = stdout.match(/[A-Za-z]{3} [A-Za-z]{3} \d{1,2} \d{2}:\d{2}:\d{2} \d{4}/);
+
+      if (dateMatch) {
+        console.log(dateMatch[0]); // Output: Tue Mar 18 13:32:57 2025
+        const date = new Date(dateMatch[0] + " UTC"); // Add UTC to avoid timezone issues
+        const isoFormat = date.toISOString();
+        callback(isoFormat)
+      } else {
+        callback("Date not found in macOS shutdown log");
+      }
+    } else {
+      callback(stdout.trim());
+    }
+  });
+}
+
 const deleteLogFile = () => {
   try {
     const logPath = path.join(app.getPath('userData'), 'logs', 'main.log');
@@ -249,6 +324,16 @@ app.on('ready', async () => {
     await getSafariActiveUrl()
     await getChromeBasedBrowserUrl()
   }
+
+  getLastShutdownTime((shutdownTime) => {
+    console.log("Last Shutdown Time : ", shutdownTime)
+    if(shutdownTime) {
+      const lastEntry = timeProcessor.getLastUnfinishedTimeEntryFUS()
+      if (lastEntry) {
+        timeProcessor.updateEndTime(lastEntry.id,shutdownTime);
+      }
+    }
+  })
 
 });
 

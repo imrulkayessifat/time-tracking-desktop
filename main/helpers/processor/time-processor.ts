@@ -147,9 +147,10 @@ export class TimeProcessor {
     // Update end time for an existing time entry
     public updateEndTime(
         time_entry_id: number,
+        time?: string
     ): void {
         try {
-            const endTime = this.getLocalTime();
+            const endTime = time || this.getLocalTime();
             console.warn("end time:", endTime)
             const updateStmt = this.db.prepare(`
                 UPDATE time_entries 
@@ -182,6 +183,22 @@ export class TimeProcessor {
             return selectStmt.get(project_id, task_id ?? null, task_id ?? null) as TimeEntry | null;
         } catch (error) {
             console.error('Error getting latest unfinished time entry:', error);
+            throw error;
+        }
+    }
+
+    public getLastUnfinishedTimeEntryFUS(): TimeEntry | null {
+        try {
+            const selectStmt = this.db.prepare(`
+                SELECT * FROM time_entries 
+                WHERE end_time IS NULL 
+                ORDER BY id DESC 
+                LIMIT 1
+            `);
+    
+            return selectStmt.get() as TimeEntry | null;
+        } catch (error) {
+            console.error('Error getting last unfinished time entry:', error);
             throw error;
         }
     }
