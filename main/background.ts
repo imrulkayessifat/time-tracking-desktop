@@ -232,7 +232,7 @@ app.on('ready', async () => {
     if (choice.response === 0) {  // If user clicks "Yes"
       forceQuit = true; // Set the flag to allow the close
       idleTracker.clearAll();
-      deleteLogFile();
+      // deleteLogFile();
       app.quit()
     }
   });

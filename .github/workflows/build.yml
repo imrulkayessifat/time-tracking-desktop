@@ -97,4 +97,6 @@ jobs:
           name: Staff Time Tracker - Linux
           path: |
             dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
           retention-days: 5

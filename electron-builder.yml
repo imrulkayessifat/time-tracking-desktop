@@ -33,7 +33,7 @@ linux:
     - AppImage
     - deb
     - rpm
-  icon: resources/icons
+  icon: resources/icon
   category: Development
   maintainer: "Jamil Hossain"
   vendor: "Staff Time Tracker"

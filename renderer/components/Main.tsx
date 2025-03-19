@@ -76,9 +76,9 @@ const Main: React.FC<MainProps> = ({
         project_id: init_project_id,
         selectedTaskId: init_task_id,
         isRunning,
-        hours:time.hours,
-        minutes:time.minutes,
-        seconds:time.seconds
+        hours: time.hours,
+        minutes: time.minutes,
+        seconds: time.seconds
       });
     }
   }, [time.hours, time.minutes, time.seconds, isRunning, init_project_id, init_task_id]);
@@ -150,6 +150,9 @@ const Main: React.FC<MainProps> = ({
     } else {
       pause();
       window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
+      setTimeout(() => {
+        handleSync();
+      }, 5000);  
     }
   };
 
@@ -167,54 +170,59 @@ const Main: React.FC<MainProps> = ({
 
 
   return (
-    <div className="flex flex-col gap-2 w-full h-screen">
-      <div className="flex justify-between mt-[10px] px-5">
-        <div className="flex items-center gap-2 border border-blue-400 rounded-md p-2">
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center gap-10">
-              <span className="font-bold text-emerald-500">Today</span>
-              <button
-                onClick={handleSync}
-                disabled={isRunning}
-                className={cn("flex items-center h-4 text-blue-500 gap-2", isRunning && "cursor-not-allowed opacity-20")}
-              >
-                <IoSync />
-                <p>Sync</p>
-              </button>
+    <div className="flex flex-col justify-between w-full h-screen">
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-between mt-[10px] px-5">
+          <div className="flex items-center gap-2 border border-blue-400 rounded-md p-2">
+            <div className="flex flex-col">
+              <div className="flex justify-between items-center gap-10">
+                <span className="font-bold text-emerald-500">Today</span>
+                <button
+                  onClick={handleSync}
+                  disabled={isRunning}
+                  className={cn("flex items-center h-4 text-blue-500 gap-2", isRunning && "cursor-not-allowed opacity-20")}
+                >
+                  <IoSync />
+                  <p>Sync</p>
+                </button>
+              </div>
+              <span>{data.duration}</span>
             </div>
-            <span>{data.duration}</span>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="mb-10 p-0 cursor-pointer" asChild>
+              <img src='/images/profile.svg' className="w-9" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="bottom" align="end" className="w-56 bg-white">
+              <DropdownMenuItem
+                disabled={isRunning}
+                className={cn("cursor-pointer", isRunning && "cursor-not-allowed")}
+                onClick={() => {
+                  removeClientToken();
+                  localStorage.removeItem('user');
+                  // localStorage.removeItem('taskTimers');
+                  queryClient.clear()
+                  router.push('/home')
+                }}
+              >
+                <span>Sign Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger className="mb-10 p-0 cursor-pointer" asChild>
-            <img src='/images/profile.svg' className="w-9" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="bottom" align="end" className="w-56 bg-white">
-            <DropdownMenuItem
-              disabled={isRunning}
-              className={cn("cursor-pointer", isRunning && "cursor-not-allowed")}
-              onClick={() => {
-                removeClientToken();
-                localStorage.removeItem('user');
-                // localStorage.removeItem('taskTimers');
-                queryClient.clear()
-                router.push('/home')
-              }}
-            >
-              <span>Sign Out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex w-full">
+          <CounterPanel hours={time.hours} minutes={time.minutes} seconds={time.seconds} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} />
+          {
+            isExpanded && (
+              <TasksPanel hasTaskStorePermission={hasTaskStorePermission} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} token={token} pause={pause} />
+            )
+          }
+        </div>
       </div>
-      <div className="flex w-full">
-        <CounterPanel hours={time.hours} minutes={time.minutes} seconds={time.seconds} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} toggleExpand={toggleExpand} token={token} />
-        {
-          isExpanded && (
-            <TasksPanel hasTaskStorePermission={hasTaskStorePermission} isRunning={isRunning} handleTimerToggle={handleTimerToggle} isExpanded={isExpanded} token={token} pause={pause} />
-          )
-        }
+      <div className="px-5 border-t">
+        <p>v1.0.0</p>
       </div>
-    </div >
+    </div>
   );
 };
 
