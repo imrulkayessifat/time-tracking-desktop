@@ -1,5 +1,6 @@
 import path from 'path'
 import log from 'electron-log';
+const os = require('os');
 import fs from 'fs';
 import {
   app,
@@ -45,7 +46,7 @@ let configurationProcessor: ConfigurationProcessor;
 // let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1";
 let apiEndpoint: string = "https://api.stafftimetrack.com/api/v1"
 let intervalMs: number = 120000;
-
+let cleanTemp
 if (isProd) {
   serve({ directory: 'app' })
 } else {
@@ -284,10 +285,31 @@ function updateTimestamp() {
   fs.writeFileSync(timestampPath, JSON.stringify({ lastCloseTime: timestamp }))
 }
 
+
+
 const updateInterval = setInterval(updateTimestamp, 10000)
+function cleanTempFiles() {
+  const tempDir = os.tmpdir();
+  fs.readdir(tempDir, (err, files) => {
+    if (err) return;
+    files.forEach(file => {
+      if (file.startsWith('_MEI')) {
+        const filePath = path.join(tempDir, file);
+        fs.rm(filePath, { recursive: true, force: true }, () => { });
+      }
+    });
+  });
+}
+if (process.platform === 'win32') {
+
+  cleanTemp = setInterval(cleanTempFiles, 30000)
+}
 
 app.on('will-quit', () => {
   clearInterval(updateInterval);
+  if (process.platform === 'win32') {
+    clearInterval(cleanTemp);
+  }
   updateTimestamp()
 })
 
