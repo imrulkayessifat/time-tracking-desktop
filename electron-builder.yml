@@ -1,5 +1,5 @@
 appId: com.asd.staff-time-tracker
-productName: Staff Time Tracker
+productName: StaffTimeTracker
 copyright: Copyright © 2018 Yoshihide Shiono
 directories:
   output: dist
@@ -36,11 +36,11 @@ linux:
   icon: resources/icon
   category: Development
   maintainer: "Jamil Hossain"
-  vendor: "Staff Time Tracker"
+  vendor: "StaffTimeTracker"
   synopsis: "Time tracking application for staff"
   description: "A comprehensive time tracking solution for managing staff work hours"
   desktop:
-    Name: Staff Time Tracker
+    Name: StaffTimeTracker
     Comment: Time tracking application for staff
     Categories: Development;Office;ProjectManagement
     MimeType: x-scheme-handler/timetracker

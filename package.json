@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "staff-time-tracker",
-  "description": "Staff Time Tracker",
+  "description": "StaffTimeTracker",
   "version": "1.0.0",
   "author": "Advanced Software Development",
   "main": "app/background.js",
