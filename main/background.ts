@@ -285,9 +285,7 @@ function updateTimestamp() {
   fs.writeFileSync(timestampPath, JSON.stringify({ lastCloseTime: timestamp }))
 }
 
-
-
-const updateInterval = setInterval(updateTimestamp, 10000)
+// const updateInterval = setInterval(updateTimestamp, 10000)
 function cleanTempFiles() {
   const tempDir = os.tmpdir();
   fs.readdir(tempDir, (err, files) => {
@@ -306,7 +304,6 @@ if (process.platform === 'win32') {
 }
 
 app.on('will-quit', () => {
-  clearInterval(updateInterval);
   if (process.platform === 'win32') {
     clearInterval(cleanTemp);
   }
@@ -351,6 +348,7 @@ ipcMain.on('timer-update', async (_, info: { project_id: number, selectedTaskId:
   if (isUrlTracking && (info.seconds % 5 === 0)) {
     startUrlTracking(info.project_id, info.selectedTaskId)
   }
+  updateTimestamp()
 });
 
 ipcMain.on('idle-started', (_, { projectId, taskId }) => {
