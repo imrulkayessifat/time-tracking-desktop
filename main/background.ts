@@ -378,6 +378,7 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     const latestTimeEntry = timeProcessor.getLatestUnfinishedTimeEntry(projectId, taskId);
     if (latestTimeEntry) {
       timeProcessor.updateEndTime(latestTimeEntry.id);
+      console.log('latest time entry : ',latestTimeEntry)
     }
     timeProcessor.stopProcessing()
     idleProcessor.stopProcessing()

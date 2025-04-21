@@ -176,7 +176,7 @@ export class TimeProcessor {
                 WHERE project_id = ? 
                 AND (task_id = ? OR (? IS NULL AND task_id IS NULL))
                 AND end_time IS NULL 
-                ORDER BY start_time DESC 
+                ORDER BY id DESC 
                 LIMIT 1
             `);
 
