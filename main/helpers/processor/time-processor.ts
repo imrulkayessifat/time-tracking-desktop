@@ -172,15 +172,13 @@ export class TimeProcessor {
     ): TimeEntry | null {
         try {
             const selectStmt = this.db.prepare(`
-                SELECT * FROM time_entries
-                WHERE project_id = ?
-                AND (task_id = ? OR task_id IS NULL)
-                AND end_time IS NULL 
+                SELECT * FROM time_entries 
+                WHERE end_time IS NULL 
                 ORDER BY id DESC 
                 LIMIT 1
             `);
 
-            return selectStmt.get(project_id, task_id ?? null) as TimeEntry | null;
+            return selectStmt.get() as TimeEntry | null;
         } catch (error) {
             console.error('Error getting latest unfinished time entry:', error);
             throw error;
