@@ -1,85 +1,91 @@
-// src/helpers/timestamp.ts
 import fs from 'fs';
 import path from 'path';
 import { app } from 'electron';
 import { getLocalTime } from './lib/getLocalTime';
 
-const timestampPath = path.join(app.getPath('userData'), 'lastCloseTime.json');
+const timestampDirectory = path.join(app.getPath('userData'), 'timestamps');
+
+// Ensure the timestamps directory exists
+function ensureDirectoryExists() {
+    if (!fs.existsSync(timestampDirectory)) {
+        fs.mkdirSync(timestampDirectory, { recursive: true });
+    }
+}
+
+// Get all timestamp files in the directory
+function getTimestampFiles() {
+    ensureDirectoryExists();
+    return fs.readdirSync(timestampDirectory)
+        .filter(file => file.startsWith('timestamp_'))
+        .map(file => path.join(timestampDirectory, file))
+        .sort();
+}
 
 export function updateTimestamp() {
     const timestamp = getLocalTime();
-    const tempPath = timestampPath + '.tmp';
-    const backupPath = timestampPath + '.backup';
+    const formattedTimestamp = timestamp.replace(/[: ]/g, '_');
+    const newFilePath = path.join(timestampDirectory, `timestamp_${formattedTimestamp}.json`);
+
+    ensureDirectoryExists();
 
     try {
-        // Write the new data to a temporary file first
-        fs.writeFileSync(tempPath, JSON.stringify({
-            lastCloseTime: timestamp,
-            version: Date.now() // Add a version number (using timestamp)
-        }));
+        // Write the new timestamp file (with or without content)
 
-        // If we already have a main file, create a backup before replacement
-        if (fs.existsSync(timestampPath)) {
-            fs.copyFileSync(timestampPath, backupPath);
-        }
+        // Create an empty file
+        fs.writeFileSync(newFilePath, '');
 
-        // Then rename the temp file to become the main file
-        fs.renameSync(tempPath, timestampPath);
 
+        // Get all existing timestamp files
+        const existingFiles = getTimestampFiles();
+
+        // Remove all except the newest file (which we just created)
+        existingFiles.forEach(file => {
+            if (file !== newFilePath) {
+                try {
+                    fs.unlinkSync(file);
+                } catch (e) {
+                    console.error(`Failed to remove old timestamp file ${file}:`, e);
+                }
+            }
+        });
+
+        console.log(`Created new timestamp file: ${newFilePath}`);
     } catch (error) {
         console.error("Error updating timestamp:", error);
-        // Clean up the temp file if it exists
-        if (fs.existsSync(tempPath)) {
-            try {
-                fs.unlinkSync(tempPath);
-            } catch (e) {
-                console.error("Failed to clean up temp file:", e);
-            }
-        }
     }
 }
 
 export function getLastCloseTime() {
-    const files = [
-        { path: timestampPath, priority: 1 },
-        { path: timestampPath + '.backup', priority: 2 }
-    ];
+    try {
+        // Get all timestamp files and sort them (newest first)
+        const timestampFiles = getTimestampFiles().reverse();
 
-    let bestData = null;
-    let highestVersion = -1;
-
-    // Try to read from all possible files and use the highest version
-    for (const file of files) {
-        try {
-            if (fs.existsSync(file.path)) {
-                const content = fs.readFileSync(file.path).toString();
-                const parsed = JSON.parse(content);
-
-                // Basic validation
-                if (!parsed || typeof parsed.lastCloseTime !== 'string') {
-                    console.log(`File ${file.path} has invalid format`);
-                    continue;
-                }
-
-                // Use version if available, otherwise use priority as a fallback
-                const version = parsed.version || file.priority;
-
-                // Keep the data with highest version
-                if (version > highestVersion) {
-                    highestVersion = version;
-                    bestData = parsed.lastCloseTime;
-                }
-            }
-        } catch (error) {
-            console.error(`Error reading from ${file.path}:`, error);
-            // Create backup of corrupted file for debugging
-            try {
-                fs.copyFileSync(file.path, `${file.path}.corrupted.${Date.now()}`);
-            } catch (e) {
-                console.error(`Failed to backup corrupted file ${file.path}:`, e);
-            }
+        if (timestampFiles.length === 0) {
+            return null;
         }
-    }
 
-    return bestData;
+        // Get the newest file
+        const newestFile = timestampFiles[0];
+
+        // Extract timestamp from the filename
+        const filename = path.basename(newestFile);
+        // Remove "timestamp_" prefix and ".json" extension
+        const timestampPart = filename.substring(10, filename.length - 5);
+
+        // Convert the formatted timestamp back to original format
+        const timestamp = timestampPart.replace(/_/g, function (match, offset) {
+            // Replace underscores with appropriate characters based on position
+            if (offset === 10 || offset === 13 || offset === 16) {
+                return ':';  // For time separators
+            } else if (offset === 7) {
+                return ' ';  // For date-time separator
+            }
+            return '-';      // For date separators
+        });
+
+        return timestamp;
+    } catch (error) {
+        console.error("Error getting last close time:", error);
+        return null;
+    }
 }
