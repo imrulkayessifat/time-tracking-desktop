@@ -27,7 +27,7 @@ import { IdleTimeProcessor } from './helpers/processor/idletime-processor';
 import { ActiveDurationProcessor } from './helpers/processor/activeduration-processor';
 import { UrlProcessor } from './helpers/processor/url-processor';
 import { ConfigurationProcessor } from './helpers/processor/configuration-processor'
-import { getLocalTime } from './helpers/lib/getLocalTime';
+import { getLastCloseTime, updateTimestamp } from './helpers/timestamp';
 
 const isProd = process.env.NODE_ENV === 'production'
 const execAsync = promisify(exec);
@@ -53,8 +53,6 @@ if (isProd) {
   app.setPath('userData', `${app.getPath('userData')} (development)`)
 }
 
-const timestampPath = path.join(app.getPath('userData'), 'lastCloseTime.json');
-
 if (isProd) {
   log.transports.file.resolvePath = () => path.join(app.getPath('userData'), 'logs', 'main.log');
   log.transports.console.level = 'debug';
@@ -62,17 +60,6 @@ if (isProd) {
   console.error = log.error;
 }
 
-function getLastCloseTime() {
-  try {
-    if (fs.existsSync(timestampPath)) {
-      const data = fs.readFileSync(timestampPath)
-      return JSON.parse(data.toString()).lastCloseTime
-    }
-  } catch (error) {
-    console.error("Error reading last close time: ", error)
-  }
-  return null;
-}
 
 async function checkAndRequestAccessibility(mainWindow: BrowserWindow) {
   if (systemPreferences.isTrustedAccessibilityClient(false)) {
@@ -182,9 +169,6 @@ app.on('ready', async () => {
     icon: path.join(app.getAppPath(), "resources/icon.png")
   })
   mainWindow.setMenu(null);
-  // globalShortcut.register('CommandOrControl+Shift+I', () => {
-  //   mainWindow.webContents.toggleDevTools();
-  // });
 
   console.log("icon path : ", path.join(app.getAppPath(), "resources/icon.png"))
   if (isProd) {
@@ -280,11 +264,6 @@ app.on('window-all-closed', () => {
   app.quit()
 })
 
-function updateTimestamp() {
-  const timestamp = getLocalTime()
-  fs.writeFileSync(timestampPath, JSON.stringify({ lastCloseTime: timestamp }))
-}
-
 // const updateInterval = setInterval(updateTimestamp, 10000)
 function cleanTempFiles() {
   const tempDir = os.tmpdir();
@@ -307,7 +286,6 @@ app.on('will-quit', () => {
   if (process.platform === 'win32') {
     clearInterval(cleanTemp);
   }
-  updateTimestamp()
 })
 
 ipcMain.on('toggle-expand', (_, isExpanded) => {
