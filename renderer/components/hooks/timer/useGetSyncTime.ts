@@ -20,6 +20,7 @@ export const useGetSyncTime = ({  token }: UseGetSyncTimeProps) => {
             const { data } = await res.json();
             return data;
         },
+        gcTime: 72 * 60 * 60 * 1000,
     })
     return query;
 }

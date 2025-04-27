@@ -16,6 +16,7 @@ import { removeClientToken } from "../lib/auth";
 import { cn } from "../lib/utils";
 import { useGetSyncTime } from "./hooks/timer/useGetSyncTime";
 import Loader from "./Loader";
+import { useGetInitSystem } from "./hooks/use-get-init-system";
 
 interface MainProps {
   token: string
@@ -38,6 +39,7 @@ const Main: React.FC<MainProps> = ({
   };
   const { init_project_id, init_task_id } = useSelectProjectTask()
   const { data, isLoading } = useGetSyncTime({ token })
+  const { data: initData, isLoading: initLoading } = useGetInitSystem({ token });
 
   const start = () => {
     // Clear any existing time and interval when starting
@@ -83,35 +85,7 @@ const Main: React.FC<MainProps> = ({
     }
   }, [time.hours, time.minutes, time.seconds, isRunning, init_project_id, init_task_id]);
 
-
-  useEffect(() => {
-    const fetchData = async () => {
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/init-system`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `${token}`,
-        },
-      });
-      console.log("init : ", res.status, typeof res.status)
-
-      if (res.status === 401) {
-        removeClientToken();
-        localStorage.removeItem('user');
-        // localStorage.removeItem('taskTimers');
-        queryClient.clear()
-        router.push('/home')
-      }
-
-      const { data } = await res.json();
-      const permission = data.permission_routes.includes("task.store");
-      setHasTaskStorePermission(permission);
-    };
-
-    if (token) {
-      fetchData();
-    }
-  }, [token]);
+  
 
   useEffect(() => {
     return () => {
@@ -121,32 +95,28 @@ const Main: React.FC<MainProps> = ({
     };
   }, [intervalId]);
 
+  useEffect(() => {
+    console.log("init data : ", initData);
+  
+    if (initData) {
+      if (!initData.success) {
+        removeClientToken();
+        localStorage.removeItem('user');
+        queryClient.clear();
+        router.push('/home');
+      } else {
+        const permission = initData.data.permission_routes.includes("task.store");
+        setHasTaskStorePermission(permission);
+      }
+    }
+  }, [initData]);
+
   const handleTimerToggle = async () => {
     if (!isRunning) {
       window.electron.ipcRenderer.send('permission-check');
       start()
 
       window.electron.ipcRenderer.send('idle-started', { projectId: init_project_id, taskId: init_task_id });
-      const attendance = localStorage.getItem('time_data')
-      if (attendance) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/track/attendance`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `${token}`
-          },
-          body: JSON.stringify({
-            check_in: attendance
-          })
-        });
-
-        const result = await response.json();
-        console.log('attendance response : ', result)
-        if (result.success) {
-          localStorage.removeItem('time_data')
-        }
-      }
-
     } else {
       pause();
       window.electron.ipcRenderer.send('idle-stopped', { projectId: init_project_id, taskId: init_task_id });
@@ -161,12 +131,11 @@ const Main: React.FC<MainProps> = ({
     console.log("sync time : ", data)
   };
 
-  if (isLoading) {
+  if (isLoading || initLoading) {
     return (
       <Loader />
     )
   }
-
 
 
   return (
@@ -186,7 +155,7 @@ const Main: React.FC<MainProps> = ({
                   <p>Sync</p>
                 </button>
               </div>
-              <span>{data.duration}</span>
+              <span>{data ? data.duration : '00:00:00'}</span>
             </div>
           </div>
           <DropdownMenu>
@@ -220,7 +189,7 @@ const Main: React.FC<MainProps> = ({
         </div>
       </div>
       <div className="px-5 border-t">
-        <p>v1.0.3</p>
+        <p>v1.0.4</p>
       </div>
     </div>
   );

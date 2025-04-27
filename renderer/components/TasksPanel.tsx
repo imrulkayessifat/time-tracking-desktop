@@ -147,13 +147,13 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       const promise = createTask(data)
 
       toast.promise(promise, {
-        loading: 'Creating Subscription...',
+        loading: 'Creating task...',
         success: (data) => {
           if (data.error) {
-            return `Creating Subscription failed: ${data.error}`
+            return `Creating task failed: ${data.error}`
           } else {
 
-            return `Creating Subscription successful: ${data.success}`
+            return `Creating task successful: ${data.success}`
           }
         },
         error: 'An unexpected error occurred',
