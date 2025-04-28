@@ -91,6 +91,9 @@ const Project: React.FC<ProjectsProps> = ({
                     <div className='w-full h-48 flex flex-col items-center justify-center'>
                       <img src="/images/empty.svg" alt="No projects found" className="max-w-[200px]" />
                       <span className='text-black'>No project assigned here</span>
+                      <button onClick={()=>setPage(1)}>
+                        back
+                      </button>
                     </div>
                   </td>
                 </tr>

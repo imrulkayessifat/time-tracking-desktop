@@ -94,6 +94,9 @@ console.log("task d",chosen_task_id)
                                         <div className='w-full h-48 flex flex-col items-center justify-center'>
                                             <img src="/images/empty.svg" alt="No tasks found" className="max-w-[200px]" />
                                             <span className='text-black'>No task assigned here</span>
+                                            <button onClick={()=>setTaskPage(1)}>
+                                                back
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

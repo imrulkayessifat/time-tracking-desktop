@@ -15,6 +15,7 @@ import { useSelectProject } from "./hooks/project/use-select-project";
 import { X } from "lucide-react";
 import { useSelectTask } from "./hooks/task/use-select-task";
 import { useSelectProjectTask } from "./hooks/use-select-projecttask";
+import useNetworkStatus from "./hooks/use-network-status";
 
 
 interface ProjectMeta {
@@ -55,6 +56,7 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
   const [searchProject, setSearchProject] = useState<ProjectData>()
   const { project_id, task_id } = useSelectProject();
   const { init_project_id, init_task_id } = useSelectProjectTask()
+  const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
     if (project_id !== -1) {
@@ -146,11 +148,15 @@ const CounterPanel: React.FC<CounterPanelProps> = ({
                 type="text"
                 className=" border block w-full ps-10 p-2.5"
               />
-              <button onClick={() => {
-                queryClient.invalidateQueries({ queryKey: ["projects"] })
-              }} disabled={isRunning} className={cn("border rounded-md px-5", isRunning && "cursor-not-allowed opacity-20")}>
-                <RefreshCcw />
-              </button>
+              {
+                isOnline && (
+                  <button onClick={() => {
+                    queryClient.invalidateQueries({ queryKey: ["projects"] })
+                  }} disabled={isRunning} className={cn("border rounded-md px-5", isRunning && "cursor-not-allowed opacity-20")}>
+                    <RefreshCcw />
+                  </button>
+                )
+              }
             </div>
             <div className={cn("absolute inset-y-0 end-24 flex items-center ps-3", searchValue.length === 0 && "hidden")}>
               <button
