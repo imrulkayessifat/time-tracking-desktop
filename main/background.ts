@@ -23,6 +23,7 @@ import { setupAuthIPC } from './helpers/auth-ipc-handler';
 import captureAndSaveScreenshot from './helpers/capture-screenshot'
 import { ScreenshotProcessor } from './helpers/processor/screenshot-processor';
 import { TimeProcessor } from './helpers/processor/time-processor';
+import { AttendanceProcessor } from './helpers/processor/attendance-processor';
 import { IdleTimeProcessor } from './helpers/processor/idletime-processor';
 import { ActiveDurationProcessor } from './helpers/processor/activeduration-processor';
 import { UrlProcessor } from './helpers/processor/url-processor';
@@ -41,6 +42,7 @@ let activeDuration: ActiveDurationProcessor;
 let urlProcessor: UrlProcessor;
 let idleTracker: TaskIdleTracker;
 let timeProcessor: TimeProcessor;
+let attendanceProcessor:AttendanceProcessor;
 let idleProcessor: IdleTimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
 // let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1";
@@ -241,6 +243,9 @@ app.on('ready', async () => {
   timeProcessor = new TimeProcessor(`${apiEndpoint}/track/bulk`, 30000);
   await timeProcessor.waitForInitialization();
 
+  attendanceProcessor = new AttendanceProcessor(`${apiEndpoint}/track/attendance`, 30000)
+  await attendanceProcessor.waitForInitialization()
+
   idleProcessor = new IdleTimeProcessor(`${apiEndpoint}/idle-time-entry`, 30000)
   await idleProcessor.waitForInitialization()
 
@@ -336,12 +341,14 @@ ipcMain.on('idle-started', (_, { projectId, taskId }) => {
   try {
     isAnyRunningTask = true
     const timeEntryId = timeProcessor.insertStartTime(projectId, taskId);
+    attendanceProcessor.insertAttendanceStart()
     idleTracker.startTracking(projectId, taskId);
     screenshotProcessor.startProcessing();
     activeDuration.startProcessing()
     urlProcessor.startProcessing()
     configurationProcessor.startProcessing();
     timeProcessor.startProcessing()
+    attendanceProcessor.startProcessing()
     idleProcessor.startProcessing()
   } catch (error) {
     console.error('Error starting idle tracking:', error);
@@ -361,10 +368,13 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
       timeProcessor.updateEndTime(latestTimeEntry.id);
       console.log('latest time entry : ',latestTimeEntry)
     }
+    attendanceProcessor.insertAttendanceEnd()
     timeProcessor.stopProcessing()
+    attendanceProcessor.startProcessing()
     idleProcessor.stopProcessing()
     configurationProcessor.stopProcessing()
     timeProcessor.processTimeEntries()
+    attendanceProcessor.processAttendanceEntries()
     idleProcessor.processIdleEntries()
     activeDuration.processActivities()
     urlProcessor.processActivities()
