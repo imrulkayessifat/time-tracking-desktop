@@ -26,7 +26,7 @@ import { useSelectProjectTask } from "./hooks/use-select-projecttask";
 import { useSelectProject } from "./hooks/project/use-select-project";
 import { useTaskDescription } from "./hooks/task/use-task-description";
 import { useCreateTask } from "./hooks/task/use-create-task";
-import useNetworkStatus from "./hooks/use-network-status";
+import { Online } from "react-detect-offline";
 import {
   Select,
   SelectContent,
@@ -72,7 +72,6 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
   const [isPending, startTransition] = useTransition();
   const [searchValue, setSearchValue] = useState<string>('');
   const [searchTask, setSearchTask] = useState<TaskData>()
-  const { isOnline } = useNetworkStatus();
 
   const { chosen_project_id, chosen_task_id, setTask } = useSelectTask()
   const mutation = useCreateTask({ token })
@@ -190,58 +189,60 @@ const TasksPanel: React.FC<TasksPanelProps> = ({
       });
     }
   }
-console.log("is onlien : ",isOnline)
+
   return (
     <div className={cn('flex flex-col h-screen px-5 gap-4 border-l', isExpanded && 'w-1/2')}>
       <div className="flex flex-col gap-8">
         <div className="w-full flex justify-between">
           <p className='text-xl leading-[25px] font-normal'>Tasks</p>
           {
-            hasTaskStorePermission && project_id !== -1 && isOnline && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <button disabled={isRunning} className={cn("flex justify-between items-center gap-4 text-[#294DFF]", isRunning && 'opacity-25 cursor-not-allowed')}>
-                    <img src="/images/create.svg" />
-                    <span>Create Tasks</span>
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[594px] sm:min-h-[337px] m-[0px] p-[26px]">
-                  <form onSubmit={handleSubmit}>
-                    <div className="flex flex-col gap-6">
-                      <div className="flex justify-between">
-                        <DialogTitle>
-
-                          <p className="font-medium text-xl">New Task</p>
-                        </DialogTitle>
-                        <DialogPrimitive.Close ref={dialogCloseRef} disabled={isPending} className=" rounded-sm ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-                          <X className="h-4 w-4" />
-                          {/* <span className="sr-only">Close</span> */}
-                        </DialogPrimitive.Close>
-                      </div>
+            hasTaskStorePermission && project_id !== -1 && (
+              <Online>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button disabled={isRunning} className={cn("flex justify-between items-center gap-4 text-[#294DFF]", isRunning && 'opacity-25 cursor-not-allowed')}>
+                      <img src="/images/create.svg" />
+                      <span>Create Tasks</span>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[594px] sm:min-h-[337px] m-[0px] p-[26px]">
+                    <form onSubmit={handleSubmit}>
                       <div className="flex flex-col gap-6">
-                        <div className="flex flex-col gap-1 w-full">
-                          <span className="font-light text-[14px]">Task*</span>
-                          <input disabled={isPending} type="text" name="name" required className="min-h-9 p-[10px] rounded-md border border-[#D5D5D5]" placeholder="Add task" />
+                        <div className="flex justify-between">
+                          <DialogTitle>
+
+                            <p className="font-medium text-xl">New Task</p>
+                          </DialogTitle>
+                          <DialogPrimitive.Close ref={dialogCloseRef} disabled={isPending} className=" rounded-sm ring-offset-background transition-opacity hover:opacity-100 focus:outline-none disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                            <X className="h-4 w-4" />
+                            {/* <span className="sr-only">Close</span> */}
+                          </DialogPrimitive.Close>
+                        </div>
+                        <div className="flex flex-col gap-6">
+                          <div className="flex flex-col gap-1 w-full">
+                            <span className="font-light text-[14px]">Task*</span>
+                            <input disabled={isPending} type="text" name="name" required className="min-h-9 p-[10px] rounded-md border border-[#D5D5D5]" placeholder="Add task" />
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-6">
+                          <div className="flex flex-col gap-1 w-full">
+                            <span className="font-light text-[14px]">Task Details*</span>
+                            <textarea disabled={isPending} name="description" required className="min-h-16 p-[10px] rounded-md border border-[#D5D5D5]" placeholder="Details...">
+
+                            </textarea>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-[18px]">
+                          <DialogPrimitive.Close>
+                            <button disabled={isPending} className="h-9 w-[100px] font-normal text-[14px] py-[8px] px-[28.5px] rounded-md border border-[#D5D5D5]">Cancel</button>
+                          </DialogPrimitive.Close>
+                          <button disabled={isPending} type="submit" className="h-9 w-[100px] font-normal text-[14px] py-[8px] px-[28.5px] rounded-md border border-[#D5D5D5] text-white bg-[#294DFF]">Save</button>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-6">
-                        <div className="flex flex-col gap-1 w-full">
-                          <span className="font-light text-[14px]">Task Details*</span>
-                          <textarea disabled={isPending} name="description" required className="min-h-16 p-[10px] rounded-md border border-[#D5D5D5]" placeholder="Details...">
-
-                          </textarea>
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-[18px]">
-                        <DialogPrimitive.Close>
-                          <button disabled={isPending} className="h-9 w-[100px] font-normal text-[14px] py-[8px] px-[28.5px] rounded-md border border-[#D5D5D5]">Cancel</button>
-                        </DialogPrimitive.Close>
-                        <button disabled={isPending} type="submit" className="h-9 w-[100px] font-normal text-[14px] py-[8px] px-[28.5px] rounded-md border border-[#D5D5D5] text-white bg-[#294DFF]">Save</button>
-                      </div>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </Online>
             )
           }
         </div>
