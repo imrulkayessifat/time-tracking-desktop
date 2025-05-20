@@ -45,8 +45,8 @@ let timeProcessor: TimeProcessor;
 let attendanceProcessor:AttendanceProcessor;
 let idleProcessor: IdleTimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
-// let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1";
-let apiEndpoint: string = "http://174.138.65.128:9091/api/v1"
+let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1";
+// let apiEndpoint: string = "http://174.138.65.128:9091/api/v1"
 let intervalMs: number = 120000;
 let cleanTemp
 if (isProd) {
@@ -322,11 +322,14 @@ ipcMain.on('message', async (event, arg) => {
 ipcMain.on('timer-update', async (_, info: { project_id: number, selectedTaskId: number, isRunning: boolean, hours: number, minutes: number, seconds: number }) => {
   const interval = await configurationProcessor?.getScreenShotInterval() ?? 2;
   const isUrlTracking = await configurationProcessor?.isUrlTracking() ?? false;
+  const isScreenShotTracking = await configurationProcessor?.isScreenShotTracking() ?? false;
   console.error("interval", interval, info.minutes, info.seconds, isUrlTracking)
 
-  if (((info.minutes % interval === 0) && info.seconds === 0) || (info.minutes == 0 && info.seconds === 0)) {
-    if (info.project_id !== -1) {
-      captureAndSaveScreenshot(info);
+  if(isScreenShotTracking) {
+    if (((info.minutes % interval === 0) && info.seconds === 0) || (info.minutes == 0 && info.seconds === 0)) {
+      if (info.project_id !== -1) {
+        captureAndSaveScreenshot(info);
+      }
     }
   }
 

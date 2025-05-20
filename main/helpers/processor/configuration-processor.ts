@@ -8,6 +8,7 @@ interface ConfigurationResponse {
             screen_shot_interval: number;
         },
         user: {
+            is_tracking: boolean
             url_tracking: boolean
         }
     }
@@ -45,6 +46,10 @@ export class ConfigurationProcessor {
 
     public isUrlTracking(): boolean | null {
         return this.currentConfig.user.url_tracking ?? false
+    }
+
+    public isScreenShotTracking(): boolean | null {
+        return this.currentConfig.user.is_tracking ?? false
     }
 
     // Start the processing loop
@@ -98,7 +103,7 @@ export class ConfigurationProcessor {
             const configData: ConfigurationResponse = response.data;
             this.currentConfig = configData.data;
 
-            console.log('Successfully updated configuration:', this.currentConfig.config);
+            console.log('Successfully updated configuration:', this.currentConfig);
 
         } catch (error) {
             console.error('Error fetching configuration:', error);
