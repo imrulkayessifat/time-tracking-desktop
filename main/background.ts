@@ -45,7 +45,7 @@ let timeProcessor: TimeProcessor;
 let attendanceProcessor:AttendanceProcessor;
 let idleProcessor: IdleTimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
-let apiEndpoint: string = "https://timetracker.flytesolutions.com/api/v1";
+let apiEndpoint: string = "https://api.stafftimetrack.com/api/v1";
 // let apiEndpoint: string = "http://174.138.65.128:9091/api/v1"
 let intervalMs: number = 120000;
 let cleanTemp

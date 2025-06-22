@@ -189,7 +189,7 @@ const Main: React.FC<MainProps> = ({
         </div>
       </div>
       <div className="px-5 border-t">
-        <p>v1.0.4</p>
+        <p>v1.1.0</p>
       </div>
     </div>
   );
