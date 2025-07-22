@@ -48,7 +48,7 @@ export class IdleTimeProcessor {
                     try {
                         await execAsync(`attrib -h "${normalizedPath}"`);
                     } catch (error) {
-                        console.warn('Failed to remove hidden attribute:', error);
+                        console.log('Failed to remove hidden attribute:', error);
                     }
                 }
             }

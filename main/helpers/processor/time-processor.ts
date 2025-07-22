@@ -53,7 +53,7 @@ export class TimeProcessor {
                     try {
                         await execAsync(`attrib -h "${normalizedPath}"`);
                     } catch (error) {
-                        console.warn('Failed to remove hidden attribute:', error);
+                        console.log('Failed to remove hidden attribute:', error);
                     }
                 }
             }
@@ -130,7 +130,7 @@ export class TimeProcessor {
             `);
 
             const startTime = this.getLocalTime();
-            console.warn("start time:", startTime)
+            console.log("start time:", startTime)
             const result = insertStmt.run(
                 project_id,
                 startTime,
@@ -151,7 +151,7 @@ export class TimeProcessor {
     ): void {
         try {
             const endTime = time || this.getLocalTime();
-            console.warn("end time:", endTime)
+            console.log("end time:", endTime)
             const updateStmt = this.db.prepare(`
                 UPDATE time_entries 
                 SET end_time = ? 
@@ -193,7 +193,7 @@ export class TimeProcessor {
                 ORDER BY id DESC 
                 LIMIT 1
             `);
-    
+
             return selectStmt.get() as TimeEntry | null;
         } catch (error) {
             console.error('Error getting last unfinished time entry:', error);

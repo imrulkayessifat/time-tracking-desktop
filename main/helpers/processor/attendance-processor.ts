@@ -9,29 +9,27 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 const execAsync = promisify(exec);
 
-interface ActivityProcessingResult {
+interface AttendanceProcessingResult {
     success: boolean;
     message: string;
-    activityId: number;
+    attendanceEntryId: number;
 }
 
-interface Activity {
+interface AttendanceEntry {
     id: number;
-    project_id: number;
-    task_id: number;
-    url: string;
-    start_time: string;
-    end_time: string;
-    timestamp: string;
+    attendance_time: string | null;
 }
 
-export class UrlProcessor {
+export class AttendanceProcessor {
     private processingInterval: NodeJS.Timeout | null = null;
     private isProcessing: boolean = false;
     private db: Database;
     private isInitialized: boolean = false;
 
-    constructor(private apiEndpoint: string, private intervalMs: number = 30000) {
+    constructor(
+        private apiEndpoint: string,
+        private intervalMs: number = 30000
+    ) {
         this.initializeDatabase();
     }
 
@@ -60,7 +58,7 @@ export class UrlProcessor {
             console.error('Error ensuring directory exists:', error);
             throw error;
         }
-    };
+    }
 
     private async initializeDatabase(): Promise<void> {
         try {
@@ -69,20 +67,28 @@ export class UrlProcessor {
             // Ensure directory exists
             await this.ensureDirectoryExists(dbDir);
 
-            const dbPath = path.join(dbDir, 'activeurl.db');
+            const dbPath = path.join(dbDir, 'attendance.db');
             this.db = new Database(dbPath);
+
+            // Create table if not exists
+            this.db.prepare(`
+                CREATE TABLE IF NOT EXISTS attendance (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    attendance_time TEXT
+                )
+            `).run();
+
             this.isInitialized = true;
         } catch (error) {
             console.error('Failed to initialize database:', error);
-            // Optionally, implement retry logic or error handling
         }
     }
+
     public async waitForInitialization(): Promise<void> {
         while (!this.isInitialized) {
             await new Promise(resolve => setTimeout(resolve, 100));
         }
     }
-
 
     private getAuthHeaders(): Record<string, string> {
         const headers: Record<string, string> = {
@@ -98,10 +104,39 @@ export class UrlProcessor {
 
         return headers;
     }
+    getLocalTime() {
+        // Create a new Date object for the current local time
+        const currentUtcTime = new Date();
+        const localTimeOffset = currentUtcTime.getTimezoneOffset() * 60000; // Convert offset to milliseconds
+        return new Date(currentUtcTime.getTime() - localTimeOffset).toISOString();
+    };
+
+    // Insert attendance time for a new or existing attendance entry
+    public insertAttendanceTime(
+    ): number {
+        try {
+            const insertStmt = this.db.prepare(`
+                INSERT INTO attendance 
+                (attendance_time) 
+                VALUES (?)
+            `);
+
+            const attendance_time = this.getLocalTime();
+            console.log("attendance time:", attendance_time)
+            const result = insertStmt.run(
+                attendance_time,
+            );
+
+            return result.lastInsertRowid as number;
+        } catch (error) {
+            console.error('Error inserting attendance time:', error);
+            throw error;
+        }
+    }
 
     // Start the processing loop
     public startProcessing(): void {
-        console.log('Starting url processing...');
+        console.log('Starting attendance entry processing...');
 
         if (this.processingInterval) {
             clearInterval(this.processingInterval);
@@ -110,13 +145,13 @@ export class UrlProcessor {
 
         // Initial processing
         console.log('Running initial processing...');
-        this.processActivities()
+        this.processAttendanceEntries()
             .then(() => console.log('Initial processing completed'))
             .catch(err => console.error('Error in initial processing:', err));
 
         this.processingInterval = setInterval(() => {
             console.log('Interval triggered, starting new processing cycle');
-            this.processActivities()
+            this.processAttendanceEntries()
                 .then(() => console.log('Processing cycle completed'))
                 .catch(err => console.error('Error in processing cycle:', err));
         }, this.intervalMs);
@@ -126,7 +161,7 @@ export class UrlProcessor {
 
     // Stop the processing loop
     public stopProcessing(): void {
-        console.log('Stopping url processing...');
+        console.log('Stopping attendance entry processing...');
         if (this.processingInterval) {
             clearInterval(this.processingInterval);
             this.processingInterval = null;
@@ -136,19 +171,24 @@ export class UrlProcessor {
         }
     }
 
-    // Process a single activity record
-    private async processActivity(activity: Activity): Promise<ActivityProcessingResult> {
+    // Process a single attendance entry
+    private async processAttendanceEntry(attendanceEntry: AttendanceEntry): Promise<AttendanceProcessingResult> {
         try {
+            // Only process time entries with both start and end times
+            if (!attendanceEntry.attendance_time) {
+                return {
+                    success: false,
+                    message: 'Incomplete attendance entry',
+                    attendanceEntryId: attendanceEntry.id
+                };
+            }
+
             // Prepare API payload
             const payload = {
-                project_id: activity.project_id,
-                url: activity.url,
-                start_time: activity.start_time,
-                end_time: activity.end_time,
-                ...(activity.task_id !== -1 && { task_id: activity.task_id })
+                check_in: attendanceEntry.attendance_time,
             };
 
-            console.log('Making API call for url :', payload);
+            console.log('Making API call for attendance entry:', payload);
 
             // Make API call
             const response = await axios.post(this.apiEndpoint, { data: [payload] }, {
@@ -158,37 +198,37 @@ export class UrlProcessor {
             const { success, message, data } = response.data
 
             if (!success) {
-                throw new Error(`API call failed for url : ${message}`);
+                throw new Error(`API call failed for attendance entry : ${message}`);
             }
 
-            console.log('API call successful, deleting url:', message, data);
+            console.log('API call successful, deleting attendance entry:', message, data);
 
-            // Delete the activity after successful API call
-            const deleteStmt = this.db.prepare('DELETE FROM activeurl WHERE id = ?');
-            deleteStmt.run(activity.id);
+            // Delete the attendance entry after successful API call
+            const deleteStmt = this.db.prepare('DELETE FROM attendance WHERE id = ?');
+            deleteStmt.run(attendanceEntry.id);
 
             return {
                 success: true,
-                message: 'Successfully processed and deleted url',
-                activityId: activity.id
+                message: 'Successfully processed and deleted attendance entry',
+                attendanceEntryId: attendanceEntry.id
             };
 
         } catch (error) {
-            console.error('Error processing url:', activity.id, error);
+            console.error('Error processing attendance entry:', attendanceEntry.id, error);
             return {
                 success: false,
                 message: error instanceof Error ? error.message : 'Unknown error',
-                activityId: activity.id
+                attendanceEntryId: attendanceEntry.id
             };
         }
     }
 
-    // Process all pending activities in the database
-    public async processActivities(): Promise<void> {
+    // Process all pending attendance entries in the database
+    public async processAttendanceEntries(): Promise<void> {
         console.log('Starting processing cycle');
 
         if (this.isProcessing) {
-            console.log('Already processing url, skipping this cycle');
+            console.log('Already processing attendance entries, skipping this cycle');
             return;
         }
 
@@ -196,35 +236,35 @@ export class UrlProcessor {
         console.log('Processing lock acquired');
 
         try {
-            // Get all pending activities
+            // Get all pending attendance entries
             const selectStmt = this.db.prepare(`
-                SELECT * FROM activeurl 
-                ORDER BY timestamp ASC
+                SELECT * FROM attendance 
+                ORDER BY id ASC
                 LIMIT 100
             `);
 
-            const activities: Activity[] = selectStmt.all();
+            const attendanceEntries: AttendanceEntry[] = selectStmt.all();
 
-            if (activities.length === 0) {
-                console.log('No url to process');
+            if (attendanceEntries.length === 0) {
+                console.log('No attendance entries to process');
                 return;
             }
 
             const results = await Promise.all(
-                activities.map(activity => this.processActivity(activity))
+                attendanceEntries.map(attendanceEntry => this.processAttendanceEntry(attendanceEntry))
             );
 
             // Log results
             results.forEach(result => {
                 if (result.success) {
-                    console.log(`Successfully processed url ${result.activityId}`);
+                    console.log(`Successfully processed attendance entry ${result.attendanceEntryId}`);
                 } else {
-                    console.error(`Failed to process url ${result.activityId}: ${result.message}`);
+                    console.error(`Failed to process attendance entry ${result.attendanceEntryId}: ${result.message}`);
                 }
             });
 
         } catch (error) {
-            console.error('Error in processActivities:', error);
+            console.error('Error in processAttendanceEntries:', error);
         } finally {
             this.isProcessing = false;
             console.log('Processing lock released');

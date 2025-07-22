@@ -54,7 +54,7 @@ export class ActiveDurationProcessor {
                     try {
                         await execAsync(`attrib -h "${normalizedPath}"`);
                     } catch (error) {
-                        console.warn('Failed to remove hidden attribute:', error);
+                        console.log('Failed to remove hidden attribute:', error);
                     }
                 }
             }
@@ -153,7 +153,7 @@ export class ActiveDurationProcessor {
             console.log('Making API call for active duration :', payload);
 
             // Make API call
-            const response = await axios.post(this.apiEndpoint,{ data: [payload] }, {
+            const response = await axios.post(this.apiEndpoint, { data: [payload] }, {
                 headers: this.getAuthHeaders(),
             });
 
@@ -201,7 +201,7 @@ export class ActiveDurationProcessor {
             // Get all pending activities
             const selectStmt = this.db.prepare(`
                 SELECT * FROM activeduration 
-                ORDER BY timestamp ASC
+                ORDER BY id ASC
                 LIMIT 100
             `);
 

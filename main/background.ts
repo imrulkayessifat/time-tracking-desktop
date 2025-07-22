@@ -22,6 +22,7 @@ import { TaskIdleTracker } from './helpers/tracker/idle-tracker'
 import { setupAuthIPC } from './helpers/auth-ipc-handler';
 import captureAndSaveScreenshot from './helpers/capture-screenshot'
 import { ScreenshotProcessor } from './helpers/processor/screenshot-processor';
+import { AttendanceProcessor } from './helpers/processor/attendance-processor';
 import { TimeProcessor } from './helpers/processor/time-processor';
 import { IdleTimeProcessor } from './helpers/processor/idletime-processor';
 import { ActiveDurationProcessor } from './helpers/processor/activeduration-processor';
@@ -40,6 +41,7 @@ let screenshotProcessor: ScreenshotProcessor;
 let activeDuration: ActiveDurationProcessor;
 let urlProcessor: UrlProcessor;
 let idleTracker: TaskIdleTracker;
+let attendanceProcessor: AttendanceProcessor;
 let timeProcessor: TimeProcessor;
 let idleProcessor: IdleTimeProcessor;
 let configurationProcessor: ConfigurationProcessor;
@@ -238,6 +240,9 @@ app.on('ready', async () => {
   urlProcessor = new UrlProcessor(`${apiEndpoint}/activity/app-usages`, 30000)
   await urlProcessor.waitForInitialization()
 
+  attendanceProcessor = new AttendanceProcessor(`${apiEndpoint}/track/attendance`, 30000)
+  await attendanceProcessor.waitForInitialization()
+
   timeProcessor = new TimeProcessor(`${apiEndpoint}/track/bulk`, 30000);
   await timeProcessor.waitForInitialization();
 
@@ -335,12 +340,14 @@ ipcMain.on('timer-update', async (_, info: { project_id: number, selectedTaskId:
 ipcMain.on('idle-started', (_, { projectId, taskId }) => {
   try {
     isAnyRunningTask = true
+    attendanceProcessor.insertAttendanceTime();
     const timeEntryId = timeProcessor.insertStartTime(projectId, taskId);
     idleTracker.startTracking(projectId, taskId);
     screenshotProcessor.startProcessing();
     activeDuration.startProcessing()
     urlProcessor.startProcessing()
     configurationProcessor.startProcessing();
+    attendanceProcessor.startProcessing()
     timeProcessor.startProcessing()
     idleProcessor.startProcessing()
   } catch (error) {
@@ -359,11 +366,13 @@ ipcMain.on('idle-stopped', (_, { projectId, isRunning, taskId }) => {
     const latestTimeEntry = timeProcessor.getLatestUnfinishedTimeEntry(projectId, taskId);
     if (latestTimeEntry) {
       timeProcessor.updateEndTime(latestTimeEntry.id);
-      console.log('latest time entry : ',latestTimeEntry)
+      console.log('latest time entry : ', latestTimeEntry)
     }
     timeProcessor.stopProcessing()
+    attendanceProcessor.stopProcessing()
     idleProcessor.stopProcessing()
     configurationProcessor.stopProcessing()
+    attendanceProcessor.processAttendanceEntries()
     timeProcessor.processTimeEntries()
     idleProcessor.processIdleEntries()
     activeDuration.processActivities()

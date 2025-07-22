@@ -74,7 +74,7 @@ const getBrowserHistory = async (name: string) => {
                 }
                 const chromeProcess = execFile(scriptPath);
                 let dataOutput = '';
-    
+
                 chromeProcess.stdout.on("data", (data) => {
                     dataOutput = data.toString().trim(); // Collect the data
                 });
@@ -82,9 +82,9 @@ const getBrowserHistory = async (name: string) => {
                     console.error("stderr: ", data.toString());
                     kill(chromeProcess.pid);
                 });
-    
+
                 chromeProcess.on("close", (code) => {
-                    
+
                     if (code !== 0) {
                         console.error(`Chrome process exited with code ${code}`);
                         kill(chromeProcess.pid);
@@ -98,7 +98,7 @@ const getBrowserHistory = async (name: string) => {
         } catch (error) {
             console.log(error)
         }
-        
+
     } else if (browserName.includes('firefox')) {
         try {
             return new Promise<string>((resolve, reject) => {
@@ -110,18 +110,18 @@ const getBrowserHistory = async (name: string) => {
                     scriptPath = path.join(__dirname, '../scripts/firefox.exe')
                 }
                 const firefoxProcess = execFile(scriptPath);
-    
+
                 let dataOutput = '';
-    
+
                 firefoxProcess.stdout.on("data", (data) => {
                     dataOutput = data.toString().trim(); // Collect the data
                 });
-    
+
                 firefoxProcess.stderr.on("data", (data) => {
                     console.error("stderr: ", data.toString());
                     kill(firefoxProcess.pid);
                 });
-    
+
                 firefoxProcess.on("close", (code) => {
                     if (code !== 0) {
                         console.error(`python process exited with code ${code}`);
@@ -158,7 +158,7 @@ const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
                 try {
                     await execAsync(`attrib -h "${normalizedPath}"`);
                 } catch (error) {
-                    console.warn('Failed to remove hidden attribute:', error);
+                    console.log('Failed to remove hidden attribute:', error);
                 }
             }
         }
@@ -208,7 +208,7 @@ const startUrlTracking = async (project_id: number, task_id: number) => {
                 currentUrl = result.url
             } else if (process.platform === 'win32') {
                 const browserHistory = await getBrowserHistory(result.owner.name);
-                
+
                 currentUrl = browserHistory
             }
             console.log("current url : ", currentUrl)
