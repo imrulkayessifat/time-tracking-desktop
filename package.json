@@ -5,6 +5,10 @@
   "version": "1.1.1",
   "author": "Advanced Software Development",
   "main": "app/background.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/imrulkayessifat/time-tracking-desktop.git"
+  },
   "scripts": {
     "dev": "nextron",
     "build": "nextron build --publish never",
